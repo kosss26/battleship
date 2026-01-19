@@ -22,7 +22,7 @@
     "socket.io-client": "^4.6.1",
     "react-query": "^3.39.3",
     "date-fns": "^3.0.6",
-    "framer-motion": "^10.16.5"
+    "framer-motion": "^10.16.16"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",
