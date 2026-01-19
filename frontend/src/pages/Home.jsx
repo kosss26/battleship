@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { haptic } from '../utils/telegram.js'
 
 function Home() {
