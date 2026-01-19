@@ -11,11 +11,11 @@
   ],
   "routes": [
     {
-      "src": "/(.*)",
+      "src": "/((?!api/).*)",
       "dest": "/index.html"
     }
   ],
-  "functions": {},
   "regions": ["fra1"],
-  "framework": "vite"
+  "framework": null,
+  "outputDirectory": "dist"
 }
