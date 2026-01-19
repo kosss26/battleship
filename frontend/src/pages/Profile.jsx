@@ -381,7 +381,7 @@ function Profile() {
             <span>Назад в меню</span>
           </Link>
         </motion.div>
-      </div>
+      </motion.div>
     </div>
   )
 }

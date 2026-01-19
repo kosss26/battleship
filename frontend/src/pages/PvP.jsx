@@ -533,9 +533,6 @@ function PvP() {
       </div>
     </div>
   )
-      </div>
-    </div>
-  )
 }
 
 export default PvP
