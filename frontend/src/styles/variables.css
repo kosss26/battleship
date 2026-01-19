@@ -1,0 +1,37 @@
+:root {
+  /* Colors from TZ */
+  --color-primary: #0088cc;
+  --color-secondary: #f5a623;
+  --color-success: #27ae60;
+  --color-error: #e74c3c;
+  
+  /* Game board colors */
+  --color-water: #0099ff;
+  --color-ship: #333333;
+  --color-hit: #ff3333;
+  --color-miss: #cccccc;
+  --color-unknown: #0099ff;
+  
+  /* Background */
+  --color-bg-light: #ffffff;
+  --color-bg-dark: #1a1a1a;
+  --color-text-light: #333333;
+  --color-text-dark: #eeeeee;
+  
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  
+  /* Board cell size */
+  --cell-size: 40px;
+  --cell-size-mobile: 32px;
+}
+
+@media (max-width: 540px) {
+  :root {
+    --cell-size: var(--cell-size-mobile);
+  }
+}
