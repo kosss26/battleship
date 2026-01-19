@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useSelector } from 'react-redux'
+import { motion } from 'framer-motion'
+import { haptic } from '../utils/telegram.js'
 import api from '../services/api.js'
 
 function Referrals() {
@@ -77,14 +79,98 @@ function Referrals() {
     }
   }
 
+  // Анимации
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.15, delayChildren: 0.2 },
+    },
+  }
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30, scale: 0.9 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 15
+      }
+    },
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-500 to-purple-700 p-4">
-      <div className="max-w-md mx-auto space-y-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-pink-900 relative overflow-hidden">
+      {/* Фоновые элементы */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-pink-900/20 to-cyan-900/20" />
+        <motion.div
+          className="absolute top-20 left-10 w-2 h-2 bg-purple-400/30 rounded-full"
+          animate={{
+            y: [0, -100, 0],
+            opacity: [0.3, 1, 0.3],
+          }}
+          transition={{ duration: 4, repeat: Infinity, delay: 0 }}
+        />
+        <motion.div
+          className="absolute top-32 right-16 w-1 h-1 bg-pink-400/40 rounded-full"
+          animate={{
+            y: [0, -80, 0],
+            opacity: [0.4, 1, 0.4],
+          }}
+          transition={{ duration: 3, repeat: Infinity, delay: 1 }}
+        />
+      </div>
+
+      <motion.div
+        className="max-w-md mx-auto pt-8 px-4 relative z-10"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         {/* Заголовок */}
-        <div className="text-center text-white py-4">
-          <h1 className="text-3xl font-bold mb-2">👥 Рефералы</h1>
-          <p className="text-white/80">Приглашай друзей и получай бонусы!</p>
-        </div>
+        <motion.div
+          variants={itemVariants}
+          className="text-center mb-8"
+        >
+          <motion.div
+            variants={{
+              animate: {
+                y: [0, -10, 0],
+                rotate: [0, 2, 0, -2, 0],
+                transition: {
+                  duration: 6,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }
+              }
+            }}
+            animate="animate"
+            className="inline-block"
+          >
+            <h1 className="text-5xl font-black text-transparent bg-gradient-to-r from-white via-purple-200 to-pink-200 bg-clip-text drop-shadow-2xl">
+              РЕФЕРАЛЫ
+            </h1>
+            <div className="flex items-center justify-center gap-2 mt-2">
+              <motion.div
+                className="w-8 h-1 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full"
+                animate={{ scaleX: [0, 1, 0] }}
+                transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+              />
+              <p className="text-white/80 font-medium tracking-widest text-sm uppercase">
+                Приглашай друзей
+              </p>
+              <motion.div
+                className="w-8 h-1 bg-gradient-to-r from-pink-500 to-purple-400 rounded-full"
+                animate={{ scaleX: [0, 1, 0] }}
+                transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+              />
+            </div>
+          </motion.div>
+        </motion.div>
 
         {/* Твой код */}
         <div className="bg-white rounded-xl shadow-lg p-6">

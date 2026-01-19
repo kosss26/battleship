@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
+import { motion } from 'framer-motion'
+import { haptic } from '../utils/telegram.js'
 import { updateUser } from '../store/slices/userSlice.js'
 import api from '../services/api.js'
 
@@ -112,14 +114,105 @@ function DailyChallenges() {
 
   const hasClaimable = challenges.some(c => c.progress >= c.target && !c.completed)
 
+  // Анимации
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.15, delayChildren: 0.2 },
+    },
+  }
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30, scale: 0.9 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 15
+      }
+    },
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-400 to-orange-600 p-4">
-      <div className="max-w-md mx-auto space-y-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-orange-900 to-red-900 relative overflow-hidden">
+      {/* Фоновые элементы */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-900/20 via-red-900/20 to-yellow-900/20" />
+        <motion.div
+          className="absolute top-20 left-10 w-2 h-2 bg-orange-400/30 rounded-full"
+          animate={{
+            y: [0, -100, 0],
+            opacity: [0.3, 1, 0.3],
+          }}
+          transition={{ duration: 4, repeat: Infinity, delay: 0 }}
+        />
+        <motion.div
+          className="absolute top-32 right-16 w-1 h-1 bg-red-400/40 rounded-full"
+          animate={{
+            y: [0, -80, 0],
+            opacity: [0.4, 1, 0.4],
+          }}
+          transition={{ duration: 3, repeat: Infinity, delay: 1 }}
+        />
+      </div>
+
+      <motion.div
+        className="max-w-md mx-auto pt-8 px-4 relative z-10"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         {/* Заголовок */}
-        <div className="text-center text-white py-4">
-          <h1 className="text-3xl font-bold mb-2">📋 Ежедневные задания</h1>
-          <p className="text-white/80">Обновление через: {timeUntilReset}</p>
-        </div>
+        <motion.div
+          variants={itemVariants}
+          className="text-center mb-8"
+        >
+          <motion.div
+            variants={{
+              animate: {
+                y: [0, -10, 0],
+                rotate: [0, 2, 0, -2, 0],
+                transition: {
+                  duration: 6,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }
+              }
+            }}
+            animate="animate"
+            className="inline-block"
+          >
+            <h1 className="text-5xl font-black text-transparent bg-gradient-to-r from-white via-orange-200 to-red-200 bg-clip-text drop-shadow-2xl">
+              ЗАДАНИЯ
+            </h1>
+            <div className="flex items-center justify-center gap-2 mt-2">
+              <motion.div
+                className="w-8 h-1 bg-gradient-to-r from-orange-400 to-red-500 rounded-full"
+                animate={{ scaleX: [0, 1, 0] }}
+                transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+              />
+              <p className="text-white/80 font-medium tracking-widest text-sm uppercase">
+                Ежедневные вызовы
+              </p>
+              <motion.div
+                className="w-8 h-1 bg-gradient-to-r from-red-500 to-orange-400 rounded-full"
+                animate={{ scaleX: [0, 1, 0] }}
+                transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+              />
+            </div>
+          </motion.div>
+
+          <motion.div
+            variants={itemVariants}
+            className="mt-4 bg-white/10 backdrop-blur-xl rounded-xl px-4 py-2 border border-white/20 inline-block"
+          >
+            <p className="text-white/70 text-sm">Обновление через: <span className="font-bold text-white">{timeUntilReset}</span></p>
+          </motion.div>
+        </motion.div>
 
         {/* Сообщение */}
         {message && (
