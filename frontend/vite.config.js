@@ -26,6 +26,8 @@ export default defineConfig(({ mode }) => ({
   },
   esbuild: {
     target: 'es2015',
-    minify: mode === 'production'
+    minify: mode === 'production',
+    jsxFactory: 'React.createElement',
+    jsxFragment: 'React.Fragment'
   }
 }))
