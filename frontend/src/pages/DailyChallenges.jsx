@@ -310,11 +310,12 @@ function DailyChallenges() {
 
         <Link
           to="/"
-          className="block text-center text-white hover:underline py-4"
+          onClick={() => haptic.light()}
+          className="block text-center text-white/80 hover:text-white py-4 font-medium"
         >
           ← Назад в меню
         </Link>
-      </div>
+      </motion.div>
     </div>
   )
 }
