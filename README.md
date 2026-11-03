@@ -1,307 +1,133 @@
-# 🚢 Battleship Online - Telegram Mini App
+# ⚓ Battleship Online — Telegram Mini App
 
-Полнофункциональная Telegram Mini App для игры "Морской Бой" с PvP, AI, турнирами, Battle Pass и социальными функциями.
+Морской бой нового поколения прямо в Telegram: PvP в реальном времени, кампания, дуэли с друзьями,
+боевой пропуск, коллекция скинов и монетизация через **Telegram Stars**.
 
-## 📋 Техническое задание
+Исходное ТЗ: `Battleship_Mini_App_TZ Техническое задание.md`.
 
-Полное ТЗ находится в файле `Battleship_Mini_App_TZ Техническое задание.md`
-
-## ✅ Реализованные функции
-
-### Фаза 1 - MVP ✅
-- [x] Аутентификация через Telegram WebApp API
-- [x] Игра против AI (Easy, Medium, Hard)
-- [x] Расстановка кораблей (ручная и случайная)
-- [x] Визуализация игрового поля 10x10
-- [x] Профиль игрока с статистикой
-- [x] Система рейтинга (ELO)
-- [x] Таблица лидеров (глобальная)
-
-### Фаза 2 - Социальные функции ✅
-- [x] PvP матчмейкинг через WebSocket
-- [x] Реферальная система (100 Gold + 10% от побед)
-- [x] Система достижений (12 достижений)
-- [x] Ежедневные задания (8 типов)
-- [x] Магазин скинов и косметики
-
-### Фаза 3 - Продвинутые функции ✅
-- [x] Battle Pass (20 уровней, бесплатные + премиум награды)
-- [x] Турниры (еженедельные, месячные)
-- [x] Telegram Payments интеграция
-- [x] Система уведомлений
-- [x] Haptic Feedback
-- [x] Локализация (RU/EN)
-- [x] Анимации и переходы (Framer Motion)
-
-## 🛠 Технологии
-
-### Frontend (57 файлов)
-- **React.js 18** + React Router DOM 6
-- **Redux Toolkit** - управление состоянием
-- **Tailwind CSS** - стилизация
-- **Framer Motion** - анимации
-- **Socket.io Client** - WebSocket
-- **Axios** - HTTP клиент
-
-### Backend
-- **Node.js + Express.js** - API сервер
-- **PostgreSQL** - база данных
-- **Socket.io** - WebSocket для PvP
-- **JWT** - аутентификация
-- **Telegram Bot API** - верификация и платежи
-
-## 📁 Структура проекта
-
-```
-Battleship/
-├── frontend/                     # React приложение
-│   ├── src/
-│   │   ├── components/           # UI компоненты
-│   │   │   ├── BattlePhase.jsx   # Боевая фаза
-│   │   │   ├── ShipPlacement.jsx # Расстановка кораблей
-│   │   │   ├── GameResults.jsx   # Результаты игры
-│   │   │   └── PageTransition.jsx# Анимации
-│   │   ├── pages/                # Страницы (12 шт)
-│   │   │   ├── Home.jsx          # Главная
-│   │   │   ├── Game.jsx          # Игра против AI
-│   │   │   ├── PvP.jsx           # PvP режим
-│   │   │   ├── Profile.jsx       # Профиль
-│   │   │   ├── Shop.jsx          # Магазин
-│   │   │   ├── Leaderboard.jsx   # Рейтинг
-│   │   │   ├── Achievements.jsx  # Достижения
-│   │   │   ├── Referrals.jsx     # Рефералы
-│   │   │   ├── DailyChallenges.jsx# Ежедневные задания
-│   │   │   ├── Tournaments.jsx   # Турниры
-│   │   │   └── BattlePass.jsx    # Battle Pass
-│   │   ├── hooks/                # React хуки
-│   │   │   ├── useTelegramAuth.js
-│   │   │   └── usePvPGame.js
-│   │   ├── services/             # API сервисы
-│   │   │   ├── api.js
-│   │   │   ├── auth.js
-│   │   │   └── socket.js
-│   │   ├── store/                # Redux
-│   │   │   ├── store.js
-│   │   │   └── slices/
-│   │   └── utils/                # Утилиты
-│   │       ├── gameLogic.js      # Игровая логика
-│   │       ├── ai.js             # AI (3 уровня)
-│   │       ├── telegram.js       # Telegram API
-│   │       └── i18n.js           # Локализация
-│   └── package.json
-├── backend/                      # Node.js сервер
-│   ├── db/
-│   │   ├── index.js              # PostgreSQL подключение
-│   │   └── schema.sql            # Схема БД
-│   ├── models/                   # Модели данных (8 шт)
-│   │   ├── User.js
-│   │   ├── Game.js
-│   │   ├── Achievement.js
-│   │   ├── Referral.js
-│   │   ├── DailyChallenge.js
-│   │   ├── Tournament.js
-│   │   ├── BattlePass.js
-│   │   └── Notification.js
-│   ├── routes/                   # API маршруты (10 шт)
-│   │   ├── auth.js
-│   │   ├── games.js
-│   │   ├── users.js
-│   │   ├── leaderboards.js
-│   │   ├── referrals.js
-│   │   ├── challenges.js
-│   │   ├── tournaments.js
-│   │   ├── battlepass.js
-│   │   ├── payments.js
-│   │   └── notifications.js
-│   ├── services/
-│   │   └── telegram.js           # Telegram API
-│   ├── socket/
-│   │   └── gameSocket.js         # PvP WebSocket
-│   ├── middleware/
-│   │   └── auth.js               # JWT middleware
-│   ├── utils/
-│   │   └── elo.js                # ELO рейтинг
-│   ├── server.js
-│   └── package.json
-├── package.json                  # Корневой package.json
-└── README.md
-```
-
-## 🚀 Быстрый старт
-
-### Требования
-- Node.js 18+
-- PostgreSQL 14+
-- Telegram Bot Token
-
-### Установка
-
-```bash
-# Клонирование
-git clone https://github.com/kosss26/battleship.git
-cd battleship
-
-# Установка зависимостей
-npm run install:all
-
-# Настройка БД
-psql -U postgres -d battleship -f backend/db/schema.sql
-```
-
-### Переменные окружения
-
-**Backend (.env)**:
-```env
-PORT=5000
-NODE_ENV=development
-FRONTEND_URL=http://localhost:3000
-
-DATABASE_URL=postgresql://user:password@localhost:5432/battleship
-
-JWT_SECRET=your-secret-key
-JWT_EXPIRES_IN=7d
-
-TELEGRAM_BOT_TOKEN=your-bot-token
-TELEGRAM_PAYMENT_PROVIDER_TOKEN=your-payment-token
-```
-
-### Запуск
-
-```bash
-# Разработка
-npm run dev
-
-# Отдельно
-cd frontend && npm run dev
-cd backend && npm run dev
-```
-
-## 🎮 Игровые режимы
-
-### AI (3 уровня)
-| Уровень | Стратегия |
-|---------|-----------|
-| Easy | Случайные выстрелы |
-| Medium | Умный поиск + шахматный паттерн |
-| Hard | Карта вероятностей + продвинутое преследование |
-
-### PvP
-- Матчмейкинг по рейтингу (±200)
-- Таймер хода: 30 секунд
-- Автоматический ход при таймауте
-- Переподключение при разрыве (10 сек)
-
-## 🏆 Система прогрессии
-
-### Рейтинг (ELO)
-- Начальный: 1000
-- K-фактор: 32
-- Ранги: Юнга → Матрос → Мичман → Лейтенант → Капитан → Адмирал
-
-### Battle Pass
-- 20 уровней
-- Бесплатные + премиум награды
-- 100 XP за уровень
-- Скины, валюта, эксклюзивы
-
-### Достижения (12 шт)
-| Категория | Достижения |
-|-----------|------------|
-| Первые шаги | Дебютант, Охотник, Мастер флота |
-| Боевые | Блиц-король, Точность, Генерал |
-| Элитные | Топ-100, Легенда, Босс-киллер |
-| AI | Новичок, Опытный, Профессионал |
-
-## 💰 Монетизация
-
-### Внутриигровая валюта
-- **Gold (🪙)** - за победы, задания, достижения
-- **Gems (💎)** - покупка за реальные деньги
-
-### Магазин
-- Скины кораблей (5 шт)
-- Темы досок (4 шт)
-- Пакеты гемов
-- Battle Pass Premium
-
-### Telegram Payments
-- Интеграция с провайдером платежей
-- Webhook для обработки
-- Автоматическое начисление
-
-## 📡 API Endpoints
-
-### Аутентификация
-```
-POST /api/auth/telegram     - Вход через Telegram
-GET  /api/auth/me           - Текущий пользователь
-```
-
-### Игры
-```
-POST /api/games/start       - Начать игру
-POST /api/games/:id/finish  - Завершить игру
-GET  /api/games/history     - История игр
-```
-
-### Социальные
-```
-GET  /api/referrals/code    - Получить реф. код
-POST /api/referrals/apply   - Применить код
-GET  /api/challenges/daily  - Ежедневные задания
-```
-
-### Турниры & Battle Pass
-```
-GET  /api/tournaments       - Список турниров
-POST /api/tournaments/:id/join - Регистрация
-GET  /api/battlepass        - Текущий Battle Pass
-POST /api/battlepass/claim  - Забрать награду
-```
-
-## 🔌 WebSocket события
-
-### Клиент → Сервер
-| Событие | Описание |
-|---------|----------|
-| game:search | Поиск противника |
-| game:placement-ready | Расстановка готова |
-| game:move | Сделать ход |
-| game:leave | Покинуть игру |
-
-### Сервер → Клиент
-| Событие | Описание |
-|---------|----------|
-| game:found | Противник найден |
-| game:started | Игра началась |
-| game:move:result | Результат хода |
-| game:finished | Игра завершена |
-
-## 📱 Telegram интеграция
-
-- ✅ Аутентификация через initData
-- ✅ Haptic Feedback (тактильная отдача)
-- ✅ Main Button / Back Button
-- ✅ Telegram Payments
-- ✅ Шаринг реферальных кодов
-- ✅ Автоопределение языка
-
-## 📊 Статистика проекта
-
-| Метрика | Значение |
-|---------|----------|
-| Файлов кода | 57 |
-| Страниц | 12 |
-| API endpoints | 25+ |
-| Моделей БД | 8 |
-| Достижений | 12 |
-| Уровней AI | 3 |
-| Языков | 2 (RU, EN) |
-
-## 📝 Лицензия
-
-ISC
+<p>
+<img src="docs/screens/home.png" width="190"> <img src="docs/screens/placement.png" width="190">
+<img src="docs/screens/battle.png" width="190"> <img src="docs/screens/victory.png" width="190">
+<img src="docs/screens/shop.png" width="190"> <img src="docs/screens/quests.png" width="190">
+</p>
 
 ---
 
-**Разработано согласно ТЗ** 🎮
+## Что внутри
+
+### Режимы
+| Режим | Описание |
+|---|---|
+| **Рейтинговый бой** | Матчмейкинг по ELO с расширяющимся окном поиска, таймер хода 30 с, авто-выстрел при бездействии, 30 с на переподключение |
+| **Против ИИ** | 4 честных уровня (Новичок → Эксперт). ИИ видит только свои выстрелы, эксперт считает карту вероятностей |
+| **Кампания** | 30 миссий в 3 главах, боссы, 3 звезды за миссию (победа / лимит выстрелов) |
+| **Дуэль с другом** | Код + ссылка `t.me/<bot>/<app>?startapp=duel_XXXX`, реванш одной кнопкой |
+
+### Прогрессия и удержание
+- уровни игрока (XP) с наградами за каждый уровень;
+- 7-дневные награды за вход, 3 ежедневных задания из пула 10;
+- **боевой пропуск** на 30 уровней (бесплатная и премиум-ветка), сезон = календарный месяц;
+- 25 достижений, звания по рейтингу (Юнга → Адмирал);
+- лидерборды: мир, неделя, друзья; история боёв;
+- реферальная программа: приглашённый получает стартовый бонус, пригласивший — награду после первого боя друга.
+
+### Монетизация
+- **Кристаллы за Telegram Stars** (5 пакетов, бонус до +50%);
+- **Набор новобранца** (одноразовый, 99 ⭐);
+- **Премиум-пропуск** (299 ⭐ или 800 💎): эксклюзивные скины, +20% золота;
+- косметика за золото/кристаллы: темы поля, скины кораблей, эффекты выстрелов, рамки аватара;
+- бустеры (Радар, Залп) — только против ИИ и в кампании, **рейтинг остаётся честным**;
+- обмен кристаллов на золото.
+
+Оплата в Stars — единственный способ, который Telegram разрешает для цифровых товаров в мини-приложениях.
+Зачисление идемпотентно (по `telegram_payment_charge_id`), цена и покупатель проверяются в `pre_checkout_query`.
+
+### Дизайн
+Тёмная «морская» тема, стеклянные карточки, векторные корабли со скинами, анимации взрывов/всплесков,
+процедурный звук на WebAudio (без файлов), haptic feedback Telegram, поддержка safe-area, RU/EN.
+
+---
+
+## Архитектура
+
+```
+shared/            Правила игры, ИИ, каталог экономики — общий код сервера и клиента
+  engine.js        флот, валидация расстановки, выстрелы, обводка потопленных
+  ai.js            ИИ четырёх уровней
+  catalog.js       цены, награды, задания, пропуск, достижения, кампания
+backend/           Node.js + Express + Socket.io + PostgreSQL
+  src/game/        авторитарные игровые комнаты, матчмейкинг, дуэли
+  src/services/    профиль/награды, матчи и ELO, магазин, бот и платежи
+  src/routes/      REST API
+  test/            unit + сквозные тесты через реальные сокеты
+frontend/          React 18 + Vite + Tailwind + Framer Motion + Zustand
+```
+
+**Античит.** Сервер хранит обе доски, клиент получает только результаты своих выстрелов; корабли соперника
+раскрываются лишь после окончания боя. Каждое действие (расстановка, выстрел, бустер, ход вне очереди)
+проверяется на сервере. Все изменения баланса идут через транзакцию с блокировкой строки пользователя.
+Авторизация — проверка подписи `initData` Telegram (HMAC-SHA256) + JWT, в том числе для сокетов.
+
+---
+
+## Локальный запуск
+
+Нужны Node.js 20+ и PostgreSQL.
+
+```bash
+npm install                       # ставит зависимости frontend и backend
+cp backend/.env.example backend/.env
+# укажите DATABASE_URL, оставьте ALLOW_DEV_LOGIN=true
+npm run dev                       # API на :5055, фронтенд на :3000 (Vite проксирует /api и /socket.io)
+```
+
+Таблицы создаются автоматически при старте сервера.
+
+В обычном браузере (без Telegram) при `ALLOW_DEV_LOGIN=true` появляется вход по имени — удобно для разработки.
+В продакшене этот вход отключён всегда.
+
+Тесты: `npm test` (нужна база `battleship_test` или переменная `TEST_DATABASE_URL`).
+
+---
+
+## Настройка Telegram
+
+1. В [@BotFather](https://t.me/BotFather): `/newbot` → получите токен.
+2. `/newapp` → привяжите Mini App к боту, укажите URL фронтенда и короткое имя (например, `play`).
+3. Оплата Stars не требует платёжного провайдера — достаточно токена бота.
+4. Заполните переменные окружения backend:
+
+| Переменная | Значение |
+|---|---|
+| `TELEGRAM_BOT_TOKEN` | токен бота |
+| `BOT_USERNAME` | имя бота без `@` |
+| `APP_SHORT_NAME` | короткое имя Mini App из `/newapp` |
+| `WEBAPP_URL` | URL фронтенда |
+| `PUBLIC_URL` | публичный HTTPS URL backend — на него ставится вебхук |
+| `WEBHOOK_SECRET` | случайная строка для проверки вебхука |
+| `FRONTEND_URL` | разрешённые origin для CORS (через запятую) |
+| `JWT_SECRET` | длинная случайная строка |
+| `DATABASE_URL`, `DATABASE_SSL=true` | PostgreSQL |
+| `ADMIN_IDS` | Telegram id админов (команды `/stats`, `/refund <user_id> <charge_id>`) |
+
+При старте сервер сам регистрирует вебхук, команды и кнопку меню бота.
+Для локальной отладки бота вместо вебхука можно включить `BOT_POLLING=true`.
+
+---
+
+## Деплой
+
+**Backend (Railway).** `railway.json` уже настроен: сборка из корня, старт `cd backend && npm start`.
+Добавьте PostgreSQL и переменные из таблицы выше, `NODE_ENV=production`.
+
+**Frontend (Vercel).** Root Directory — `frontend`, сборка `npm run build`, выход `dist`.
+Фронтенд импортирует `../shared`, поэтому в настройках проекта должна быть включена опция
+*Include files outside the root directory in the Build Step* (включена по умолчанию).
+Переменные: `VITE_API_URL=https://<backend>/api`, `VITE_WS_URL=https://<backend>`.
+
+---
+
+## ⚠️ Безопасность
+
+Файл `backend/.env` раньше был закоммичен в репозиторий. Он удалён из индекса, но остался в истории git.
+**Перевыпустите** токен бота (`/revoke` в BotFather), пароль базы данных и `JWT_SECRET`.

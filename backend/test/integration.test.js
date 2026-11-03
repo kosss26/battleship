@@ -150,6 +150,9 @@ test('ranked matchmaking, cheating attempts and resign', async () => {
   const loser = sa.over.won ? sb : sa
   assert.ok(winner.over.extra.ratingDelta > 0)
   assert.ok(loser.over.extra.ratingDelta < 0)
+  // A win by resignation must not unlock skill achievements
+  assert.ok(!winner.over.rewards.achievements.includes('perfect'))
+  assert.ok(!winner.over.rewards.achievements.includes('fast_win'))
 
   // Referral: Carol gets rewarded after Dave played
   await wait(200)

@@ -67,6 +67,7 @@ async function finalize(room) {
         difficulty: room.mode === 'campaign' ? CAMPAIGN.find((l) => l.n === room.level)?.ai : room.difficulty,
         level: room.level,
         won: winnerSeat === i,
+        reason,
         ratingDelta: deltas[i],
         ...room.seatStats(i),
       })
@@ -246,7 +247,13 @@ export function initSockets(server) {
     socket.on('duel:create', guard(async () => {
       ensureFree()
       const u = await loadProfile()
-      for (const [c, d] of duels) if (d.hostId === userId) duels.delete(c)
+      // Idempotent: a host has at most one open invite
+      for (const [c, d] of duels) {
+        if (d.hostId === userId) {
+          d.createdAt = Date.now()
+          return { code: c }
+        }
+      }
       let code
       do code = crypto.randomBytes(4).toString('hex').toUpperCase().slice(0, 6)
       while (duels.has(code))

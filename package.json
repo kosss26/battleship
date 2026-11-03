@@ -1,28 +1,19 @@
 {
   "name": "battleship-telegram-miniapp",
-  "version": "1.0.0",
-  "description": "Telegram Mini App - Battleship Online",
+  "version": "2.0.0",
+  "description": "Battleship Online — Telegram Mini App",
   "private": true,
   "workspaces": [
     "frontend",
     "backend"
   ],
   "scripts": {
-    "start": "cd backend && npm start",
-    "build": "cd backend && npm install",
-    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
-    "dev:frontend": "cd frontend && npm run dev",
-    "dev:backend": "cd backend && npm run dev",
-    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install"
+    "start": "npm --prefix backend start",
+    "dev": "concurrently -n api,web -c cyan,magenta \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
+    "build": "npm --prefix frontend run build",
+    "test": "npm --prefix backend test"
   },
-  "keywords": [
-    "telegram",
-    "miniapp",
-    "battleship",
-    "game"
-  ],
-  "author": "",
-  "license": "ISC",
+  "license": "UNLICENSED",
   "devDependencies": {
     "concurrently": "^8.2.2"
   }

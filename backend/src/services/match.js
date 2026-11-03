@@ -14,7 +14,7 @@ export function campaignStars(level, won, shots) {
 
 /**
  * Applies the outcome of a finished match to one human player.
- * r: { mode, difficulty, level, won, shots, hits, sunk, shipsLost, bestHitChain, ratingDelta }
+ * r: { mode, difficulty, level, won, reason, shots, hits, sunk, shipsLost, bestHitChain, ratingDelta }
  */
 export async function applyMatchResult(userId, r) {
   const { user, result } = await mutateUser(userId, (u) => {
@@ -28,14 +28,19 @@ export async function applyMatchResult(userId, r) {
     s.sunk += r.sunk
     s.shipsLost += r.shipsLost
     s.bestHitChain = Math.max(s.bestHitChain, r.bestHitChain || 0)
+    // Skill feats only count when the enemy fleet was actually destroyed (not a resignation)
+    const fullWin = r.won && r.reason === 'victory'
     if (r.won) {
       s.wins++
       s.streak++
       s.bestStreak = Math.max(s.bestStreak, s.streak)
+    }
+    if (fullWin) {
       if (r.shipsLost === 0) s.perfectWins++
       if (r.shots < 35) s.fastWins++
       s.fastestWin = s.fastestWin ? Math.min(s.fastestWin, r.shots) : r.shots
-    } else {
+    }
+    if (!r.won) {
       s.losses++
       s.streak = 0
     }
@@ -89,9 +94,9 @@ export async function applyMatchResult(userId, r) {
       won_hard: r.won && ((r.mode === 'ai' && ['hard', 'expert'].includes(r.difficulty)) || (r.mode === 'campaign' && ['hard', 'expert'].includes(r.difficulty))) ? 1 : 0,
       won_pvp: r.won && r.mode === 'ranked' ? 1 : 0,
       campaign_win: r.won && r.mode === 'campaign' ? 1 : 0,
-      accurate_win: r.won && accuracy >= 0.6 ? 1 : 0,
+      accurate_win: fullWin && accuracy >= 0.6 ? 1 : 0,
       played_duel: r.mode === 'duel' ? 1 : 0,
-      fast_win: r.won && r.shots < 45 ? 1 : 0,
+      fast_win: fullWin && r.shots < 45 ? 1 : 0,
     }, summary)
     checkAchievements(u, summary)
 
