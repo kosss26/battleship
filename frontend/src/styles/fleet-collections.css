@@ -1,0 +1,72 @@
+/* Cosmetic materials only: the 10x10 geometry and shot markers are unchanged. */
+.water[data-board-theme='theme_arctic'] {
+  background: radial-gradient(ellipse at 0 0, #d4f0ff38, transparent 38%),
+    radial-gradient(ellipse at 100% 100%, #8ed9f329, transparent 35%),
+    linear-gradient(145deg, #244e73, #0c2a48 65%, #183d59);
+}
+.water[data-board-theme='theme_arctic']::before,
+.water[data-board-theme='theme_imperial']::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  border-radius: inherit; box-shadow: inset 0 0 16px #c1e8ff35;
+  background: linear-gradient(130deg, #e1f7ff55 0, transparent 3% 97%, #e1f7ff44 100%);
+}
+.water[data-board-theme='theme_arctic'] > .water-waves { opacity: .65; }
+.water[data-board-theme='theme_imperial'] {
+  background: radial-gradient(ellipse at 80% 0, #caa45613, transparent 40%),
+    radial-gradient(ellipse at 5% 100%, #264c6d60, transparent 50%),
+    linear-gradient(145deg, #1c3a54, #071b30 70%);
+}
+.water[data-board-theme='theme_imperial']::before {
+  box-shadow: inset 0 0 0 1px #d3b3799c, inset 0 0 13px #030c1e80;
+  background: linear-gradient(130deg, #e3c57f66 0, transparent 2% 98%, #e3c57f66 100%);
+}
+.fleet-collections { margin-bottom: 17px; }
+.fleet-collections .naval-section-heading { margin-top: 4px; }
+.fleet-collections .naval-section-heading h2 { font-size: 18px; }
+.fleet-collections .naval-section-heading > span { max-width: 42%; }
+.fleet-collection-card { position: relative; isolation: isolate; display: flex; align-items: flex-start; flex-direction: column; justify-content: center; width: 100%; aspect-ratio: 2; padding: 16px; overflow: hidden; text-align: left; border: 1px solid #8faebf; border-radius: 20px; background: #102b40; box-shadow: 0 8px 20px #0003; margin-bottom: 10px; }
+.fleet-collection-card::before { content: ''; position: absolute; z-index: -2; inset: 0; background: url('/art/naval/collections.svg') center top / 100% 200%; }
+.fleet-collection-imperial { border-color: #c6a365; }
+.fleet-collection-imperial::before { background-position: center bottom; }
+.fleet-collection-card::after { content: ''; position: absolute; z-index: -1; inset: 0; background: linear-gradient(90deg, #061624ed, #071b2b88 45%, #071b2b05 80%), linear-gradient(0deg, #041323d9, transparent 55%); }
+.fleet-collection-kicker { color: #aad8f3; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; }
+.fleet-collection-imperial .fleet-collection-kicker { color: #f1d49a; }
+.fleet-collection-card > strong { max-width: 65%; font-size: 23px; font-weight: 800; line-height: 1.15; letter-spacing: -.5px; margin: 7px 0; text-shadow: 0 1px 8px #000; }
+.fleet-collection-tagline { color: #bcd0de; max-width: 64%; font-size: 10px; line-height: 1.5; }
+.fleet-collection-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; margin-top: auto; padding-top: 13px; font-size: 10px; }
+.fleet-collection-footer > span { display: flex; gap: 5px; align-items: center; }
+.fleet-collection-footer > span:first-child { color: #7debf6; font-weight: 800; }
+.fleet-collection-footer > span:last-child { color: #bbcedc; }
+.cosmetic-try { display: block; width: 100%; text-align: left; }
+.cosmetic-try > span { display: inline-flex; align-items: center; gap: 4px; margin-top: 7px; color: #80dce9; font-size: 10px; }
+.fleet-preview { width: calc(100% - 24px); max-width: 456px; max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 24px); overflow-y: auto; overscroll-behavior: contain; margin: auto; padding: 15px; border: 1px solid #6c95ab; border-radius: 22px; background: linear-gradient(145deg, #112e42, #071625 65%); color: #eaf3fa; box-shadow: 0 22px 80px #0009; }
+.fleet-preview::backdrop { background: #020a12ce; backdrop-filter: blur(8px); }
+.fleet-preview-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.fleet-preview-heading > div > span { display: flex; align-items: center; gap: 5px; color: #79d6e7; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; }
+.fleet-preview-heading h2 { margin-top: 4px; font-size: 22px; font-weight: 800; line-height: 1.15; letter-spacing: -.5px; }
+.fleet-preview-close { display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; border: 1px solid #64829375; background: #bedfff09; color: #c6dae6; }
+.fleet-preview-hint { font-size: 10px; line-height: 1.5; color: #b1c8d8; margin: 9px 0 12px; }
+.fleet-preview .naval-tabs { margin-bottom: 12px; }
+.fleet-preview .naval-tabs button { min-height: 32px; }
+.fleet-preview-board { margin-bottom: 9px; }
+.fleet-preview-board > div > .text-slate-500 { color: #a4bed0; }
+.fleet-preview-caption { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 6px 0 12px; color: #91b2c7; font-size: 9px; }
+.fleet-preview-caption button { display: inline-flex; align-items: center; gap: 4px; color: #b8d8e9; min-height: 30px; }
+.fleet-preview-items { display: flex; flex-direction: column; border-top: 1px solid #91b5cc35; }
+.fleet-preview-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 64px; padding: 10px 1px; border-bottom: 1px solid #91b5cc24; }
+.fleet-preview-item > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.fleet-preview-item > div > span { color: #91b4cc; font-size: 9px; }
+.fleet-preview-item strong { font-size: 12px; font-weight: 800; }
+.fleet-preview-item .naval-button { flex-shrink: 0; min-height: 34px; padding: 7px 10px; font-size: 11px; }
+.fleet-preview-equipped { display: flex; align-items: center; gap: 5px; color: #8acbd9; font-size: 11px; }
+.fleet-preview-error { color: #ffd28a; background: #d8962220; border: 1px solid #d7a55470; border-radius: 10px; padding: 9px 11px; margin: 0 0 10px; font-size: 11px; }
+.fleet-preview-fair { font-size: 9px; line-height: 1.6; color: #8faec3; margin: 10px 0 0; }
+@media (max-width: 359px) {
+  .fleet-collection-card { padding: 12px; }
+  .fleet-collection-card > strong { font-size: 20px; margin: 5px 0; }
+  .fleet-collection-footer { padding-top: 9px; }
+  .fleet-collection-tagline { font-size: 9px; }
+  .fleet-preview { padding: 12px; }
+  .fleet-preview-heading h2 { font-size: 20px; }
+  .fleet-preview-caption { font-size: 8px; }
+}

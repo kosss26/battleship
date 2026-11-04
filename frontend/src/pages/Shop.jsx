@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Check, ChevronRight } from 'lucide-react'
+import { Check, ChevronRight, Eye } from 'lucide-react'
 import {
-  STAR_PRODUCTS, THEMES, SHIP_SKINS, EFFECTS, FRAMES, BOOSTERS, GOLD_EXCHANGE, RARITY,
+  STAR_PRODUCTS, THEMES, SHIP_SKINS, EFFECTS, FRAMES, BOOSTERS, GOLD_EXCHANGE, RARITY, FLEET_COLLECTIONS,
 } from '@shared/catalog.js'
 import { useStore } from '../store/app.js'
 import { useT, useL, tr } from '../lib/i18n.js'
@@ -12,6 +12,7 @@ import Ship from '../components/Ship.jsx'
 import { NavalHeader, NavalAction, NavalTabs } from '../components/naval.jsx'
 import { LegalLinks } from '../components/LegalLinks.jsx'
 import { AdButton, useAdsEnabled } from '../components/Ads.jsx'
+import FleetPreview from '../components/FleetPreview.jsx'
 
 /** Buys a Telegram Stars product: creates the invoice server-side and opens it */
 export async function buyStars(productId) {
@@ -106,10 +107,10 @@ function Offers({ onCollection }) {
   )
 }
 
-function CosmeticPreview({ slot, item }) {
+function CosmeticThumbnail({ slot, item }) {
   if (slot === 'theme') {
     return (
-      <div className="water grid h-16 w-full grid-cols-5 grid-rows-3 overflow-hidden rounded-xl" style={Object.fromEntries(Object.entries(item.vars).map(([k, v]) => [`--${k}`, v]))}>
+      <div data-board-theme={item.id} className="water relative grid h-16 w-full grid-cols-5 grid-rows-3 overflow-hidden rounded-xl" style={Object.fromEntries(Object.entries(item.vars).map(([k, v]) => [`--${k}`, v]))}>
         {Array.from({ length: 15 }, (_, i) => (
           <div key={i} className="border border-[color:var(--grid)]">{i === 7 && <div className="m-auto mt-2 h-2 w-2 rounded-full" style={{ background: 'var(--miss)' }} />}</div>
         ))}
@@ -133,6 +134,7 @@ function Collection() {
   const p = useStore((s) => s.profile)
   const mutate = useStore((s) => s.mutate)
   const [slot, setSlot] = useState('theme')
+  const [preview, setPreview] = useState(null)
   const lists = { theme: THEMES, ship: SHIP_SKINS, effect: EFFECTS, frame: FRAMES }
   return (
     <div>
@@ -148,6 +150,19 @@ function Collection() {
           { value: 'frame', label: t('frames') },
         ]}
       />
+      {['theme', 'ship'].includes(slot) && (
+        <section className="fleet-collections" aria-label={t('skins_collections')}>
+          <div className="naval-section-heading"><h2>{t('skins_collections')}</h2><span>{t('skins_preview_first')}</span></div>
+          {FLEET_COLLECTIONS.map((c) => (
+            <button key={c.id} className={`fleet-collection-card fleet-collection-${c.id}`} data-collection-id={c.id}
+              onClick={() => setPreview({ collectionId: c.id, themeId: c.themeId, shipId: c.shipId })}>
+              <span className="fleet-collection-kicker">{t('skins_collection')}</span>
+              <strong>{l(c.name)}</strong><span className="fleet-collection-tagline">{l(c.tagline)}</span>
+              <span className="fleet-collection-footer"><span><Eye size={14} />{t('skins_try')}</span><span>{t('skins_owned', { n: [c.themeId, c.shipId].filter((id) => p.owned.includes(id)).length })}<ChevronRight size={16} /></span></span>
+            </button>
+          ))}
+        </section>
+      )}
       <div className="grid grid-cols-2 gap-3">
         {lists[slot].map((item) => {
           const owned = p.owned.includes(item.id)
@@ -155,7 +170,10 @@ function Collection() {
           const rarity = RARITY[item.rarity]
           return (
             <div key={item.id} className="glass flex flex-col p-3" style={{ boxShadow: equipped ? `0 0 0 2px ${rarity.color}` : undefined }}>
-              <CosmeticPreview slot={slot} item={item} />
+              {['theme', 'ship'].includes(slot) ? <button className="cosmetic-try" aria-label={`${t('skins_try')}: ${l(item.name)}`}
+                onClick={() => setPreview({ itemId: item.id, themeId: slot === 'theme' ? item.id : p.equipped.theme, shipId: slot === 'ship' ? item.id : p.equipped.ship })}>
+                <CosmeticThumbnail slot={slot} item={item} /><span><Eye size={12} />{t('skins_try')}</span>
+              </button> : <CosmeticThumbnail slot={slot} item={item} />}
               <div className="mt-2 text-sm font-extrabold">{l(item.name)}</div>
               <div className="mb-2 text-[11px] font-bold" style={{ color: rarity.color }}>{l(rarity.name)}</div>
               <div className="mt-auto">
@@ -175,6 +193,7 @@ function Collection() {
           )
         })}
       </div>
+      {preview && <FleetPreview selection={preview} onClose={() => setPreview(null)} />}
     </div>
   )
 }

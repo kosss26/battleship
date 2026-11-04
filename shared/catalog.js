@@ -91,6 +91,11 @@ export const THEMES = [
     name: { ru: 'Золотой флот', en: 'Golden Fleet' },
     vars: { water: '#1c1405', water2: '#3d2b07', grid: 'rgba(251,191,36,0.30)', glow: '#fbbf24', miss: '#fde68a' },
   },
+  {
+    id: 'theme_imperial', rarity: 'legendary', price: { gems: 450 },
+    name: { ru: 'Императорские воды', en: 'Imperial Waters' },
+    vars: { water: '#081b30', water2: '#183b57', grid: 'rgba(225,191,124,0.32)', glow: '#d8b775', miss: '#c5e4f5' },
+  },
 ]
 
 /** Ship skins: hull gradient + deck colour */
@@ -100,7 +105,8 @@ export const SHIP_SKINS = [
   { id: 'ship_stealth', rarity: 'rare', price: { gold: 3500 }, name: { ru: 'Стелс', en: 'Stealth' }, hull: ['#334155', '#020617'], deck: '#64748b' },
   { id: 'ship_pirate', rarity: 'epic', price: { gems: 180 }, name: { ru: 'Пиратский', en: 'Pirate' }, hull: ['#b45309', '#451a03'], deck: '#fcd34d' },
   { id: 'ship_cyber', rarity: 'epic', price: { gems: 220 }, name: { ru: 'Кибер', en: 'Cyber' }, hull: ['#22d3ee', '#7c3aed'], deck: '#f0abfc' },
-  { id: 'ship_royal', rarity: 'legendary', price: { gems: 500 }, name: { ru: 'Королевский', en: 'Royal' }, hull: ['#fde047', '#b45309'], deck: '#fff7ed' },
+  { id: 'ship_royal', rarity: 'legendary', price: { gems: 500 }, name: { ru: 'Королевский', en: 'Royal' }, hull: ['#334b60', '#0b192c'], deck: '#a88d59', model: 'imperial', accent: '#e6c780' },
+  { id: 'ship_arctic', rarity: 'epic', price: { gems: 180 }, name: { ru: 'Полярный', en: 'Polar' }, hull: ['#e7f3fc', '#738fa8'], deck: '#c0d4e3', model: 'arctic', accent: '#9ee7ff' },
   { id: 'ship_season', rarity: 'legendary', price: null, exclusive: 'pass', name: { ru: 'Флагман сезона', en: 'Season Flagship' }, hull: ['#f43f5e', '#7e22ce'], deck: '#fecdd3' },
 ]
 
@@ -133,6 +139,22 @@ export function findCosmetic(id) {
   }
   return null
 }
+
+/** Curated looks. Components use the normal cosmetic purchase/equip endpoints. */
+export const FLEET_COLLECTIONS = [
+  {
+    id: 'arctic', themeId: 'theme_arctic', shipId: 'ship_arctic',
+    name: { ru: 'Арктика', en: 'Arctic' },
+    tagline: { ru: 'Холодная сталь. Чистая тактика.', en: 'Cold steel. Clear tactics.' },
+    description: { ru: 'Зимний камуфляж, ледяные огни и холодные воды. Все корабли сохраняют обычные размеры и правила боя.', en: 'Winter camouflage, ice-blue lights and polar waters. Ship sizes and battle rules stay the same.' },
+  },
+  {
+    id: 'imperial', themeId: 'theme_imperial', shipId: 'ship_royal',
+    name: { ru: 'Императорский флот', en: 'Imperial Fleet' },
+    tagline: { ru: 'Тёмная сталь. Золотые детали.', en: 'Midnight steel. Golden details.' },
+    description: { ru: 'Латунная окантовка, тиковая палуба и глубокое синее море. Королевский скин остаётся доступен его владельцам.', en: 'Brass trim, a teak deck and deep blue water. Existing Royal owners keep their ship skin.' },
+  },
+]
 
 /* ───────────────────────── Boosters ───────────────────────── */
 /* Only usable vs AI and in the campaign — ranked stays skill-only. */

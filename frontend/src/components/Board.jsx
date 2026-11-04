@@ -91,6 +91,7 @@ const Board = forwardRef(function Board(
   const grid = (
     <div
       ref={ref}
+      data-board-theme={theme?.id}
       onPointerDown={onPointerDown}
       className={`water relative aspect-square w-full touch-none overflow-hidden ${small ? 'rounded-xl' : 'rounded-2xl'} ${shake ? 'shake' : ''}`}
       style={{ boxShadow: `inset 0 0 0 1px var(--grid), 0 0 ${small ? 12 : 30}px -10px var(--glow)` }}
