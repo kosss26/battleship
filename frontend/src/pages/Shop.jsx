@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom'
 import { useState } from 'react'
 import { Check, ChevronRight, Eye } from 'lucide-react'
 import {
@@ -255,7 +256,8 @@ function Exchange() {
 
 export default function Shop() {
   const t = useT()
-  const [tab, setTab] = useState('offers')
+  const [searchParams] = useSearchParams()
+  const [tab, setTab] = useState(() => searchParams.get('tab') === 'collection' ? 'collection' : 'offers')
   return (
     <div className="naval-screen naval-shop">
       <NavalHeader title={t('shop')} />

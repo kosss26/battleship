@@ -1,57 +1,49 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  ChevronRight, Globe, Volume2, Vibrate, Users, Award, LifeBuoy, ShieldCheck, Music, Bell, GraduationCap, FileText, Lock, Trash2,
+  ChevronRight, Globe, Volume2, Vibrate, Users, LifeBuoy, ShieldCheck, Music, Bell, GraduationCap, FileText, Lock, Trash2, Settings, ChevronsUp, Trophy, Swords, Crosshair, ChevronDown,
 } from 'lucide-react'
-import { ACHIEVEMENTS, seasonInfo, RANKS } from '@shared/catalog.js'
+import { ACHIEVEMENTS, seasonInfo, RANKS, MAX_LEVEL } from '@shared/catalog.js'
 import { useStore } from '../store/app.js'
-import { useT, useL } from '../lib/i18n.js'
+import { useT, useL, useLang } from '../lib/i18n.js'
 import { api } from '../lib/api.js'
 import { openLink, requestWriteAccess, isTelegram } from '../lib/telegram.js'
-import { Avatar, Progress, RankBadge, Toggle, Segmented, Empty, Spinner, Modal } from '../components/ui.jsx'
+import { Avatar, Toggle, Segmented, Empty, Spinner, Modal, Sheet, fmt } from '../components/ui.jsx'
 import { SeasonEmblem } from '../components/Season.jsx'
 import { useHomeScreenAvailable } from '../components/Share.jsx'
 import { addToHomeScreen } from '../lib/telegram.js'
 import { Smartphone } from 'lucide-react'
-
-function Stat({ label, value }) {
-  return (
-    <div className="rounded-2xl bg-white/[0.04] p-3">
-      <div className="font-display text-xl font-bold">{value}</div>
-      <div className="text-[11px] font-bold uppercase text-slate-500">{label}</div>
-    </div>
-  )
-}
+import { NavalWordmark } from '../components/naval.jsx'
+import { CaptainAvatar, NavalRank, NavalMedal } from '../components/NavalIdentity.jsx'
 
 function History() {
   const t = useT()
+  const lang = useLang()
   const [games, setGames] = useState(null)
+  const [error, setError] = useState(false)
+  const [retry, setRetry] = useState(0)
+  const [expanded, setExpanded] = useState(false)
   useEffect(() => {
-    api('/me/history').then((d) => setGames(d.games)).catch(() => setGames([]))
-  }, [])
-  if (!games) return <div className="flex justify-center py-6"><Spinner size={22} /></div>
-  if (!games.length) return <Empty icon="⚓" text={t('no_history')} />
+    let alive = true
+    setError(false)
+    api('/me/history').then((d) => { if (alive) setGames(d.games) }).catch(() => { if (alive) setError(true) })
+    return () => { alive = false }
+  }, [retry])
   return (
-    <div className="space-y-2">
-      {games.slice(0, 10).map((g) => (
-        <div key={g.id} className="flex items-center gap-3 rounded-2xl bg-white/[0.03] p-3">
-          <div className={`flex h-9 w-9 items-center justify-center rounded-xl text-sm font-black ${g.won ? 'bg-emerald-400/15 text-emerald-300' : 'bg-rose-500/15 text-rose-300'}`}>
-            {g.won ? 'W' : 'L'}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-bold">
-              {t(`mode_${g.mode}`)}
-              {g.mode === 'ai' && g.difficulty ? ` · ${t(`diff_${g.difficulty}`)}` : ''}
-              {g.opponent ? ` · ${g.opponent}` : ''}
+    <section className="identity-history">
+      <div className="identity-section-heading"><h2>{t('identity_recent_battles')}</h2>{games?.length > 2 && <button onClick={() => setExpanded(!expanded)} aria-expanded={expanded}>{t(expanded ? 'identity_collapse' : 'identity_all_battles')}<ChevronDown size={14} /></button>}</div>
+      {error ? <div className="naval-panel identity-empty"><p>{t('error_generic')}</p><button className="naval-button" onClick={() => setRetry((v) => v + 1)}>{t('retry')}</button></div> : !games ? <div className="identity-empty"><Spinner size={22} /></div> : !games.length ? <Empty icon="⚓" text={t('no_history')} /> : (
+        <div className="identity-history-list">
+          {games.slice(0, expanded ? 10 : 2).map((g) => (
+            <div key={g.id} className={`naval-panel identity-history-row ${g.won ? 'is-win' : 'is-loss'}`}>
+              <Swords size={22} aria-hidden="true" />
+              <div className="identity-row-name"><strong>{t(g.won ? 'identity_victory' : 'defeat')}</strong><small>{t(g.mode === 'ranked' ? 'identity_ranked_battle' : `mode_${g.mode}`)}{g.opponent ? ` · ${g.opponent}` : ''}{g.mode === 'ai' && g.difficulty ? ` · ${t(`diff_${g.difficulty}`)}` : ''}</small>{expanded && <time dateTime={g.endedAt}>{new Date(g.endedAt).toLocaleString(lang === 'ru' ? 'ru-RU' : 'en-US')}</time>}</div>
+              {g.mode === 'ranked' && <span className="identity-score"><Trophy size={14} /><b>{g.ratingDelta > 0 ? '+' : ''}{g.ratingDelta}</b></span>}
             </div>
-            <div className="text-[11px] text-slate-500">{new Date(g.endedAt).toLocaleString()}</div>
-          </div>
-          {g.mode === 'ranked' && (
-            <span className={`text-sm font-black ${g.ratingDelta >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>{g.ratingDelta > 0 ? '+' : ''}{g.ratingDelta}</span>
-          )}
+          ))}
         </div>
-      ))}
-    </div>
+      )}
+    </section>
   )
 }
 
@@ -135,11 +127,21 @@ export default function Profile() {
   const updateSettings = useStore((s) => s.updateSettings)
   const friendsBadge = useStore((s) => s.friendsBadge)
   const [deleting, setDeleting] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const settingsTitle = useRef(null)
+  const settingsTrigger = useRef(null)
   const homeAvailable = useHomeScreenAvailable()
+  const l = useL()
   const s = p.stats
   const winrate = s.games ? Math.round((s.wins / s.games) * 100) : 0
   const accuracy = s.shots ? Math.round((s.hits / s.shots) * 100) : 0
   const achCount = Object.keys(p.achievements).length
+  const maxLevel = p.level >= MAX_LEVEL
+  const xpMax = Math.max(1, p.levelXpNeeded || 0)
+  const xpValue = maxLevel ? xpMax : Math.max(0, Math.min(p.levelXp || 0, xpMax))
+  const medals = [...ACHIEVEMENTS].sort((a, b) => Number(!!p.achievements[b.id]) - Number(!!p.achievements[a.id])).slice(0, 4)
+  const closeSettings = () => { setSettingsOpen(false); settingsTrigger.current?.focus() }
+  useEffect(() => { if (settingsOpen) settingsTitle.current?.focus() }, [settingsOpen])
 
   const Row = ({ icon: Icon, label, right, onClick }) => {
     const Tag = onClick ? 'button' : 'div'
@@ -153,60 +155,30 @@ export default function Profile() {
   }
 
   return (
-    <div>
-      <div className="glass relative mb-4 overflow-hidden p-5 text-center">
-        <div className="pointer-events-none absolute -top-16 left-1/2 h-40 w-64 -translate-x-1/2 rounded-full bg-cyan-400/15 blur-3xl" />
-        <div className="relative mx-auto mb-3 w-fit">
-          <Avatar photo={p.photo} name={p.name} frame={p.equipped.frame} size={92} />
-          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-cyan-400 px-2.5 py-0.5 text-xs font-black text-ink-950 ring-4 ring-ink-850">
-            {t('level')} {p.level}
-          </span>
-        </div>
-        <h1 className="h-display mt-4 text-xl">{p.name}</h1>
-        {p.username && <div className="text-sm text-slate-500">@{p.username}</div>}
-        <div className="mt-3 flex items-center justify-center gap-2">
-          <RankBadge rating={p.rating} size="lg" />
-          <span className="chip bg-white/[0.07] px-3 py-1.5 text-sm">⚡ {p.rating}</span>
-          {p.premium && <span className="chip bg-amber-300/15 px-3 py-1.5 text-sm text-amber-200">👑 Premium</span>}
-        </div>
-        <div className="mx-auto mt-4 max-w-[240px]">
-          <Progress value={p.levelXp} max={p.levelXpNeeded} />
-          <div className="mt-1 text-[11px] font-bold text-slate-500">{p.levelXp} / {p.levelXpNeeded} XP</div>
-        </div>
-      </div>
-
-      <div className="mb-4 grid grid-cols-3 gap-2">
-        <Stat label={t('games')} value={s.games} />
-        <Stat label={t('wins')} value={s.wins} />
-        <Stat label={t('winrate')} value={`${winrate}%`} />
-        <Stat label={t('accuracy')} value={`${accuracy}%`} />
-        <Stat label={t('sunk_total')} value={s.sunk} />
-        <Stat label={t('best_streak')} value={s.bestStreak} />
-      </div>
-
-      {p.isAdmin && (
-        <button onClick={() => navigate('/admin')} className="mb-4 flex w-full items-center gap-3 rounded-3xl bg-gradient-to-r from-emerald-400/20 to-cyan-400/10 p-4 text-left ring-1 ring-emerald-300/30">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-400 text-ink-950"><ShieldCheck size={22} /></div>
-          <div className="flex-1">
-            <div className="font-extrabold">{t('admin_panel')}</div>
-            <div className="text-xs text-slate-400">{t('admin_panel_sub')}</div>
-          </div>
-          <ChevronRight size={18} className="text-slate-500" />
-        </button>
-      )}
-
-      <div className="glass mb-4 divide-y divide-white/[0.05] p-0">
-        <Row icon={Award} label={t('achievements')} onClick={() => navigate('/achievements')} right={<span className="chip bg-amber-300/15 text-amber-200">{achCount}/{ACHIEVEMENTS.length}</span>} />
-        <Row icon={Users} label={t('friends')} onClick={() => navigate('/friends')} right={friendsBadge ? <span className="chip bg-rose-500 text-white">{friendsBadge}</span> : undefined} />
-        <Row icon={GraduationCap} label={t('how_to_play')} onClick={() => useStore.setState({ showTutorial: true })} />
-        {homeAvailable && <Row icon={Smartphone} label={t('home_screen')} onClick={() => addToHomeScreen(() => useStore.getState().toast(t('home_screen_added'), 'success'))} />}
-      </div>
-
-      <SeasonHistory />
-
-      <div className="label mb-2 px-1">{t('history')}</div>
-      <div className="mb-4"><History /></div>
-
+    <div className="naval-screen naval-profile">
+      <header className="identity-heading"><NavalWordmark /><div className="identity-title-row"><h1>{t('profile')}</h1><button ref={settingsTrigger} className="identity-settings-button" onClick={() => setSettingsOpen(true)} aria-label={t('settings')} aria-haspopup="dialog"><Settings size={21} /></button></div></header>
+      <section className="naval-panel identity-dossier" aria-label={t('profile')}>
+        <div className="identity-dossier-main"><CaptainAvatar photo={p.photo} name={p.name} frame={p.equipped.frame} size={76} /><div className="identity-dossier-copy"><h2 title={p.name}>{p.name}</h2><span className="identity-level"><ChevronsUp size={16} />{t('tier', { n: p.level })}</span><div className="identity-rank-line"><NavalRank rating={p.rating} /><span className="identity-score"><Trophy size={15} /><b>{fmt(p.rating)}</b></span></div></div></div>
+        <div className="identity-xp"><div><span>{t(maxLevel ? 'identity_max_level' : 'identity_next_level', { n: p.level + 1 })}</span><span>{maxLevel ? t('identity_xp_complete') : <>{fmt(p.levelXp)} / {fmt(p.levelXpNeeded)} <small>XP</small></>}</span></div><div className="identity-xp-track" role="progressbar" aria-label={t('level')} aria-valuemin={0} aria-valuemax={xpMax} aria-valuenow={xpValue}><span style={{ width: `${xpValue / xpMax * 100}%` }} /></div></div>
+      </section>
+      <section className="naval-panel identity-stats" aria-label={t('identity_statistics')}>
+        {[[Swords, fmt(s.games), t('games')], [Trophy, `${winrate}%`, t('wins')], [Crosshair, `${accuracy}%`, t('accuracy')]].map(([Icon, value, label]) => <div key={label}><Icon size={23} /><span><b>{value}</b><small>{label}</small></span></div>)}
+      </section>
+      <button className="naval-panel identity-fleet-link" onClick={() => navigate('/shop?tab=collection')}><span className="identity-fleet-copy"><strong>{t('identity_my_fleet')}</strong><small>{t('identity_fleet_sub')}</small></span><ChevronRight size={22} /></button>
+      <button className="naval-panel identity-achievements" onClick={() => navigate('/achievements')}>
+        <span className="identity-achievements-heading"><strong>{t('achievements')}</strong><span>{achCount} / {ACHIEVEMENTS.length}<ChevronRight size={17} /></span></span>
+        <span className="identity-medal-shelf">{medals.map((a, i) => <span key={a.id} title={l(a.title)} aria-label={`${l(a.title)}: ${t(p.achievements[a.id] ? 'identity_unlocked' : 'identity_locked')}`}><NavalMedal type={['anchor', 'target', 'star', 'compass'][i]} tone={i === 2 ? 'gold' : 'silver'} locked={!p.achievements[a.id]} /></span>)}</span>
+      </button>
+      <History />
+      <button className="naval-panel identity-friends" onClick={() => navigate('/friends')}><Users size={23} /><strong>{t('friends')}</strong>{!!friendsBadge && <span className="identity-friends-badge">{friendsBadge}</span>}<ChevronRight size={20} /></button>
+      <Sheet open={settingsOpen} onClose={closeSettings} title={t('settings')} tall>
+        <div className="identity-profile-settings" role="dialog" aria-modal="true" aria-label={t('settings')}><h2 className="sr-only" ref={settingsTitle} tabIndex={-1}>{t('settings')}</h2>
+          {p.username && <p className="mb-3 text-sm text-slate-400">@{p.username}</p>}
+          {p.premium && <p className="mb-3 text-sm text-amber-200">Telegram Premium</p>}
+          {p.isAdmin && <div className="glass mb-4"><Row icon={ShieldCheck} label={t('admin_panel')} onClick={() => navigate('/admin')} /></div>}
+          <div className="glass mb-4"><Row icon={GraduationCap} label={t('how_to_play')} onClick={() => { closeSettings(); useStore.setState({ showTutorial: true }) }} />{homeAvailable && <Row icon={Smartphone} label={t('home_screen')} onClick={() => addToHomeScreen(() => useStore.getState().toast(t('home_screen_added'), 'success'))} />}</div>
+          <div className="identity-extra-stats">{[[t('wins'), s.wins], [t('sunk_total'), s.sunk], [t('best_streak'), s.bestStreak]].map(([label, value]) => <div key={label}><b>{fmt(value || 0)}</b><span>{label}</span></div>)}</div>
+          <SeasonHistory />
       <div className="label mb-2 px-1">{t('settings')}</div>
       <div className="glass mb-4 divide-y divide-white/[0.05] p-0">
         <div className="flex items-center gap-3 px-4 py-3">
@@ -235,10 +207,12 @@ export default function Profile() {
       <div className="glass mb-4 divide-y divide-white/[0.05] p-0">
         <Row icon={FileText} label={t('terms')} onClick={() => navigate('/legal/terms')} />
         <Row icon={Lock} label={t('privacy')} onClick={() => navigate('/legal/privacy')} />
-        <Row icon={Trash2} label={<span className="text-rose-300">{t('delete_account')}</span>} onClick={() => setDeleting(true)} />
+        <Row icon={Trash2} label={<span className="text-rose-300">{t('delete_account')}</span>} onClick={() => { closeSettings(); setDeleting(true) }} />
       </div>
+        </div>
+        <div className="pb-2 text-center text-[11px] text-slate-500">Battleship Online · v2.0 · ID {p.id}</div>
+      </Sheet>
       <DeleteAccount open={deleting} onClose={() => setDeleting(false)} />
-      <div className="pb-2 text-center text-[11px] text-slate-600">Battleship Online · v2.0 · ID {p.id}</div>
     </div>
   )
 }

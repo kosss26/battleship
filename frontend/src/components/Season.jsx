@@ -73,7 +73,7 @@ export function SeasonBanner({ progress }) {
   )
 }
 
-export function SeasonRewardsSheet({ open, onClose }) {
+export function SeasonRewardsSheet({ open, onClose, progress }) {
   const t = useT()
   const l = useL()
   const s = useSeason()
@@ -88,6 +88,10 @@ export function SeasonRewardsSheet({ open, onClose }) {
         </div>
       </div>
       <p className="mb-4 text-xs text-slate-400">{t('season_rewards_sub', { n: SEASON_MIN_GAMES })}</p>
+      {progress && <div className="mb-4 rounded-2xl bg-white/[0.04] p-3">
+        <p className={`mb-2 text-xs font-bold ${progress.games >= SEASON_MIN_GAMES ? 'text-emerald-300' : 'text-slate-300'}`}>{progress.games >= SEASON_MIN_GAMES ? `✓ ${t('season_qualified')}` : t('season_progress', { a: progress.games ?? 0, b: SEASON_MIN_GAMES })}</p>
+        <Progress value={progress.games ?? 0} max={SEASON_MIN_GAMES} height="h-1.5" />
+      </div>}
       <div className="mb-3 rounded-2xl p-3 ring-1 ring-amber-300/40" style={{ background: 'linear-gradient(120deg, rgba(251,191,36,0.15), rgba(168,85,247,0.1))' }}>
         <div className="mb-2 flex items-center gap-3">
           <Avatar name="TOP" frame="frame_legend" size={40} />

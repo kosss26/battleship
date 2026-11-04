@@ -1,0 +1,128 @@
+/* Captain dossier and standings follow the approved naval screen concept. */
+.identity-heading { margin-bottom: 12px; }
+.identity-heading .naval-wordmark { padding-bottom: 13px; }
+.identity-heading h1 { font-size: 23px; line-height: 1.2; font-weight: 800; letter-spacing: -.65px; }
+.identity-title-row { display: flex; align-items: center; justify-content: space-between; min-height: 35px; }
+.identity-settings-button { display: grid; place-items: center; min-width: 44px; min-height: 44px; margin: -5px 0; border: 1px solid #537f96; border-radius: 10px; background: linear-gradient(145deg, #18374b, #081b2a); box-shadow: inset 0 1px 1px #b8deed23; color: #dfedf5; }
+.captain-avatar { display: inline-block; flex-shrink: 0; padding: 2px; border-radius: 50%; background: linear-gradient(135deg, #8dfaff, #35d0e4 45%, #296c86); box-shadow: 0 3px 10px #0005; }
+.captain-avatar > img, .captain-avatar > .naval-art { display: block; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.identity-rank { display: inline-flex; align-items: center; gap: 5px; color: #dfedf5; font-size: 11px; font-weight: 650; white-space: nowrap; }
+.identity-rank-mark { display: grid; place-items: center; position: relative; width: 24px; height: 25px; flex-shrink: 0; }
+.identity-rank-mark > svg:last-child { position: absolute; }
+.identity-score { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-size: 14px; font-variant-numeric: tabular-nums; }
+.identity-score svg { color: #ffda75; flex-shrink: 0; }
+.identity-score b { font-weight: 800; }
+.naval-medal { position: relative; display: inline-block; width: 72px; height: 72px; flex-shrink: 0; filter: drop-shadow(0 3px 2px #0009); }
+.naval-medal > svg:first-child { width: 100%; height: 100%; }
+.naval-medal .naval-medal-symbol { position: absolute; width: 35%; height: 35%; left: 32.5%; top: 29%; filter: drop-shadow(0 2px 1px #000); }
+.naval-medal.is-locked { filter: saturate(.3); opacity: .35; }
+.identity-section-title, .identity-section-heading h2 { font-size: 18px; line-height: 1.3; font-weight: 800; letter-spacing: -.4px; }
+.identity-section-title { margin: 4px 4px 9px; }
+.identity-row-name { display: flex; flex: 1; flex-direction: column; min-width: 0; gap: 2px; }
+.identity-row-name strong { font-size: 12px; font-weight: 800; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.identity-row-name small { font-size: 10px; line-height: 1.4; color: #afc9d9; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.identity-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; min-height: 150px; padding: 20px; font-size: 12px; }
+/* Leaderboard */
+.naval-panel.identity-season { position: relative; display: flex; align-items: center; width: 100%; min-height: 100px; overflow: hidden; padding: 9px 12px 9px 7px; gap: 9px; text-align: left; background: linear-gradient(90deg, #082030f5 20%, #092334df 48%, #09233410), url('/art/naval/hero.webp') right 57% / cover; }
+.identity-season > .naval-medal { width: 67px; height: 77px; padding-right: 4px; border-right: 1px solid #8da7b447; }
+.identity-season-copy { position: relative; display: flex; flex-direction: column; gap: 5px; min-width: 0; text-shadow: 0 2px 5px #00101a; }
+.identity-season-copy > span { font-size: 12px; font-weight: 700; }
+.identity-season-copy > strong { font-size: 17px; line-height: 1.2; font-weight: 800; text-wrap: balance; }
+.identity-season-copy > small { display: flex; align-items: center; gap: 5px; font-size: 10px; color: #c4d7e3; }
+.identity-season-chevron { position: absolute; right: 8px; bottom: 9px; color: #d8edf6; }
+.naval-tabs.identity-leaderboard-tabs { gap: 5px; padding: 0; margin: 11px 0 8px; border: 0; background: none; border-radius: 0; }
+.identity-leaderboard-tabs button { min-height: 44px; border: 1px solid #486e84; border-radius: 11px; background: linear-gradient(#16384a, #081f2e); color: #e1edf5; font-size: 11px; font-weight: 750; }
+.identity-leaderboard-tabs button[aria-pressed='true'] { color: #002534; border-color: #97fbff; background: linear-gradient(135deg, #63f9fa, #08d8e7); box-shadow: inset 0 1px 2px #e5ffffa3, 0 2px 8px #00dce517; }
+.identity-leaderboard-tabs button[aria-pressed='true']::after { display: none; }
+.identity-podium { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; align-items: end; padding: 15px 9px 9px; margin-bottom: 3px; isolation: isolate; }
+.identity-podium::after { content: ''; position: absolute; z-index: -1; height: 23px; bottom: 3px; left: 0; right: 0; border-radius: 2px 2px 8px 8px; background: linear-gradient(#2b5164, #0b2534 42%, #16394a); clip-path: polygon(4% 0, 96% 0, 100% 85%, 97% 100%, 3% 100%, 0 85%); box-shadow: inset 0 -2px 1px #8abacf3b; }
+.identity-podium-entry { min-width: 0; display: flex; align-items: center; flex-direction: column; }
+.identity-podium-avatar { position: relative; z-index: 1; margin-bottom: -5px; }
+.identity-place-medal { position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); display: grid; place-items: center; width: 29px; height: 29px; border: 2px solid #e7f2f7; border-radius: 50%; background: linear-gradient(135deg, #e7f6fe, #8baabd 60%, #46667d); color: #0b2432; font-size: 18px; font-weight: 900; text-shadow: 0 1px 0 #fff5; box-shadow: 0 2px 4px #0008; }
+.identity-podium-plinth { position: relative; min-width: 0; width: 100%; min-height: 69px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; padding: 20px 4px 11px; border: 1px solid #244a60; border-top: 7px solid #597f93; background: linear-gradient(110deg, #143b50, #071d2b 75%); box-shadow: inset 3px 0 5px #97bfcc16; }
+.identity-podium-plinth strong { display: block; width: 100%; overflow: hidden; text-overflow: ellipsis; text-align: center; white-space: nowrap; font-size: 12px; line-height: 1.2; font-weight: 800; }
+.identity-podium-plinth > span { display: flex; align-items: center; gap: 5px; color: #ffe187; font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.place-1 { z-index: 2; }
+.place-1 .identity-podium-plinth { min-height: 82px; border-top-color: #89adbd; background: linear-gradient(110deg, #23526a, #092130 70%); }
+.place-1 .captain-avatar { background: linear-gradient(135deg, #fff3c5, #e1bd73 50%, #886127); }
+.place-1 .identity-place-medal { width: 35px; height: 35px; bottom: -12px; border-color: #ffe8a9; background: linear-gradient(135deg, #fff1b1, #e6b44b 60%, #986021); font-size: 22px; }
+.identity-podium-laurel { position: absolute; width: 65px; height: 43px; left: 50%; bottom: -15px; transform: translateX(-50%); filter: drop-shadow(0 2px 1px #0008); pointer-events: none; }
+.place-3 .captain-avatar { background: linear-gradient(135deg, #ffe5c8, #b8825d 55%, #805034); }
+.place-3 .identity-place-medal { border-color: #e7b996; background: linear-gradient(135deg, #f2d0ab, #b17b55 65%, #75442b); }
+.place-3 .identity-podium-plinth { min-height: 62px; border-top-color: #436a80; }
+.identity-ranking-list { display: flex; flex-direction: column; gap: 5px; }
+.naval-panel.identity-ranking-row { display: flex; align-items: center; gap: 10px; min-height: 48px; border-radius: 13px; padding: 5px 10px; }
+.identity-row-place { min-width: 20px; text-align: center; font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.identity-ranking-row.is-me { border-color: #31dbe7; }
+.naval-panel.identity-own-place { position: sticky; z-index: 5; bottom: calc(84px + var(--safe-bottom)); display: flex; align-items: center; gap: 8px; min-height: 52px; margin-top: 10px; padding: 6px 11px; border: 1px solid #60f7ff; border-radius: 13px; background: linear-gradient(110deg, #07424f, #052a39 70%, #083849); box-shadow: inset 0 1px 0 #bcffff1a, 0 4px 15px #0006; }
+.identity-own-number { min-width: 35px; color: #33f0f3; font-size: 13px; font-weight: 850; }
+.identity-own-place .identity-rank { font-size: 10px; font-weight: 500; }
+.identity-own-place .identity-rank-mark { display: none; }
+.identity-own-place .identity-score { color: #ffe08a; }
+.identity-score-note { margin: 8px 4px; color: #a8c3d4; font-size: 11px; text-align: right; }
+/* Profile */
+.naval-panel.identity-dossier { overflow: hidden; position: relative; padding: 12px 11px 10px; background: linear-gradient(90deg, #092537eb 5%, #092537b0 50%, #08223020), linear-gradient(0deg, #071f2f 15%, transparent 90%), url('/art/naval/hero.webp') right 53% / cover; }
+.identity-dossier-main { display: flex; align-items: center; gap: 11px; }
+.identity-dossier-copy { min-width: 0; flex: 1; }
+.identity-dossier-copy h2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 21px; line-height: 1.25; font-weight: 800; letter-spacing: -.4px; text-shadow: 0 2px 3px #001422; }
+.identity-level { display: flex; align-items: center; gap: 5px; margin: 4px 0 7px; font-size: 11px; color: #c0d7e5; }
+.identity-level svg { color: #37ebf0; }
+.identity-rank-line { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 7px; padding: 4px 6px; border: 1px solid #668fa537; border-radius: 7px; background: #061b2bc9; }
+.identity-rank-line .identity-score { border-left: 1px solid #8cb1c652; padding-left: 7px; font-size: 12px; }
+.identity-xp { margin-top: 13px; }
+.identity-xp > div:first-child { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; color: #def0f7; margin-bottom: 5px; font-variant-numeric: tabular-nums; }
+.identity-xp small { color: #b1cbd9; font-size: 8px; }
+.identity-xp-track { height: 10px; border-radius: 20px; background: #304e60; overflow: hidden; box-shadow: inset 0 2px 2px #0003; }
+.identity-xp-track > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #09deec, #60f9f6); box-shadow: 0 0 10px #33f7f740; }
+.naval-panel.identity-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 9px 5px; margin-top: 8px; border-radius: 13px; }
+.identity-stats > div { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 2px 4px; min-width: 0; }
+.identity-stats > div + div { border-left: 1px solid #709bb264; }
+.identity-stats > div > svg { flex-shrink: 0; color: #d9eff9; filter: drop-shadow(0 2px 1px #0007); }
+.identity-stats > div:nth-child(2) > svg { color: #f6d47b; }
+.identity-stats > div > span { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.identity-stats b { font-size: 19px; line-height: 1.2; font-weight: 800; font-variant-numeric: tabular-nums; }
+.identity-stats small { font-size: 9px; color: #b9d2e0; }
+.naval-panel.identity-fleet-link { position: relative; isolation: isolate; display: flex; align-items: center; justify-content: flex-end; overflow: hidden; width: 100%; min-height: 56px; margin-top: 8px; padding: 10px 10px 10px 42%; gap: 5px; text-align: left; border-radius: 13px; }
+.identity-fleet-link::before { content: ''; position: absolute; z-index: -1; left: 0; top: 50%; transform: translateY(-50%); width: 46%; aspect-ratio: 1; background: url('/art/naval/modes.webp') left bottom / 200% 200%; mask-image: linear-gradient(90deg, #000 45%, transparent); -webkit-mask-image: linear-gradient(90deg, #000 45%, transparent); }
+.identity-fleet-copy { display: flex; flex: 1; flex-direction: column; min-width: 0; gap: 2px; }
+.identity-fleet-copy strong { font-size: 15px; font-weight: 800; line-height: 1.3; }
+.identity-fleet-copy small { font-size: 9px; color: #c0d4e0; line-height: 1.4; }
+.identity-fleet-link > svg { color: #bde3f3; flex-shrink: 0; }
+.naval-panel.identity-achievements { display: block; width: 100%; padding: 8px 10px 2px; margin-top: 8px; border-radius: 13px; text-align: left; }
+.identity-achievements-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.identity-achievements-heading > strong { font-size: 15px; font-weight: 800; }
+.identity-achievements-heading > span { display: inline-flex; align-items: center; gap: 4px; color: #c9dfeb; font-size: 11px; }
+.identity-medal-shelf { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.identity-medal-shelf > span { display: flex; justify-content: center; }
+.identity-medal-shelf .naval-medal { width: 60px; height: 60px; }
+.identity-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 3px; margin: 9px 0 7px; }
+.identity-section-heading > button { display: flex; align-items: center; gap: 2px; min-height: 32px; font-size: 10px; color: #a8d0e2; }
+.identity-history-list { display: flex; flex-direction: column; gap: 5px; }
+.naval-panel.identity-history-row { display: flex; align-items: center; gap: 10px; min-height: 47px; padding: 7px 11px; border-radius: 12px; }
+.identity-history-row > svg { flex-shrink: 0; }
+.identity-history-row.is-win > svg, .identity-history-row.is-win .identity-row-name strong { color: #6aefad; }
+.identity-history-row.is-loss > svg, .identity-history-row.is-loss .identity-row-name strong, .identity-history-row.is-loss .identity-score { color: #ff757c; }
+.identity-history-row.is-win .identity-score { color: #ffe293; }
+.identity-history-row time { font-size: 9px; color: #8badc1; }
+.naval-panel.identity-friends { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; border-radius: 12px; margin-top: 10px; padding: 9px 11px; text-align: left; }
+.identity-friends strong { flex: 1; font-size: 13px; font-weight: 800; }
+.identity-friends > svg { color: #d4eaf5; }
+.identity-friends-badge { min-width: 19px; padding: 2px 5px; border-radius: 20px; background: #e43b62; font-size: 10px; font-weight: 800; text-align: center; }
+.identity-extra-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-bottom: 15px; }
+.identity-extra-stats > div { display: flex; flex-direction: column; text-align: center; padding: 10px 5px; gap: 4px; background: #ffffff08; border-radius: 10px; }
+.identity-extra-stats b { font-size: 18px; }
+.identity-extra-stats span { font-size: 10px; color: #afc9d9; }
+@media (max-width: 359px) {
+  .identity-dossier-main { gap: 8px; }
+  .identity-dossier-main > .captain-avatar { width: 62px !important; height: 62px !important; }
+  .identity-dossier-copy h2 { font-size: 19px; }
+  .identity-stats > div { gap: 5px; padding: 2px; }
+  .identity-stats b { font-size: 17px; }
+  .identity-stats > div > svg { width: 19px; }
+  .identity-podium-avatar > .captain-avatar { width: 58px !important; height: 58px !important; }
+  .place-1 .identity-podium-avatar > .captain-avatar { width: 70px !important; height: 70px !important; }
+  .identity-ranking-row .identity-score, .identity-own-place .identity-score { font-size: 12px; gap: 4px; }
+  .naval-panel.identity-ranking-row { gap: 6px; padding: 5px 8px; }
+  .identity-season-copy > strong { font-size: 15px; }
+  .identity-own-place { gap: 6px; }
+}

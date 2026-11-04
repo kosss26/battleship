@@ -7,7 +7,7 @@ import { Coin, Gem, fmt } from './ui.jsx'
 import '../styles/naval-home.css'
 import '../styles/naval-pages.css'
 
-export const isNavalRoute = (path) => ['/', '/quests', '/shop'].includes(path)
+export const isNavalRoute = (path) => ['/', '/quests', '/shop', '/top', '/profile'].includes(path)
 
 export function NavalWordmark() {
   return (
