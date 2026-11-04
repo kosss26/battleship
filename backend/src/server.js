@@ -8,6 +8,7 @@ import { migrate } from './db.js'
 import api from './routes/api.js'
 import { initSockets, isOnline } from './game/manager.js'
 import { startReminderScheduler } from './services/notify.js'
+import { startSeasonScheduler } from './services/seasons.js'
 import { setupBot } from './services/bot.js'
 
 const corsOrigin = (origin, cb) => {
@@ -33,7 +34,10 @@ export async function start() {
   await new Promise((resolve) => httpServer.listen(config.port, resolve))
   console.log(`⚓ Battleship API listening on :${config.port}`)
   setupBot()
-  if (process.env.NODE_ENV !== 'test') startReminderScheduler(isOnline)
+  if (process.env.NODE_ENV !== 'test') {
+    startReminderScheduler(isOnline)
+    startSeasonScheduler()
+  }
   return { app, httpServer, io }
 }
 

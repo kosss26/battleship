@@ -5,17 +5,22 @@ import { query } from '../db.js'
 import { verifyInitData, appLink } from '../telegram.js'
 import {
   upsertTelegramUser, getUser, mutateUser, selfView, publicProfile, freshSelf, displayName,
-  claimDaily, claimQuest, claimPass, GameError,
+  claimDaily, claimQuest, claimPass, GameError, deleteAccount,
 } from '../services/users.js'
 import { buyItem, equip } from '../services/shop.js'
 import { createStarInvoice, handleUpdate } from '../services/bot.js'
-import { notifyProfile, presence, isOnline, emitToUser as emitFriends } from '../game/manager.js'
+import { notifyProfile, presence, isOnline, emitToUser as emitFriends, kickUser } from '../game/manager.js'
 import { listFriends, requestFriend, acceptFriend, removeFriend, makeFriends, friendIds } from '../services/friends.js'
 import { notifyById, clearBlocked } from '../services/notify.js'
 import { START_PARAM } from '../../../shared/catalog.js'
 import adminRouter from './admin.js'
+import { unclaimedResult, seasonHistory, claimSeason, currentSeasonProgress } from '../services/seasons.js'
+import { seasonInfo } from '../../../shared/catalog.js'
 
 const router = express.Router()
+
+/** Own profile plus an unclaimed season result, if any */
+const fullSelf = async (id) => ({ ...(await freshSelf(id)), seasonResult: await unclaimedResult(id) })
 
 const sign = (userId) => jwt.sign({ uid: userId }, config.jwtSecret, { expiresIn: '30d' })
 
@@ -73,6 +78,7 @@ router.get('/config', (req, res) => {
     appLink: appLink(),
     devLogin: config.allowDevLogin,
     payments: !!config.botToken,
+    legal: { operator: config.legalOperator, contact: config.legalContact },
   })
 })
 
@@ -99,7 +105,7 @@ router.post('/auth/telegram', rateLimit(30, 60_000), wrap(async (req, res) => {
   if (user.banned) return res.status(403).json({ error: 'banned' })
   if (isNew && user.referred_by) await makeFriends(user.id, user.referred_by)
   if (!isNew) clearBlocked(user.id).catch(() => {})
-  res.json({ token: sign(user.id), profile: await freshSelf(user.id), isNew, startParam: verified.startParam })
+  res.json({ token: sign(user.id), profile: await fullSelf(user.id), isNew, startParam: verified.startParam })
 }))
 
 /** Browser login for local development only */
@@ -112,14 +118,36 @@ router.post('/auth/dev', wrap(async (req, res) => {
     { refCode: req.body?.ref },
   )
   if (isNew && user.referred_by) await makeFriends(user.id, user.referred_by)
-  res.json({ token: sign(user.id), profile: await freshSelf(user.id), isNew })
+  res.json({ token: sign(user.id), profile: await fullSelf(user.id), isNew })
 }))
 
 /* ───────── me ───────── */
 
 router.use('/me', auth, rateLimit(120, 60_000))
 
-router.get('/me', wrap(async (req, res) => res.json({ profile: await freshSelf(req.userId) })))
+router.get('/me', wrap(async (req, res) => res.json({ profile: await fullSelf(req.userId) })))
+
+/* ───────── seasons ───────── */
+
+router.get('/me/seasons', wrap(async (req, res) => {
+  res.json({ current: seasonInfo(), progress: await currentSeasonProgress(req.userId), history: await seasonHistory(req.userId) })
+}))
+
+router.post('/me/season/claim', wrap(async (req, res) => {
+  const { user, summary } = await claimSeason(req.userId, String(req.body?.season || ''))
+  const profile = { ...selfView(user), seasonResult: await unclaimedResult(req.userId) }
+  notifyProfile(req.userId, profile)
+  res.json({ profile, summary })
+}))
+
+/* ───────── account deletion ───────── */
+
+router.post('/me/delete', wrap(async (req, res) => {
+  if (req.body?.confirm !== 'DELETE') return res.status(400).json({ error: 'confirmation_required' })
+  await deleteAccount(req.userId)
+  kickUser(req.userId)
+  res.json({ ok: true })
+}))
 
 router.patch('/me/settings', mutation((u, req) => {
   const { language, sound, haptics, music, notify } = req.body || {}
@@ -261,6 +289,8 @@ router.get('/leaderboard', auth, rateLimit(60, 60_000), wrap(async (req, res) =>
   )
   res.json({
     type,
+    season: seasonInfo(),
+    progress: type === 'rating' ? await currentSeasonProgress(req.userId) : null,
     entries: rows.map((r, i) => ({
       place: i + 1,
       id: Number(r.id),

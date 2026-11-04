@@ -81,6 +81,8 @@ export const useStore = create((set, get) => ({
 
   setProfile(profile) {
     if (!profile) return
+    // Realtime updates (socket 'profile') don't carry the season result — keep the last known one
+    if (!('seasonResult' in profile)) profile = { ...profile, seasonResult: get().profile?.seasonResult ?? null }
     setSoundEnabled(profile.settings?.sound !== false)
     setHapticsEnabled(profile.settings?.haptics !== false)
     setMusicEnabled(profile.settings?.music !== false)
@@ -146,7 +148,7 @@ export const useStore = create((set, get) => ({
     s.on('connect_error', (err) => {
       set({ connected: false })
       if (err?.message === 'unauthorized') get().boot()
-      if (err?.message === 'banned') set({ status: 'banned' })
+      if (err?.message === 'banned' && get().status !== 'deleted') set({ status: 'banned' })
     })
     s.on('profile', (p) => get().setProfile(p))
     s.on('game:state', (st) => {
@@ -212,6 +214,16 @@ export const useStore = create((set, get) => ({
       haptic.success()
       set({ mm: null })
     })
+  },
+
+  async deleteAccount() {
+    await post('/me/delete', { confirm: 'DELETE' })
+    setToken(null)
+    try {
+      localStorage.removeItem('bs_dev_name')
+    } catch {}
+    getSocket().disconnect()
+    set({ status: 'deleted', profile: null, game: null })
   },
 
   leaveGame() {

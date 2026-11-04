@@ -118,6 +118,8 @@ export const FRAMES = [
   { id: 'frame_silver', rarity: 'rare', price: { gold: 1500 }, name: { ru: 'Серебро', en: 'Silver' }, ring: 'linear-gradient(135deg,#e2e8f0,#64748b)' },
   { id: 'frame_neon', rarity: 'epic', price: { gems: 120 }, name: { ru: 'Неон', en: 'Neon' }, ring: 'linear-gradient(135deg,#22d3ee,#a855f7,#f43f5e)' },
   { id: 'frame_admiral', rarity: 'legendary', price: null, exclusive: 'pass', name: { ru: 'Адмиральская', en: 'Admiral' }, ring: 'linear-gradient(135deg,#fde047,#f59e0b,#fde047)' },
+  { id: 'frame_officer', rarity: 'epic', price: null, exclusive: 'season', name: { ru: 'Офицер сезона', en: 'Season Officer' }, ring: 'conic-gradient(from 0deg,#38bdf8,#e0f2fe,#38bdf8,#0ea5e9,#38bdf8)' },
+  { id: 'frame_legend', rarity: 'legendary', price: null, exclusive: 'season', name: { ru: 'Легенда сезона', en: 'Season Legend' }, ring: 'conic-gradient(from 0deg,#f43f5e,#fbbf24,#22d3ee,#a855f7,#f43f5e)' },
 ]
 
 export const COSMETIC_SLOTS = { theme: THEMES, ship: SHIP_SKINS, effect: EFFECTS, frame: FRAMES }
@@ -309,3 +311,75 @@ export const CAMPAIGN_STAR_GOLD = 25
 
 /** Telegram deep-link start params */
 export const START_PARAM = { ref: 'ref_', duel: 'duel_' }
+
+/* ───────────────────────── Rating seasons ───────────────────────── */
+/* A season is a calendar month (UTC), shared with the battle pass. */
+
+export const SEASON_EPOCH = '2026-11' // season #1
+export const SEASON_MIN_GAMES = 5 // ranked games needed to qualify for season rewards
+export const SEASON_TOP = 100
+
+const SEASON_THEMES = [
+  { icon: '🌌', color: '#34d399', to: '#0ea5e9', name: { ru: 'Северное сияние', en: 'Aurora' } },
+  { icon: '⛈️', color: '#38bdf8', to: '#6366f1', name: { ru: 'Шторм', en: 'Storm' } },
+  { icon: '🏴‍☠️', color: '#fbbf24', to: '#ef4444', name: { ru: 'Пиратская удача', en: "Pirate's Luck" } },
+  { icon: '🧊', color: '#93c5fd', to: '#e0f2fe', name: { ru: 'Ледяной фронт', en: 'Ice Front' } },
+  { icon: '🌋', color: '#fb923c', to: '#dc2626', name: { ru: 'Огненное кольцо', en: 'Ring of Fire' } },
+  { icon: '🐙', color: '#a78bfa', to: '#ec4899', name: { ru: 'Зов глубин', en: 'Call of the Deep' } },
+  { icon: '🏝️', color: '#2dd4bf', to: '#facc15', name: { ru: 'Тропический рейд', en: 'Tropical Raid' } },
+  { icon: '🌅', color: '#fb7185', to: '#f59e0b', name: { ru: 'Багровый закат', en: 'Crimson Dusk' } },
+  { icon: '⚓', color: '#60a5fa', to: '#1e3a8a', name: { ru: 'Флот адмиралтейства', en: 'Admiralty Fleet' } },
+  { icon: '🌕', color: '#e2e8f0', to: '#94a3b8', name: { ru: 'Лунный прилив', en: 'Lunar Tide' } },
+  { icon: '🐉', color: '#4ade80', to: '#15803d', name: { ru: 'Морской змей', en: 'Sea Serpent' } },
+  { icon: '❄️', color: '#bae6fd', to: '#818cf8', name: { ru: 'Полярная ночь', en: 'Polar Night' } },
+]
+
+const monthIndex = (id) => {
+  const [y, m] = id.split('-').map(Number)
+  return y * 12 + (m - 1)
+}
+
+export function seasonInfo(id = seasonId()) {
+  const n = monthIndex(id) - monthIndex(SEASON_EPOCH) + 1
+  const theme = SEASON_THEMES[((n - 1) % SEASON_THEMES.length + SEASON_THEMES.length) % SEASON_THEMES.length]
+  const [y, m] = id.split('-').map(Number)
+  return {
+    id,
+    number: Math.max(1, n),
+    ...theme,
+    startsAt: new Date(Date.UTC(y, m - 1, 1)).toISOString(),
+    endsAt: new Date(Date.UTC(y, m, 1)).toISOString(),
+  }
+}
+
+export function prevSeasonId(id = seasonId()) {
+  const i = monthIndex(id) - 1
+  return `${Math.floor(i / 12)}-${String((i % 12) + 1).padStart(2, '0')}`
+}
+
+/** End-of-season reward by final rank (and a bonus for the global top) */
+export const SEASON_REWARDS = {
+  recruit: { gold: 200 },
+  sailor: { gold: 400 },
+  bosun: { gold: 600, gems: 10 },
+  lieutenant: { gold: 800, gems: 30 },
+  captain: { gems: 60, cosmetics: ['frame_officer'] },
+  commodore: { gems: 100, cosmetics: ['frame_officer'] },
+  admiral: { gems: 200, cosmetics: ['frame_officer'] },
+}
+export const SEASON_TOP_BONUS = { gems: 100, cosmetics: ['frame_legend'] }
+
+export function seasonReward(rating, place) {
+  const rank = rankFor(rating)
+  const base = SEASON_REWARDS[rank.id] || {}
+  if (!place || place > SEASON_TOP) return { ...base }
+  const bonus = SEASON_TOP_BONUS
+  return {
+    ...base,
+    gems: (base.gems || 0) + bonus.gems,
+    cosmetics: [...new Set([...(base.cosmetics || []), ...bonus.cosmetics])],
+  }
+}
+
+/** Soft reset applied at the start of a new season */
+export const seasonResetRating = (rating) => Math.round(1000 + (rating - 1000) / 2)

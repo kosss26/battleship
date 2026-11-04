@@ -359,3 +359,21 @@ export async function freshSelf(id) {
   const { user } = await mutateUser(id, () => {})
   return selfView(user)
 }
+
+/**
+ * Deletes the player's personal data on request (Privacy Policy).
+ * Personal fields are wiped and the Telegram link is removed; game and payment records
+ * stay (anonymised) because they are needed for accounting and other players' history.
+ */
+export async function deleteAccount(id) {
+  await tx(async (c) => {
+    await c.query(
+      `UPDATE users SET first_name = 'Deleted', last_name = NULL, username = NULL, photo_url = NULL,
+         tg_id = NULL, banned = TRUE, ban_reason = 'deleted_by_user',
+         data = jsonb_set(data - 'notifyState', '{deletedAt}', to_jsonb(now()))
+       WHERE id = $1`,
+      [id],
+    )
+    await c.query('DELETE FROM friendships WHERE a = $1 OR b = $1', [id])
+  })
+}

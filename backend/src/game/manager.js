@@ -7,6 +7,7 @@ import { getUser, publicProfile, mutateUser, selfView, GameError, displayName } 
 import { areFriends } from '../services/friends.js'
 import { notifyById } from '../services/notify.js'
 import { applyMatchResult, saveGame } from '../services/match.js'
+import { query } from '../db.js'
 import { eloDelta } from '../services/elo.js'
 
 const rooms = new Map() // roomId -> GameRoom
@@ -65,10 +66,18 @@ async function finalize(room) {
   // Matches abandoned during placement count only for ranked/duel forfeits
   const played = room.startedAt !== null
 
+  let ratingNote = null
   if (room.mode === 'ranked' && played) {
     const [a, b] = room.seats
     deltas[0] = eloDelta(a.profile.rating, b.profile.rating, winnerSeat === 0 ? 1 : 0, a.rankedGames)
     deltas[1] = eloDelta(b.profile.rating, a.profile.rating, winnerSeat === 1 ? 1 : 0, b.rankedGames)
+    ratingNote = await rankedGuard(room, winnerSeat, reason)
+    if (ratingNote === 'repeat_opponent') {
+      deltas[0] = 0
+      deltas[1] = 0
+    } else if (ratingNote === 'early_forfeit') {
+      deltas[winnerSeat] = 0 // the quitter still loses rating, the winner gains nothing
+    }
   }
 
   const rewards = await Promise.all(room.seats.map(async (seat, i) => {
@@ -81,6 +90,7 @@ async function finalize(room) {
         won: winnerSeat === i,
         reason,
         ratingDelta: deltas[i],
+        ratingNote,
         ...room.seatStats(i),
       })
       emit(seat.userId, 'profile', selfView(user))
@@ -107,7 +117,7 @@ async function finalize(room) {
 
   if (played) {
     const humanId = (i) => (room.seats[i].kind === 'human' ? room.seats[i].userId : null)
-    saveGame({
+    await saveGame({
       id: room.id,
       mode: room.mode,
       difficulty: room.difficulty || (room.level ? `L${room.level}` : null),
@@ -127,6 +137,31 @@ async function finalize(room) {
   // Keep the finished room briefly so duel players can ask for a rematch
   setTimeout(() => closeRoom(room), room.mode === 'duel' ? 120_000 : 5_000)
   for (const s of room.humans()) if (room.mode !== 'duel') userRoom.delete(s.userId)
+}
+
+/* ───────── rating anti-abuse ───────── */
+
+export const RANKED_GUARD = { maxGamesPerPairPerDay: 3, minShotsForForfeitWin: 12 }
+
+/**
+ * Detects rating farming between two accounts:
+ *  - repeat_opponent: the same pair already played N ranked games in the last 24h
+ *  - early_forfeit: the match ended by resign/disconnect/timeout almost immediately
+ */
+async function rankedGuard(room, winnerSeat, reason) {
+  const [a, b] = room.seats.map((s) => s.userId)
+  try {
+    const { rows } = await query(
+      `SELECT count(*)::int AS n FROM games WHERE mode = 'ranked' AND ended_at > now() - interval '24 hours'
+         AND ((p1 = $1 AND p2 = $2) OR (p1 = $2 AND p2 = $1))`,
+      [a, b],
+    )
+    if (rows[0].n >= RANKED_GUARD.maxGamesPerPairPerDay) return 'repeat_opponent'
+  } catch (e) {
+    console.error('[rankedGuard]', e.message)
+  }
+  if (reason !== 'victory' && room.moves.length < RANKED_GUARD.minShotsForForfeitWin) return 'early_forfeit'
+  return null
 }
 
 /* ───────── matchmaking ───────── */

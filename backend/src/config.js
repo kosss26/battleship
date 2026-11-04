@@ -27,5 +27,8 @@ export const config = {
   webhookSecret: env.WEBHOOK_SECRET || '',
   botPolling: env.BOT_POLLING === 'true',
   // Telegram ids with access to the admin panel: the project owner always, plus anyone in ADMIN_IDS
+  // Shown in the Terms and Privacy Policy
+  legalOperator: env.LEGAL_OPERATOR || '',
+  legalContact: env.LEGAL_CONTACT || '',
   adminIds: [...new Set([OWNER_ID, ...(env.ADMIN_IDS || '').split(',').map((s) => s.trim()).filter(Boolean)])],
 }

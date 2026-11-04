@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, Globe, Volume2, Vibrate, Users, Award, LifeBuoy, ShieldCheck, Music, Bell, GraduationCap } from 'lucide-react'
-import { requestWriteAccess, isTelegram } from '../lib/telegram.js'
-import { ACHIEVEMENTS } from '@shared/catalog.js'
+import {
+  ChevronRight, Globe, Volume2, Vibrate, Users, Award, LifeBuoy, ShieldCheck, Music, Bell, GraduationCap, FileText, Lock, Trash2,
+} from 'lucide-react'
+import { ACHIEVEMENTS, seasonInfo, RANKS } from '@shared/catalog.js'
 import { useStore } from '../store/app.js'
-import { useT } from '../lib/i18n.js'
+import { useT, useL } from '../lib/i18n.js'
 import { api } from '../lib/api.js'
-import { openLink } from '../lib/telegram.js'
-import { Avatar, Progress, RankBadge, Toggle, Segmented, Empty, Spinner } from '../components/ui.jsx'
+import { openLink, requestWriteAccess, isTelegram } from '../lib/telegram.js'
+import { Avatar, Progress, RankBadge, Toggle, Segmented, Empty, Spinner, Modal } from '../components/ui.jsx'
+import { SeasonEmblem } from '../components/Season.jsx'
 
 function Stat({ label, value }) {
   return (
@@ -50,6 +52,78 @@ function History() {
   )
 }
 
+function SeasonHistory() {
+  const t = useT()
+  const l = useL()
+  const [data, setData] = useState(null)
+  useEffect(() => {
+    api('/me/seasons').then(setData).catch(() => {})
+  }, [])
+  if (!data?.history?.length) return null
+  return (
+    <div className="mb-4">
+      <div className="label mb-2 px-1">{t('season_history')}</div>
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+        {data.history.map((h) => {
+          const s = seasonInfo(h.season)
+          const rank = RANKS.find((r) => r.id === h.rank) || RANKS[0]
+          return (
+            <div key={h.season} className="glass flex w-36 shrink-0 flex-col items-center p-3 text-center">
+              <SeasonEmblem season={s} size={40} />
+              <div className="mt-2 text-[11px] font-bold" style={{ color: s.color }}>{t('season_n', { n: s.number })}</div>
+              <div className="text-xs text-slate-400">{l(s.name)}</div>
+              <div className="mt-1 text-sm font-extrabold">{rank.icon} {l(rank.name)}</div>
+              <div className="text-[11px] text-slate-500">⚡{h.rating}{h.place ? ` · #${h.place}` : ''}</div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function DeleteAccount({ open, onClose }) {
+  const t = useT()
+  const deleteAccount = useStore((s) => s.deleteAccount)
+  const toast = useStore((s) => s.toast)
+  const [word, setWord] = useState('')
+  const [busy, setBusy] = useState(false)
+  const ok = word.trim().toUpperCase() === t('delete_account_word')
+  return (
+    <Modal open={open} onClose={onClose}>
+      <div className="glass-strong p-6 text-center">
+        <div className="mb-2 text-5xl">🗑️</div>
+        <div className="mb-2 font-display text-lg font-bold">{t('delete_account_title')}</div>
+        <p className="mb-4 text-sm text-slate-300">{t('delete_account_text')}</p>
+        <input
+          className="mb-4 h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-4 text-center text-sm font-bold outline-none focus:border-rose-400/60"
+          placeholder={t('delete_account_type')}
+          value={word}
+          onChange={(e) => setWord(e.target.value)}
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <button className="btn-ghost" onClick={onClose}>{t('cancel')}</button>
+          <button
+            className="btn h-12 bg-rose-500 text-white"
+            disabled={!ok || busy}
+            onClick={async () => {
+              setBusy(true)
+              try {
+                await deleteAccount()
+              } catch (e) {
+                toast(e.code || 'error_generic', 'error')
+                setBusy(false)
+              }
+            }}
+          >
+            {t('delete_account')}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
 export default function Profile() {
   const t = useT()
   const navigate = useNavigate()
@@ -57,6 +131,7 @@ export default function Profile() {
   const config = useStore((s) => s.config)
   const updateSettings = useStore((s) => s.updateSettings)
   const friendsBadge = useStore((s) => s.friendsBadge)
+  const [deleting, setDeleting] = useState(false)
   const s = p.stats
   const winrate = s.games ? Math.round((s.wins / s.games) * 100) : 0
   const accuracy = s.shots ? Math.round((s.hits / s.shots) * 100) : 0
@@ -122,6 +197,8 @@ export default function Profile() {
         <Row icon={GraduationCap} label={t('how_to_play')} onClick={() => useStore.setState({ showTutorial: true })} />
       </div>
 
+      <SeasonHistory />
+
       <div className="label mb-2 px-1">{t('history')}</div>
       <div className="mb-4"><History /></div>
 
@@ -150,6 +227,12 @@ export default function Profile() {
         />
         {config?.botUsername && <Row icon={LifeBuoy} label={t('support')} onClick={() => openLink(`https://t.me/${config.botUsername}`)} />}
       </div>
+      <div className="glass mb-4 divide-y divide-white/[0.05] p-0">
+        <Row icon={FileText} label={t('terms')} onClick={() => navigate('/legal/terms')} />
+        <Row icon={Lock} label={t('privacy')} onClick={() => navigate('/legal/privacy')} />
+        <Row icon={Trash2} label={<span className="text-rose-300">{t('delete_account')}</span>} onClick={() => setDeleting(true)} />
+      </div>
+      <DeleteAccount open={deleting} onClose={() => setDeleting(false)} />
       <div className="pb-2 text-center text-[11px] text-slate-600">Battleship Online · v2.0 · ID {p.id}</div>
     </div>
   )

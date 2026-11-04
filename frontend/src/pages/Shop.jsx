@@ -11,6 +11,7 @@ import { openInvoice, haptic } from '../lib/telegram.js'
 import { Segmented, Price, Coin, Gem, fmt, Avatar } from '../components/ui.jsx'
 import Ship from '../components/Ship.jsx'
 import { Wallet } from './Home.jsx'
+import { LegalLinks } from '../components/LegalLinks.jsx'
 
 /** Buys a Telegram Stars product: creates the invoice server-side and opens it */
 export async function buyStars(productId) {
@@ -87,6 +88,9 @@ function Offers() {
           </motion.button>
         ))}
       </div>
+      <p className="mt-4 px-2 text-center text-[11px] leading-relaxed text-slate-500">
+        <LegalLinks textKey="purchase_legal" />
+      </p>
     </div>
   )
 }

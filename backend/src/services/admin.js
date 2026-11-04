@@ -46,11 +46,22 @@ export async function dashboard() {
   ])
   const users = u[0]
   const pay = p[0]
+  const { rows: suspicious } = await query(
+    `SELECT LEAST(p1, p2) AS a, GREATEST(p1, p2) AS b, count(*)::int AS games,
+            count(*) FILTER (WHERE reason <> 'victory' AND shots < 12)::int AS early,
+            min(ua.first_name) AS a_name, min(ub.first_name) AS b_name
+       FROM games g
+       JOIN users ua ON ua.id = LEAST(p1, p2) JOIN users ub ON ub.id = GREATEST(p1, p2)
+      WHERE mode = 'ranked' AND ended_at > now() - interval '24 hours' AND p1 IS NOT NULL AND p2 IS NOT NULL
+      GROUP BY 1, 2 HAVING count(*) >= 3 OR count(*) FILTER (WHERE reason <> 'victory' AND shots < 12) >= 2
+      ORDER BY games DESC LIMIT 20`,
+  )
   return {
     users,
     gamesToday: Object.fromEntries(g.map((r) => [r.mode, r.n])),
     payments: { ...pay, conversion: users.total ? +((pay.payers / users.total) * 100).toFixed(2) : 0, arppu: pay.payers ? Math.round(pay.stars_total / pay.payers) : 0 },
     daily,
+    suspicious: suspicious.map((r) => ({ a: Number(r.a), b: Number(r.b), aName: r.a_name, bName: r.b_name, games: r.games, early: r.early })),
     live: liveStats(),
     season: seasonId(),
   }

@@ -10,6 +10,7 @@ import { startAi } from '../lib/play.js'
 import { Avatar, Coin, Gem, Progress, RankBadge, Sheet, fmt, RewardChips, Stars } from '../components/ui.jsx'
 import { MATCH_REWARDS, QUESTS, PASS_XP_PER_TIER, PASS_TIERS, DAILY_REWARDS, CAMPAIGN } from '@shared/catalog.js'
 import { buyStars } from './Shop.jsx'
+import { SeasonChip } from '../components/Season.jsx'
 
 export function TopBar() {
   const p = useStore((s) => s.profile)
@@ -140,9 +141,10 @@ export default function Home() {
           <div className="absolute left-[30%] top-[62%] h-2 w-2 animate-pulse rounded-full bg-rose-400 shadow-[0_0_10px_#fb7185]" />
         </div>
         <div className="relative">
-          <div className="mb-3 flex items-center gap-2">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
             <RankBadge rating={p.rating} />
             <span className="chip bg-cyan-300/10 text-cyan-200"><Zap size={12} />{p.rating}</span>
+            <button onClick={(e) => { e.stopPropagation(); navigate('/top') }}><SeasonChip /></button>
           </div>
           <h2 className="h-display mb-1 text-[26px] leading-tight">{t('ranked')}</h2>
           <p className="mb-5 max-w-[220px] text-sm text-slate-300/80">{t('ranked_sub')}</p>

@@ -4,6 +4,7 @@ import { api } from '../lib/api.js'
 import { useStore } from '../store/app.js'
 import { useT } from '../lib/i18n.js'
 import { Avatar, Segmented, Spinner, Empty, RankBadge } from '../components/ui.jsx'
+import { SeasonBanner } from '../components/Season.jsx'
 
 export default function Leaderboard() {
   const t = useT()
@@ -28,6 +29,7 @@ export default function Leaderboard() {
   return (
     <div>
       <h1 className="h-display mb-4 text-[22px]">{t('leaderboard')}</h1>
+      <SeasonBanner progress={data?.progress} />
       <Segmented
         value={type}
         onChange={setType}

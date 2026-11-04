@@ -148,7 +148,9 @@ test('ranked matchmaking, cheating attempts and resign', async () => {
   await until(() => sa.over && sb.over)
   const winner = sa.over.won ? sa : sb
   const loser = sa.over.won ? sb : sa
-  assert.ok(winner.over.extra.ratingDelta > 0)
+  // Instant resignation: the quitter loses rating, the winner gains nothing (anti-farming)
+  assert.equal(winner.over.extra.ratingDelta, 0)
+  assert.equal(winner.over.extra.ratingNote, 'early_forfeit')
   assert.ok(loser.over.extra.ratingDelta < 0)
   // A win by resignation must not unlock skill achievements
   assert.ok(!winner.over.rewards.achievements.includes('perfect'))

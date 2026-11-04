@@ -89,3 +89,24 @@ INSERT INTO friendships (a, b, status, requested_by)
   SELECT LEAST(id, referred_by), GREATEST(id, referred_by), 'accepted', referred_by
     FROM users WHERE referred_by IS NOT NULL AND referred_by <> id
   ON CONFLICT DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS meta (
+  key   TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS season_results (
+  season     TEXT NOT NULL,
+  user_id    BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  rating     INT NOT NULL,
+  rank       TEXT NOT NULL,
+  place      INT,
+  games      INT NOT NULL,
+  wins       INT NOT NULL,
+  reward     JSONB NOT NULL DEFAULT '{}'::jsonb,
+  claimed    BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (season, user_id)
+);
+CREATE INDEX IF NOT EXISTS season_results_user_idx ON season_results (user_id, season DESC);
+CREATE INDEX IF NOT EXISTS games_ranked_idx ON games (ended_at) WHERE mode = 'ranked';

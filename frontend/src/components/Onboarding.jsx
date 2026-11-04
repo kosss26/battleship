@@ -11,6 +11,7 @@ import { sfx } from '../lib/sound.js'
 import { startAi } from '../lib/play.js'
 import Board from './Board.jsx'
 import Ship from './Ship.jsx'
+import { LegalLinks } from './LegalLinks.jsx'
 
 const DEMO_FLEET = randomFleet(mulberry32(7))
 
@@ -188,6 +189,7 @@ export default function Onboarding() {
             <button className="btn-ghost w-full" onClick={allowNotifications} disabled={notifOn}>
               {notifOn ? <><BellRing size={18} /> {t('notifications_on')}</> : <><Bell size={18} /> {t('allow_notifications')}</>}
             </button>
+            <p className="px-2 pb-1 text-center text-[11px] leading-relaxed text-slate-500"><LegalLinks textKey="legal_consent" onOpen={() => useStore.setState({ showTutorial: false })} /></p>
             {profile.stats.games === 0 ? (
               <button className="btn-primary w-full text-base" onClick={() => finish(true)}>
                 <Swords size={20} /> {t('start_training')}

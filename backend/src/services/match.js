@@ -51,11 +51,14 @@ export async function applyMatchResult(userId, r) {
       base = MATCH_REWARDS.ai[r.difficulty]?.[r.won ? 'win' : 'loss'] || base
       if (r.won) s[`${r.difficulty}Wins`] = (s[`${r.difficulty}Wins`] || 0) + 1
     } else if (r.mode === 'ranked') {
-      base = MATCH_REWARDS.ranked[r.won ? 'win' : 'loss']
+      // A flagged win (farming suspicion) pays like a loss and doesn't count as a PvP win
+      const cleanWin = r.won && !r.ratingNote
+      base = MATCH_REWARDS.ranked[cleanWin ? 'win' : 'loss']
       s.pvpGames++
-      if (r.won) s.pvpWins++
+      if (cleanWin) s.pvpWins++
       u.rating = applyDelta(u.rating, r.ratingDelta)
       extra.ratingDelta = r.ratingDelta
+      extra.ratingNote = r.ratingNote || null
     } else if (r.mode === 'duel') {
       s.duels++
       if (u.data.duelRewards.count < DUEL_REWARDS_PER_DAY) {
@@ -93,7 +96,7 @@ export async function applyMatchResult(userId, r) {
       sunk: r.sunk,
       hits: r.hits,
       won_hard: r.won && ((r.mode === 'ai' && ['hard', 'expert'].includes(r.difficulty)) || (r.mode === 'campaign' && ['hard', 'expert'].includes(r.difficulty))) ? 1 : 0,
-      won_pvp: r.won && r.mode === 'ranked' ? 1 : 0,
+      won_pvp: r.won && r.mode === 'ranked' && !r.ratingNote ? 1 : 0,
       campaign_win: r.won && r.mode === 'campaign' ? 1 : 0,
       accurate_win: fullWin && accuracy >= 0.6 ? 1 : 0,
       played_duel: r.mode === 'duel' ? 1 : 0,

@@ -23,6 +23,8 @@ import Duel from './pages/Duel.jsx'
 import Search from './pages/Search.jsx'
 import Battle from './pages/Battle.jsx'
 import Admin from './pages/Admin.jsx'
+import Legal from './pages/Legal.jsx'
+import SeasonResultPopup from './components/SeasonResultPopup.jsx'
 import AdminUser from './pages/AdminUser.jsx'
 import { START_PARAM } from '@shared/catalog.js'
 
@@ -137,6 +139,22 @@ export default function App() {
     window.scrollTo(0, 0)
   }, [location.pathname])
 
+  // Legal documents are readable without signing in (e.g. opened from the bot)
+  if (location.pathname.startsWith('/legal/') && status !== 'ready') {
+    return (
+      <Routes>
+        <Route path="/legal/:doc" element={<Legal standalone />} />
+      </Routes>
+    )
+  }
+  if (status === 'deleted') {
+    return (
+      <div className="app-bg flex min-h-screen flex-col items-center justify-center gap-3 px-8 text-center">
+        <div className="text-5xl">🗑️</div>
+        <div className="font-bold text-slate-200">{t('account_deleted')}</div>
+      </div>
+    )
+  }
   if (status === 'boot') return <Splash text={t('loading')} />
   if (status === 'dev_login') return <DevLogin />
   if (status === 'need_tg') return <NeedTelegram />
@@ -205,6 +223,7 @@ export default function App() {
               <Route path="/duel/:code" element={<Duel />} />
               <Route path="/search" element={<Search />} />
               <Route path="/battle" element={<Battle />} />
+              <Route path="/legal/:doc" element={<Legal />} />
               <Route path="/admin" element={isAdmin ? <Admin /> : <Navigate to="/" replace />} />
               <Route path="/admin/user/:id" element={isAdmin ? <AdminUser /> : <Navigate to="/" replace />} />
               <Route path="*" element={<Home />} />
@@ -216,6 +235,7 @@ export default function App() {
       <Toasts />
       <RewardPopup />
       <InvitePopup />
+      <SeasonResultPopup />
       <AnimatePresence>{showTutorial && location.pathname !== '/battle' && <Onboarding key="tutorial" />}</AnimatePresence>
     </div>
   )

@@ -50,6 +50,14 @@ export async function handleUpdate(update) {
       parse_mode: 'HTML',
       reply_markup: playMarkup(lang, param),
     })
+  } else if (text === '/terms' || text === '/privacy') {
+    const page = text === '/terms' ? 'terms' : 'privacy'
+    const url = new URL(config.webappUrl)
+    url.pathname = `/legal/${page}`
+    const label = page === 'terms'
+      ? (lang === 'ru' ? '📄 Пользовательское соглашение' : '📄 Terms of Service')
+      : (lang === 'ru' ? '🔒 Политика конфиденциальности' : '🔒 Privacy Policy')
+    await botApi('sendMessage', { chat_id: msg.chat.id, text: label, reply_markup: { inline_keyboard: [[{ text: label, web_app: { url: url.toString() } }]] } })
   } else if (text === '/paysupport') {
     await botApi('sendMessage', {
       chat_id: msg.chat.id,
@@ -144,6 +152,8 @@ export async function setupBot() {
     await botApi('setMyCommands', { commands: [
       { command: 'start', description: 'Играть / Play' },
       { command: 'paysupport', description: 'Помощь с оплатой / Payment support' },
+      { command: 'terms', description: 'Условия / Terms of Service' },
+      { command: 'privacy', description: 'Конфиденциальность / Privacy Policy' },
     ] })
     await botApi('setChatMenuButton', { menu_button: { type: 'web_app', text: '⚓ Play', web_app: { url: config.webappUrl } } })
   } catch (e) {

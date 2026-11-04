@@ -41,9 +41,10 @@ function Bars({ rows, field, color }) {
 }
 
 function Overview() {
+  const navigate = useNavigate()
   const { data, error, reload } = useLoad(() => api('/admin/dashboard'))
   if (!data) return <Loading error={error} />
-  const { users, payments, live, gamesToday, daily } = data
+  const { users, payments, live, gamesToday, daily, suspicious = [] } = data
   const modes = { ai: 'ИИ', campaign: 'Кампания', ranked: 'Рейтинг', duel: 'Дуэли' }
   return (
     <div>
@@ -74,6 +75,21 @@ function Overview() {
           <Tile label="Возвратов" value={fmt(payments.refunds)} sub={`покупок: ${payments.payments}`} />
         </div>
       </Card>
+      {suspicious.length > 0 && (
+        <Card title="⚠️ Подозрение на накрутку рейтинга (24 ч)">
+          <p className="mb-2 text-[11px] text-slate-500">Пары с 3+ рейтинговыми боями друг против друга или с досрочными сдачами. Очки за такие бои уже не начисляются; при необходимости проверьте игроков.</p>
+          <div className="space-y-1.5">
+            {suspicious.map((s) => (
+              <div key={`${s.a}-${s.b}`} className="flex items-center gap-2 rounded-xl bg-white/[0.03] px-3 py-2 text-sm">
+                <button className="truncate text-cyan-300" onClick={() => navigate(`/admin/user/${s.a}`)}>{s.aName}</button>
+                <span className="text-slate-500">×</span>
+                <button className="truncate text-cyan-300" onClick={() => navigate(`/admin/user/${s.b}`)}>{s.bName}</button>
+                <span className="ml-auto whitespace-nowrap text-xs text-slate-400">{s.games} боёв · {s.early} сдач</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
       <Card title="Боёв за 24 часа">
         <div className="grid grid-cols-4 gap-2">
           {Object.entries(modes).map(([k, v]) => <Tile key={k} label={v} value={gamesToday[k] || 0} />)}
