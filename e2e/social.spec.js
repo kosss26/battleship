@@ -1,0 +1,62 @@
+import { test, expect, uid, userId, expectNoPageErrors } from './helpers.js'
+
+test('duel by 5-digit code, wrong code, and invite link', async ({ newPlayer }) => {
+  const tag = uid()
+  const host = await newPlayer(`Хост ${tag}`)
+  const guest = await newPlayer(`Гость ${tag}`)
+  await host.getByText('С другом', { exact: true }).click()
+  await host.getByText('Создать бой').click()
+  await expect(host.getByText('Скопировать код')).toBeVisible()
+  const digits = host.locator('.h-16.w-12')
+  await expect(digits.first()).not.toHaveText('')
+  const code = (await digits.allTextContents()).join('')
+  expect(code).toMatch(/^\d{5}$/)
+
+  await guest.getByText('С другом', { exact: true }).click()
+  await guest.getByText('Ввести код').click()
+  await guest.getByLabel('code').click()
+  await guest.keyboard.type('00000')
+  await expect(guest.getByText('Неверный код или бой уже начался')).toBeVisible()
+  await guest.getByLabel('code').click()
+  await guest.keyboard.type(code)
+  await expect(guest.getByText('Расстановка флота')).toBeVisible()
+  await expect(host.getByText('Расстановка флота')).toBeVisible()
+
+  // Link with ?startapp=duel_<code> joins straight away
+  const host2 = await newPlayer(`Хост2 ${tag}`)
+  const linked = await newPlayer(`Ссылка ${tag}`)
+  await host2.getByText('С другом', { exact: true }).click()
+  await host2.getByText('Создать бой').click()
+  await expect(host2.locator('.h-16.w-12').first()).not.toHaveText('')
+  const code2 = (await host2.locator('.h-16.w-12').allTextContents()).join('')
+  await linked.goto(`/?startapp=duel_${code2}`)
+  await expect(linked.getByText('Расстановка флота')).toBeVisible()
+  expectNoPageErrors(host, guest, host2, linked)
+})
+
+test('friends: request by ID, accept, challenge with an invite popup', async ({ newPlayer }) => {
+  const tag = uid()
+  const a = await newPlayer(`Анна ${tag}`)
+  const b = await newPlayer(`Борис ${tag}`)
+  const aId = await userId(`Анна ${tag}`)
+
+  await b.goto('/friends')
+  await b.getByPlaceholder('ID друга').fill(String(aId))
+  await b.getByRole('button', { name: 'Добавить' }).click()
+  await expect(a.getByText(`Борис ${tag} хочет добавить вас в друзья`)).toBeVisible()
+
+  await a.goto('/friends')
+  await a.getByRole('button', { name: /Заявки/ }).click()
+  await a.getByRole('button', { name: 'Принять' }).click()
+  await a.getByRole('button', { name: /Друзья ·/ }).click()
+  await expect(a.getByText(`Борис ${tag}`)).toBeVisible()
+  await expect(a.getByText('в сети')).toBeVisible()
+
+  await a.getByRole('button', { name: 'Вызвать' }).click()
+  await expect(b.getByText(`Анна ${tag} вызывает вас на бой!`)).toBeVisible()
+  await expect(a.getByText(`Приглашение отправлено: Борис ${tag}`).first()).toBeVisible()
+  await b.getByRole('button', { name: 'Принять' }).click()
+  await expect(a.getByText('Расстановка флота')).toBeVisible()
+  await expect(b.getByText('Расстановка флота')).toBeVisible()
+  expectNoPageErrors(a, b)
+})
