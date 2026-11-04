@@ -1,13 +1,14 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Anchor, Plus, LoaderCircle } from 'lucide-react'
+import { Anchor, Plus, LoaderCircle, ArrowLeft } from 'lucide-react'
 import { useStore } from '../store/app.js'
 import { useT } from '../lib/i18n.js'
 import { Coin, Gem, fmt } from './ui.jsx'
 import '../styles/naval-home.css'
 import '../styles/naval-pages.css'
+import '../styles/naval-expedition.css'
 
-export const isNavalRoute = (path) => ['/', '/quests', '/shop', '/top', '/profile'].includes(path)
+export const isNavalRoute = (path) => ['/', '/quests', '/shop', '/top', '/profile', '/campaign', '/friends', '/achievements'].includes(path)
 
 export function NavalWordmark({ compact = false }) {
   return (
@@ -69,4 +70,14 @@ export function NavalTabs({ value, onChange, options, label, className = '' }) {
       {options.map((o) => <button key={o.value} aria-pressed={value === o.value} onClick={() => onChange(o.value)}>{o.label}</button>)}
     </div>
   )
+}
+
+/** Secondary routes share the compact masthead and a predictable way home. */
+export function NavalSubHeader({ title, right }) {
+  const navigate = useNavigate()
+  const t = useT()
+  return <header className="naval-subheader">
+    <div className="naval-subheader-top"><button className="naval-back" onClick={() => window.history.state?.idx > 0 ? navigate(-1) : navigate('/')} aria-label={t('expedition_back')}><ArrowLeft size={21} /></button><NavalWordmark compact /></div>
+    <div className="naval-subheader-title"><h1>{title}</h1>{right}</div>
+  </header>
 }

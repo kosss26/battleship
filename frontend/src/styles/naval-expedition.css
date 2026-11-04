@@ -1,0 +1,140 @@
+/* Secondary naval screens use the same metal, ocean art and cyan actions. */
+.naval-subheader { margin-bottom: 13px; }
+.naval-subheader-top { position: relative; display: flex; align-items: center; justify-content: center; min-height: 31px; margin-bottom: 8px; }
+.naval-subheader-top .naval-wordmark { padding-bottom: 0; }
+.naval-back { position: absolute; left: -7px; top: -7px; display: grid; place-items: center; width: 44px; height: 44px; color: #e6f4fb; border-radius: 12px; }
+.naval-back:active { background: #ffffff0c; }
+.naval-subheader-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.naval-subheader h1 { font-size: 24px; line-height: 1.3; font-weight: 850; letter-spacing: -.7px; }
+.naval-medal-art { display: block; width: 78px; height: 78px; flex-shrink: 0; background: url('/art/naval/medals.webp') var(--medal-x) var(--medal-y) / 400% 200% no-repeat; filter: drop-shadow(0 3px 2px #0005); }
+.naval-medal-art.is-locked { opacity: .46; filter: saturate(.35); }
+.naval-tabs.expedition-tabs { padding: 0; gap: 5px; border: 0; border-radius: 0; background: transparent; margin: 12px 0; }
+.expedition-tabs button { min-height: 42px; padding: 8px 4px; border: 1px solid #507d94; border-radius: 11px; background: linear-gradient(#18394c, #071e2d); color: #dcebf4; font-weight: 750; font-size: 11px; }
+.expedition-tabs button[aria-pressed='true'] { background: linear-gradient(135deg, #59f7f8, #09d5e3); color: #002333; border-color: #96fcff; box-shadow: inset 0 1px 2px #eeffff75; }
+.expedition-tabs button[aria-pressed='true']::after { display: none; }
+.expedition-empty { display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 25px 20px; text-align: center; color: #bdd5e3; font-size: 13px; }
+/* Achievements */
+.naval-panel.awards-banner { display: flex; align-items: center; gap: 10px; padding: 12px 9px; background: linear-gradient(90deg, #092435eb 15%, #092435ab), url('/art/naval/hero.webp') center 70% / cover; }
+.awards-banner > .naval-medal-art { width: 91px; height: 91px; }
+.awards-banner > div { min-width: 0; flex: 1; }
+.awards-banner h2 { font-size: 19px; line-height: 1.3; font-weight: 850; letter-spacing: -.4px; }
+.awards-banner p { color: #c2d9e7; margin: 6px 0 12px; font-size: 12px; }
+.awards-progress-line { display: flex; align-items: center; gap: 9px; }
+.awards-progress-line > span { font-size: 10px; color: #d8eaf4; white-space: nowrap; }
+.awards-progress { flex: 1; height: 9px; overflow: hidden; border-radius: 20px; background: #2b4d62; box-shadow: inset 0 1px 2px #0003; }
+.awards-progress > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #10d8e8, #57f8f3); }
+.award-list { display: flex; flex-direction: column; gap: 8px; }
+.naval-panel.award-row { display: flex; gap: 9px; align-items: center; padding: 11px 9px 11px 5px; border-radius: 16px; min-height: 92px; }
+.award-medal { position: relative; flex-shrink: 0; border-right: 1px solid #7098ad4d; padding-right: 4px; }
+.award-medal .naval-medal-art { width: 66px; height: 66px; }
+.award-lock { position: absolute; bottom: -1px; left: 28px; padding: 1px; background: #092133; color: #a8c2d5; border-radius: 3px; width: 16px; height: 16px; }
+.award-body { flex: 1; min-width: 0; }
+.award-body h2 { font-size: 14px; font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
+.award-body p { font-size: 10px; color: #bed3df; margin: 5px 0 9px; line-height: 1.4; }
+.award-earned { display: inline-flex; align-items: center; gap: 4px; color: #35e9ec; font-size: 11px; font-weight: 700; }
+.award-count { display: block; margin-bottom: 4px; font-size: 11px; font-variant-numeric: tabular-nums; }
+.award-body .awards-progress { height: 7px; }
+.award-reward { flex-shrink: 0; max-width: 65px; }
+.award-reward > div { flex-direction: column; align-items: flex-end; gap: 5px; }
+.naval-screen .award-reward .chip { padding: 3px 4px; border: 1px solid #65899f; border-radius: 7px; background: #102e3e; font-size: 10px; white-space: nowrap; }
+/* Campaign */
+.campaign-total { display: inline-flex; align-items: center; gap: 5px; padding: 6px 8px; border: 1px solid #608da4; border-radius: 10px; background: linear-gradient(#1d4055, #09202f); font-size: 12px; font-weight: 800; white-space: nowrap; }
+.campaign-chapter-art { position: absolute; z-index: -2; left: 0; top: 50%; transform: translateY(-22%); width: 100%; aspect-ratio: 1; background: url('/art/naval/campaign-seas.webp') var(--chapter-x) var(--chapter-y) / 200% 300% no-repeat; }
+.naval-panel.campaign-chapter-banner, .naval-panel.campaign-chapter-preview { position: relative; isolation: isolate; overflow: hidden; min-height: 106px; text-align: left; }
+.campaign-chapter-banner::after, .campaign-chapter-preview::after { content: ''; z-index: -1; position: absolute; inset: 0; background: linear-gradient(90deg, #071e2edb, #08213270 57%, transparent); }
+.campaign-banner-copy { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; padding: 13px; text-shadow: 0 2px 5px #001422; }
+.campaign-banner-copy > span { font-size: 11px; font-weight: 800; font-style: italic; text-transform: uppercase; letter-spacing: 1px; }
+.campaign-banner-copy h2, .campaign-banner-copy > strong { font-size: 21px; line-height: 1.2; font-weight: 850; letter-spacing: -.4px; }
+.campaign-banner-copy p, .campaign-banner-copy > small { display: flex; align-items: center; gap: 6px; margin-top: 5px; font-size: 11px; color: #d4e5ef; }
+.naval-panel.campaign-chart { position: relative; isolation: isolate; overflow: hidden; width: 100%; aspect-ratio: 1.36; margin-top: 9px; background: #082334; }
+.campaign-chart > .campaign-chapter-art { transform: translateY(-50%); }
+.campaign-chart::after { content: ''; position: absolute; z-index: -1; inset: 0; background: linear-gradient(#03182310, #03182344); }
+.campaign-route { transform: translateY(-9px); position: absolute; inset: 0; width: 100%; height: 100%; }
+.campaign-route path { stroke: #c6e8f4b3; stroke-width: 1.4; stroke-dasharray: 4 4; fill: none; }
+.campaign-mission { position: absolute; display: flex; align-items: center; justify-content: flex-start; flex-direction: column; min-width: 44px; width: 17%; min-height: 57px; transform: translate(-50%, -50%); gap: 1px; border-radius: 12px; }
+.campaign-mission-number { position: relative; display: grid; place-items: center; width: 37px; height: 37px; margin-bottom: 2px; border-radius: 50%; border: 2px solid #c8e0ec; background: linear-gradient(135deg, #54778b, #102e42 60%, #061b2a); box-shadow: inset 0 1px 2px #f6ffff7a, 0 3px 5px #0009; color: #f4fbff; font-size: 17px; font-weight: 800; text-shadow: 0 2px 1px #001422; }
+.campaign-mission-wreath { position: absolute; inset: -5px; width: 43px; height: 43px; color: #cee5ed; filter: drop-shadow(0 2px 1px #0008); }
+.campaign-node-lock { position: absolute; top: -10px; padding: 1px; border-radius: 3px; background: #092233; color: #d7eaf2; width: 15px; height: 15px; }
+.campaign-mission.is-locked { opacity: .7; }
+.campaign-mission.is-current .campaign-mission-number { border-color: #57faff; box-shadow: 0 0 0 2px #09adbc66, 0 0 14px #22eef65c, inset 0 0 4px #7cffff5e; }
+.campaign-mission.is-current .campaign-mission-wreath { color: #92f8ff; }
+.campaign-next-label { color: #002b38; background: #25ebf1; padding: 2px 7px; border-radius: 7px; font-size: 9px; line-height: 1.2; font-weight: 850; }
+.campaign-modifier-dot { position: absolute; right: 8%; top: 1px; width: 6px; height: 6px; border-radius: 50%; background: #f3cf7d; box-shadow: 0 0 0 2px #112936; }
+.naval-panel.campaign-continue { display: flex; align-items: center; gap: 8px; position: relative; isolation: isolate; overflow: hidden; width: 100%; min-height: 64px; padding: 10px 8px 10px 29%; margin: 9px 0 12px; border-radius: 14px; text-align: left; }
+.campaign-continue::before { content: ''; position: absolute; z-index: -1; left: 0; top: 50%; transform: translateY(-50%); width: 33%; aspect-ratio: 1; background: url('/art/naval/modes.webp') left bottom / 200% 200%; mask-image: linear-gradient(90deg, #000 30%, transparent); -webkit-mask-image: linear-gradient(90deg, #000 30%, transparent); }
+.campaign-continue-copy { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.campaign-continue-copy > strong { font-size: 14px; font-weight: 800; }
+.campaign-continue-copy > small { font-size: 9px; color: #bed6e4; line-height: 1.4; }
+.campaign-continue .naval-button { padding: 8px; min-height: 38px; font-size: 11px; }
+.campaign-other-chapters { display: flex; flex-direction: column; gap: 9px; }
+.naval-panel.campaign-chapter-preview { width: 100%; min-height: 92px; }
+.campaign-chapter-preview.is-locked { filter: saturate(.6); }
+.campaign-chapter-preview .campaign-banner-copy > strong { font-size: 19px; }
+.campaign-chapter-preview .campaign-chapter-art { transform: translateY(-22%); }
+.expedition-start { width: 100%; min-height: 46px; font-size: 15px; }
+/* Friends */
+.naval-panel.friends-banner { min-height: 99px; padding: 15px 13px; background: linear-gradient(90deg, #092537f5 10%, #092537a8 55%, transparent), url('/art/naval/hero.webp') right 58% / cover; }
+.friends-banner h2 { font-size: 22px; line-height: 1.3; font-weight: 850; letter-spacing: -.4px; margin-bottom: 12px; }
+.friend-id-copy { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 5px 7px; border: 1px solid #82a7ba82; border-radius: 9px; background: #061d2dcc; font-size: 11px; color: #d8ebf5; }
+.friend-id-copy b { font-weight: 800; }
+.friend-add-form { display: flex; gap: 6px; margin: 12px 0; }
+.friend-add-form input { flex: 1; min-width: 0; min-height: 44px; padding: 10px 12px; color: #eaf4fa; border: 1px solid #628ba2; border-radius: 11px; background: linear-gradient(#112e41, #0a2131); outline: none; font-size: 12px; }
+.friend-add-form input:focus { border-color: #4ee8f3; }
+.friend-add-form input::placeholder { color: #9bb7cb; }
+.friend-add-form .naval-button { flex-shrink: 0; padding: 9px 12px; font-size: 11px; min-height: 44px; }
+.friend-list { display: flex; flex-direction: column; gap: 7px; }
+.friend-list > h2 { margin: 1px 3px 2px; font-size: 16px; font-weight: 800; text-transform: capitalize; }
+.naval-panel.naval-friend-row { position: relative; display: flex; align-items: center; gap: 8px; min-height: 74px; padding: 10px 9px; border-radius: 15px; color: #edf6fb; font-family: Manrope, system-ui, sans-serif; }
+.friend-avatar { position: relative; flex-shrink: 0; }
+.friend-person { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.friend-person > strong { font-size: 14px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.friend-person > span { display: flex; align-items: center; gap: 3px; font-size: 9px; color: #bdcfdb; white-space: nowrap; }
+.friend-person > span > svg { color: #f5d276; flex-shrink: 0; }
+.friend-person > small { font-size: 10px; color: #9fb7c8; }
+.friend-person .is-online { color: #5fe6a1; }
+.friend-person .is-busy { color: #ffd985; }
+.friend-challenge { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 38px; padding: 7px 8px; border-radius: 10px; border: 1px solid #29dfea; background: #052737; color: #4aebf2; font-size: 11px; font-weight: 800; margin-right: 9px; }
+.friend-challenge:disabled { opacity: .45; }
+.is-offline .friend-challenge { border-color: #5d849a; color: #b6cedd; background: #102b3c; }
+.friend-menu { position: absolute; top: 0; right: 1px; }
+.friend-menu summary { display: grid; place-items: center; min-width: 24px; height: 24px; color: #a5bfce; list-style: none; cursor: pointer; }
+.friend-menu summary::-webkit-details-marker { display: none; }
+.friend-menu > button { display: flex; align-items: center; gap: 6px; position: absolute; right: 0; top: 24px; z-index: 3; white-space: nowrap; min-height: 44px; padding: 10px 14px; border: 1px solid #7598ad; border-radius: 9px; background: #102c3f; box-shadow: 0 5px 20px #0008; color: #ffb6bd; font-size: 12px; }
+.naval-panel.friend-request-row { display: flex; align-items: center; gap: 8px; padding: 10px; min-height: 70px; border-radius: 14px; }
+.friend-request-accept { min-height: 36px; padding: 7px 8px; font-size: 10px; }
+.friend-request-decline { display: grid; place-items: center; width: 32px; height: 40px; color: #a5c1d2; }
+.naval-panel.friend-invite-banner { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 94px; margin-top: 16px; padding: 12px 9px 12px 4px; text-align: left; }
+.friend-invite-banner > .naval-medal-art { width: 70px; height: 70px; }
+.friend-invite-banner > span:not(.naval-medal-art):not(.naval-button) { display: flex; flex: 1; flex-direction: column; gap: 5px; min-width: 0; }
+.friend-invite-banner strong { font-size: 15px; line-height: 1.3; font-weight: 800; }
+.friend-invite-banner small { font-size: 10px; line-height: 1.4; color: #b6cdda; }
+.friend-invite-banner .naval-button { flex-shrink: 0; padding: 8px; font-size: 10px; }
+.naval-panel.friend-referral-rewards { position: relative; padding: 20px 15px; margin-bottom: 12px; overflow: hidden; background: linear-gradient(120deg, #123346, #081e2e); }
+.friend-referral-rewards > .naval-medal-art { position: absolute; right: 3px; top: 10px; width: 100px; height: 100px; opacity: .35; }
+.friend-referral-rewards .relative { max-width: 100%; }
+.friend-referral-rewards p { font-size: 12px; line-height: 1.7; }
+.friend-share-button { width: 100%; margin-bottom: 8px; min-height: 44px; }
+.friends-load-error { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px; margin-bottom: 10px; font-size: 12px; }
+@media (max-width: 359px) {
+  .naval-subheader h1 { font-size: 23px; }
+  .awards-banner > .naval-medal-art { width: 74px; height: 74px; }
+  .awards-banner h2 { font-size: 17px; }
+  .awards-banner p { font-size: 10px; }
+  .award-medal .naval-medal-art { width: 52px; height: 52px; }
+  .award-lock { left: 22px; }
+  .naval-panel.award-row { gap: 6px; padding-right: 7px; }
+  .award-body h2 { font-size: 12px; }
+  .award-body p { font-size: 9px; }
+  .naval-screen .award-reward .chip { font-size: 9px; }
+  .friend-avatar .captain-avatar { width: 41px !important; height: 41px !important; }
+  .friend-person > strong { font-size: 12px; }
+  .friend-person > span { font-size: 8px; gap: 2px; }
+  .friend-challenge { font-size: 10px; gap: 2px; padding: 6px; }
+  .friend-invite-banner > .naval-medal-art { width: 56px; height: 56px; }
+  .friend-invite-banner strong { font-size: 13px; }
+  .friend-invite-banner small { font-size: 9px; }
+  .campaign-mission-number { width: 33px; height: 33px; font-size: 15px; }
+  .campaign-mission-wreath { width: 39px; height: 39px; }
+  .campaign-mission > div svg { width: 9px; height: 9px; }
+  .campaign-continue .naval-button { padding: 7px; font-size: 10px; }
+}

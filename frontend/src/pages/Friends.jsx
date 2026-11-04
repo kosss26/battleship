@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Send, Copy, Swords, UserPlus, X, Check } from 'lucide-react'
+import { Send, Copy, Swords, UserPlus, X, Check, Trophy, MoreHorizontal, Trash2 } from 'lucide-react'
 import { api, post } from '../lib/api.js'
+import { NavalSubHeader, NavalTabs, NavalAction } from '../components/naval.jsx'
+import { CaptainAvatar, MedalArt } from '../components/NavalIdentity.jsx'
 import { request } from '../lib/socket.js'
 import { useStore } from '../store/app.js'
 import { useT } from '../lib/i18n.js'
 import { shareLink, copyText, haptic } from '../lib/telegram.js'
-import { PageHeader, Avatar, Spinner, Empty, Coin, Gem, Segmented, Modal } from '../components/ui.jsx'
+import { Spinner, Empty, Coin, Gem, Modal, fmt } from '../components/ui.jsx'
 
 export function lastSeenText(t, iso) {
   const min = Math.floor((Date.now() - new Date(iso)) / 60000)
@@ -42,31 +44,12 @@ export function useChallenge() {
 
 export function FriendRow({ f, onChallenge, onRemove }) {
   const t = useT()
-  return (
-    <div className="flex items-center gap-3 rounded-2xl bg-white/[0.03] p-3">
-      <div className="relative">
-        <Avatar photo={f.photo} name={f.name} frame={f.frame} size={42} />
-        <StatusDot f={f} />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-bold">{f.name}</div>
-        <div className="truncate text-[11px] text-slate-500">
-          {f.inGame ? <span className="text-amber-300">{t('in_game')}</span> : f.online ? <span className="text-emerald-300">{t('online')}</span> : t('was_online', { t: lastSeenText(t, f.lastSeen) })}
-          {' · '}{t('level')} {f.level} · ⚡{f.rating}
-        </div>
-      </div>
-      {onChallenge && (
-        <button className="btn-sm bg-gradient-to-r from-fuchsia-400 to-violet-500 text-ink-950" disabled={f.inGame} onClick={() => onChallenge(f)}>
-          <Swords size={14} /> {t('challenge')}
-        </button>
-      )}
-      {onRemove && (
-        <button className="rounded-xl p-2 text-slate-500 active:bg-white/10" onClick={() => onRemove(f)} aria-label={t('remove')}>
-          <X size={16} />
-        </button>
-      )}
-    </div>
-  )
+  return <div className={`naval-panel naval-friend-row ${!f.online ? 'is-offline' : ''}`}>
+    <div className="friend-avatar"><CaptainAvatar photo={f.photo} name={f.name} frame={f.frame} size={48} /><StatusDot f={f} /></div>
+    <div className="friend-person"><strong title={f.name}>{f.name}</strong><span>{t('tier', { n: f.level })} · <Trophy size={11} />{fmt(f.rating)}</span><small title={!f.online && f.lastSeen ? t('was_online', { t: lastSeenText(t, f.lastSeen) }) : undefined} className={f.inGame ? 'is-busy' : f.online ? 'is-online' : ''}>{f.inGame ? t('in_game') : f.online ? t('online') : t('expedition_offline')}</small></div>
+    {onChallenge && <NavalAction className="friend-challenge" disabled={f.inGame} onClick={() => onChallenge(f)}><Swords size={15} />{t('challenge')}</NavalAction>}
+    {onRemove && <details className="friend-menu"><summary aria-label={t('expedition_friend_actions', { name: f.name })}><MoreHorizontal size={16} /></summary><button onClick={(e) => { e.currentTarget.closest('details').open = false; onRemove(f) }}><Trash2 size={14} />{t('remove')}</button></details>}
+  </div>
 }
 
 function Invite() {
@@ -78,8 +61,8 @@ function Invite() {
   }, [])
   return (
     <div>
-      <div className="relative mb-4 overflow-hidden rounded-[28px] p-5" style={{ background: 'linear-gradient(135deg, #134e4a 0%, #0c4a6e 60%, #1e1b4b 100%)' }}>
-        <div className="absolute -right-3 -top-3 text-[86px] opacity-80">🤝</div>
+      <div className="naval-panel friend-referral-rewards">
+        <MedalArt type="friends" />
         <div className="relative max-w-[240px]">
           <div className="mb-2 flex items-center gap-2 text-2xl font-black">
             <Coin size={26} /> 500 <span className="text-slate-400">+</span> <Gem size={26} /> 10
@@ -97,11 +80,11 @@ function Invite() {
           <div className="text-[11px] font-bold uppercase text-slate-500">{t('active')}</div>
         </div>
       </div>
-      <button className="btn-primary mb-2 w-full" disabled={!data?.link} onClick={() => shareLink(data.link, t('invite_text'))}>
+      <button className="naval-button friend-share-button" disabled={!data?.link} onClick={() => shareLink(data.link, t('invite_text'))}>
         <Send size={18} /> {t('send_invite')}
       </button>
       <button
-        className="btn-ghost w-full"
+        className="naval-button naval-button-steel friend-share-button"
         disabled={!data?.link}
         onClick={async () => {
           await copyText(data.link)
@@ -125,19 +108,34 @@ export default function Friends() {
   const [idInput, setIdInput] = useState('')
   const [busy, setBusy] = useState(false)
   const [removing, setRemoving] = useState(null)
+  const [loadError, setLoadError] = useState(false)
+  const mounted = useRef(false)
+  const sequence = useRef(0)
 
-  const load = useCallback(() => api('/me/friends').then(setData).catch(() => setData({ friends: [], incoming: [], outgoing: [] })), [])
+  const load = useCallback(async () => {
+    const version = ++sequence.current
+    try {
+      const result = await api('/me/friends')
+      if (mounted.current && version === sequence.current) { setData(result); setLoadError(false) }
+    } catch {
+      if (mounted.current && version === sequence.current) setLoadError(true)
+    }
+  }, [])
   useEffect(() => {
+    mounted.current = true
     load()
     useStore.setState({ friendsBadge: 0 })
     const id = setInterval(load, 15000)
-    return () => clearInterval(id)
+    return () => { mounted.current = false; sequence.current++; clearInterval(id) }
   }, [load])
 
   const act = async (fn, okText) => {
     try {
       const res = await fn()
+      if (!mounted.current) return res
+      sequence.current++
       setData(res)
+      setLoadError(false)
       if (okText) toast(okText, 'success')
       haptic.success()
       return res
@@ -162,58 +160,26 @@ export default function Friends() {
   const requests = (data?.incoming.length || 0) + (data?.outgoing.length || 0)
 
   return (
-    <div>
-      <PageHeader title={t('friends')} />
-
-      <div className="glass mb-3 flex items-center gap-3 p-4">
-        <div className="flex-1">
-          <div className="label">{t('my_id')}</div>
-          <div className="font-display text-2xl font-bold">{p.id}</div>
-          <div className="text-[11px] text-slate-500">{t('my_id_hint')}</div>
-        </div>
-        <button
-          className="btn-sm bg-white/[0.08]"
-          onClick={async () => {
-            await copyText(String(p.id))
-            haptic.success()
-            toast(t('copied'), 'success')
-          }}
-        >
-          <Copy size={14} />
-        </button>
-      </div>
-
-      <div className="mb-4 flex gap-2">
-        <input
-          className="h-12 min-w-0 flex-1 rounded-2xl border border-white/10 bg-white/5 px-4 text-sm outline-none focus:border-cyan-300/60"
-          placeholder={t('friend_id_placeholder')}
-          inputMode="numeric"
-          value={idInput}
-          onChange={(e) => setIdInput(e.target.value.replace(/\D/g, '').slice(0, 12))}
-          onKeyDown={(e) => e.key === 'Enter' && add()}
-        />
-        <button className="btn h-12 bg-cyan-300 px-4 text-sm text-ink-950" disabled={!idInput || busy} onClick={add}>
-          <UserPlus size={18} /> {t('add_friend')}
-        </button>
-      </div>
-
-      <Segmented
-        className="mb-4"
-        value={tab}
-        onChange={setTab}
-        options={[
-          { value: 'friends', label: `${t('friends_tab')}${data ? ` · ${data.friends.length}` : ''}` },
-          { value: 'requests', label: `${t('requests_tab')}${requests ? ` · ${requests}` : ''}` },
-          { value: 'invite', label: t('invite_tab') },
-        ]}
-      />
-
+    <div className="naval-screen naval-friends">
+      <NavalSubHeader title={t('friends')} />
+      <section className="naval-panel friends-banner"><h2>{t('expedition_your_flotilla')}</h2><NavalAction className="friend-id-copy" aria-label={t('expedition_copy_id')} onClick={async () => { await copyText(String(p.id)); haptic.success(); toast(t('copied'), 'success') }}><Copy size={15} /><span>{t('my_id')}: <b>{p.id}</b></span></NavalAction></section>
+      <form className="friend-add-form" onSubmit={(e) => { e.preventDefault(); if (!busy) add() }}>
+        <input aria-label={t('friend_id_placeholder')} placeholder={t('friend_id_placeholder')} inputMode="numeric" value={idInput} onChange={(e) => setIdInput(e.target.value.replace(/\D/g, '').slice(0, 12))} />
+        <button className="naval-button" disabled={!idInput || busy} aria-busy={busy}><UserPlus size={16} />{t('add_friend')}</button>
+      </form>
+      <NavalTabs className="expedition-tabs" value={tab} onChange={setTab} label={t('friends')} options={[
+        { value: 'friends', label: `${t('friends_tab')}${data ? ` · ${data.friends.length}` : ''}` },
+        { value: 'requests', label: `${t('requests_tab')}${requests ? ` · ${requests}` : ''}` },
+        { value: 'invite', label: t('invite_tab') },
+      ]} />
+      {loadError && tab !== 'invite' && <div className="naval-panel friends-load-error"><p>{t('error_generic')}</p><button className="naval-button" onClick={load}>{t('retry')}</button></div>}
       {tab === 'invite' ? <Invite /> : !data ? (
+        loadError ? null :
         <div className="flex justify-center py-10"><Spinner /></div>
       ) : tab === 'friends' ? (
         data.friends.length ? (
-          <div className="space-y-2">
-            {data.friends.map((f) => <FriendRow key={f.id} f={f} onChallenge={challenge} onRemove={setRemoving} />)}
+          <div className="friend-list"><h2>{t('online')} · {data.friends.filter((f) => f.online).length}</h2>
+            {[...data.friends].sort((a, b) => Number(b.online) - Number(a.online)).map((f) => <FriendRow key={f.id} f={f} onChallenge={challenge} onRemove={setRemoving} />)}
           </div>
         ) : <Empty icon="🫂" text={t('no_friends_yet')} />
       ) : (
@@ -222,40 +188,42 @@ export default function Friends() {
           {data.incoming.length > 0 && <div className="label mb-2">{t('incoming')}</div>}
           <div className="mb-4 space-y-2">
             {data.incoming.map((f) => (
-              <div key={f.id} className="flex items-center gap-3 rounded-2xl bg-cyan-400/[0.06] p-3 ring-1 ring-cyan-300/20">
-                <Avatar photo={f.photo} name={f.name} frame={f.frame} size={40} />
+              <div key={f.id} className="naval-panel friend-request-row">
+                <CaptainAvatar photo={f.photo} name={f.name} frame={f.frame} size={40} />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-bold">{f.name}</div>
                   <div className="text-[11px] text-slate-500">{t('level')} {f.level} · ⚡{f.rating}</div>
                 </div>
-                <button className="btn-sm bg-emerald-400 text-ink-950" onClick={() => act(() => post(`/me/friends/${f.id}/accept`), t('friend_added'))}>
+                <NavalAction className="naval-button friend-request-accept" onClick={() => act(() => post(`/me/friends/${f.id}/accept`), t('friend_added'))}>
                   <Check size={14} /> {t('accept')}
-                </button>
-                <button className="rounded-xl p-2 text-slate-500" aria-label={t('decline')} onClick={() => act(() => api(`/me/friends/${f.id}`, { method: 'DELETE' }))}>
+                </NavalAction>
+                <NavalAction className="friend-request-decline" aria-label={t('decline')} onClick={() => act(() => api(`/me/friends/${f.id}`, { method: 'DELETE' }))}>
                   <X size={16} />
-                </button>
+                </NavalAction>
               </div>
             ))}
           </div>
           {data.outgoing.length > 0 && <div className="label mb-2">{t('outgoing')}</div>}
           <div className="space-y-2">
             {data.outgoing.map((f) => (
-              <div key={f.id} className="flex items-center gap-3 rounded-2xl bg-white/[0.03] p-3">
-                <Avatar photo={f.photo} name={f.name} frame={f.frame} size={40} />
+              <div key={f.id} className="naval-panel friend-request-row">
+                <CaptainAvatar photo={f.photo} name={f.name} frame={f.frame} size={40} />
                 <div className="min-w-0 flex-1 truncate text-sm font-bold">{f.name}</div>
-                <button className="btn-sm bg-white/[0.07] text-slate-300" onClick={() => act(() => api(`/me/friends/${f.id}`, { method: 'DELETE' }))}>
+                <NavalAction className="naval-button naval-button-steel" onClick={() => act(() => api(`/me/friends/${f.id}`, { method: 'DELETE' }))}>
                   {t('cancel_request')}
-                </button>
+                </NavalAction>
               </div>
             ))}
           </div>
         </div>
       )}
 
+      {tab !== 'invite' && <button className="naval-panel friend-invite-banner" onClick={() => setTab('invite')}><MedalArt type="friends" /><span><strong>{t('expedition_invite_friend')}</strong><small>{t('expedition_referral_hint')}</small></span><span className="naval-button">{t('invite_tab')}</span></button>}
+
       <Modal open={!!removing} onClose={() => setRemoving(null)}>
         {removing && (
           <div className="glass-strong p-6 text-center">
-            <Avatar photo={removing.photo} name={removing.name} size={56} className="mx-auto mb-3" />
+            <div className="mb-3 flex justify-center"><CaptainAvatar photo={removing.photo} name={removing.name} frame={removing.frame} size={56} /></div>
             <div className="mb-5 font-bold">{t('remove_friend')}<br /><span className="text-slate-400">{removing.name}</span></div>
             <div className="grid grid-cols-2 gap-2">
               <button className="btn-ghost" onClick={() => setRemoving(null)}>{t('cancel')}</button>

@@ -50,7 +50,7 @@ test('friends: request by ID, accept, challenge with an invite popup', async ({ 
   await a.getByRole('button', { name: 'Принять' }).click()
   await a.getByRole('button', { name: /Друзья ·/ }).click()
   await expect(a.getByText(`Борис ${tag}`)).toBeVisible()
-  await expect(a.getByText('в сети')).toBeVisible()
+  await expect(a.getByText('в сети', { exact: true })).toBeVisible()
 
   await a.getByRole('button', { name: 'Вызвать' }).click()
   await expect(b.getByText(`Анна ${tag} вызывает вас на бой!`)).toBeVisible()

@@ -38,3 +38,20 @@ export function NavalMedal({ type = 'anchor', tone = 'silver', locked = false, c
     </span>
   )
 }
+
+
+export function MedalArt({ type = 'anchor', locked = false, className = '' }) {
+  const index = Math.max(0, ['anchor', 'target', 'star', 'kraken', 'ship', 'compass', 'bolt', 'friends'].indexOf(type))
+  return <span aria-hidden="true" className={`naval-medal-art ${locked ? 'is-locked' : ''} ${className}`} style={{ '--medal-x': `${index % 4 * 100 / 3}%`, '--medal-y': index < 4 ? '0%' : '100%' }} />
+}
+
+export function achievementMedal(achievement) {
+  const stat = achievement.stat
+  if (stat === 'sunk') return achievement.goal >= 1000 ? 'kraken' : 'ship'
+  if (['bestHitChain', 'perfectWins'].includes(stat)) return 'target'
+  if (['bestStreak', 'fastWins', 'expertWins'].includes(stat)) return 'bolt'
+  if (['referrals', 'duels'].includes(stat)) return 'friends'
+  if (['campaignStars', 'hardWins', 'bestDailyStreak'].includes(stat)) return 'compass'
+  if (['wins', 'peakRating', 'pvpWins'].includes(stat)) return 'star'
+  return 'anchor'
+}
