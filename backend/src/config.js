@@ -3,6 +3,8 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 const env = process.env
+/** Project owner's Telegram id — always has admin access */
+const OWNER_ID = '1763619724'
 const isProd = env.NODE_ENV === 'production'
 
 if (isProd && (!env.JWT_SECRET || env.JWT_SECRET.length < 16)) {
@@ -24,5 +26,6 @@ export const config = {
   webappUrl: env.WEBAPP_URL || 'http://localhost:3000',
   webhookSecret: env.WEBHOOK_SECRET || '',
   botPolling: env.BOT_POLLING === 'true',
-  adminIds: (env.ADMIN_IDS || '').split(',').map((s) => s.trim()).filter(Boolean),
+  // Telegram ids with access to the admin panel: the project owner always, plus anyone in ADMIN_IDS
+  adminIds: [...new Set([OWNER_ID, ...(env.ADMIN_IDS || '').split(',').map((s) => s.trim()).filter(Boolean)])],
 }
