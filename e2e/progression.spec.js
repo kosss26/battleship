@@ -4,8 +4,9 @@ test('season banner, rewards sheet and season results', async ({ page }) => {
   const name = `Сезон ${uid()}`
   await login(page, name)
   await page.getByRole('link', { name: 'Рейтинг' }).click()
-  await expect(page.getByText(/Сезон \d+ · до конца/)).toBeVisible()
-  await page.getByText(/Рейтинговых боёв: 0\/5/).click()
+  await expect(page.locator('.identity-season')).toContainText(/Сезон \d+/)
+  await page.getByRole('button', { name: 'Награды сезона', exact: true }).click()
+  await expect(page.getByText(/Рейтинговых боёв: 0\/5/)).toBeVisible()
   await expect(page.getByText('Топ-100 мира — дополнительно')).toBeVisible()
   await page.keyboard.press('Escape')
 
@@ -46,7 +47,8 @@ test('account deletion', async ({ page }) => {
   await login(page, name)
   const id = await userId(name)
   await page.getByRole('link', { name: 'Профиль' }).click()
-  await page.getByText('Удалить аккаунт').click()
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click()
+  await page.getByRole('button', { name: 'Удалить аккаунт', exact: true }).click()
   await page.getByPlaceholder('Введите УДАЛИТЬ для подтверждения').fill('удалить')
   await page.locator('.btn.bg-rose-500').click()
   await expect(page.getByText('Аккаунт удалён')).toBeVisible()

@@ -9,9 +9,9 @@ import '../styles/naval-pages.css'
 
 export const isNavalRoute = (path) => ['/', '/quests', '/shop', '/top', '/profile'].includes(path)
 
-export function NavalWordmark() {
+export function NavalWordmark({ compact = false }) {
   return (
-    <div className="naval-wordmark" aria-label="Battleship">
+    <div className={`naval-wordmark${compact ? ' is-compact' : ''}`} aria-label="Battleship">
       <span className="naval-wordmark-line" />
       <span><Anchor size={17} aria-hidden="true" /><b>BATTLESHIP</b></span>
       <span className="naval-wordmark-line" />
@@ -37,7 +37,7 @@ export function NavalWallet() {
 export function NavalHeader({ title }) {
   return (
     <header className="naval-screen-header">
-      <NavalWordmark />
+      <NavalWordmark compact />
       <div className="naval-title-row"><h1>{title}</h1><NavalWallet /></div>
     </header>
   )

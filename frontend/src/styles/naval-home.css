@@ -129,3 +129,9 @@
   .naval-home *, .naval-home *::before, .naval-home *::after,
   .naval-tabbar * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* Internal pages keep the brand without repeating the full home masthead. */
+.naval-wordmark.is-compact { gap: 9px; padding: 0 24px 6px; }
+.naval-wordmark.is-compact b { font-size: 15px; letter-spacing: 1px; }
+.naval-wordmark.is-compact svg { height: 8px; }
+.naval-wordmark.is-compact .naval-wordmark-line { width: 22px; height: 1px; }

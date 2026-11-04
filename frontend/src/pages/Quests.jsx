@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
-import { Lock, Check, Crown, Gift, Clock3, Swords, Crosshair, Ship as ShipIcon, ChevronRight } from 'lucide-react'
-import { QUESTS, DAILY_REWARDS, PASS_TIERS, PASS_XP_PER_TIER, passRewards, PASS_PREMIUM_GEMS, STAR_PRODUCTS } from '@shared/catalog.js'
+import { Lock, Check, Crown, Gift, Clock3, Swords, Crosshair, Ship as ShipIcon, ChevronRight, Trophy, Bot, ShieldCheck, Map, Users, Timer, Radar } from 'lucide-react'
+import { QUESTS, DAILY_REWARDS, PASS_TIERS, PASS_XP_PER_TIER, passRewards, PASS_PREMIUM_GEMS, STAR_PRODUCTS, BOOSTERS } from '@shared/catalog.js'
 import { useStore } from '../store/app.js'
 import { useT, useL, formatLeft } from '../lib/i18n.js'
 import { Progress, RewardChips, Gem, Coin, fmt } from '../components/ui.jsx'
@@ -12,13 +12,20 @@ const tomorrow = () => {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1)).toISOString()
 }
 
+const QUEST_ICONS = { played: Swords, won: Trophy, sunk: ShipIcon, hits: Crosshair, won_hard: Bot, won_pvp: ShieldCheck, campaign_win: Map, accurate_win: Crosshair, played_duel: Users, fast_win: Timer }
+
 function RewardIcon({ reward }) {
+  const l = useL()
   if (!reward) return null
+  const boosters = Object.entries(reward.boosters || {}).filter(([, n]) => n > 0)
+  if (boosters.length) return <span className="naval-calendar-boosters">
+    {reward.gold ? <span className="naval-calendar-gold"><Coin size={15} />{fmt(reward.gold)}</span> : <Radar size={21} aria-hidden="true" />}
+    {boosters.map(([id, n]) => <span key={id}>{l(BOOSTERS[id]?.name)} ×{n}</span>)}
+  </span>
   if (reward.cosmetics?.length) return <ShipIcon size={28} aria-hidden="true" />
   if (reward.gold && reward.gems) return <span className="naval-multi-reward"><span><Coin size={13} />{fmt(reward.gold)}</span><span><Gem size={13} />{fmt(reward.gems)}</span></span>
   if (reward.gems) return <><Gem size={22} /><span>{fmt(reward.gems)}</span></>
   if (reward.gold) return <><Coin size={22} /><span>{fmt(reward.gold)}</span></>
-  if (reward.boosters) return <Crosshair size={25} aria-hidden="true" />
   return null
 }
 
@@ -110,7 +117,7 @@ export default function Quests() {
             const def = QUESTS.find((d) => d.id === q.id)
             if (!def) return null
             const done = q.progress >= def.target
-            const Icon = def.event === 'sunk' ? ShipIcon : def.event === 'hits' ? Crosshair : Swords
+            const Icon = QUEST_ICONS[def.event] || Swords
             return (
               <article key={q.id} className={`naval-panel naval-mission ${done && !q.claimed ? 'is-ready' : ''} ${q.claimed ? 'is-claimed' : ''}`}>
                 <span className="naval-mission-icon"><Icon size={24} aria-hidden="true" /></span>

@@ -39,7 +39,7 @@ test('a win can be turned into a story card', async ({ newPlayer }) => {
   const tag = uid()
   const winner = await newPlayer(`Победитель ${tag}`)
   const loser = await newPlayer(`Соперник ${tag}`)
-  await winner.getByText('С другом', { exact: true }).click()
+  await winner.getByRole('button', { name: 'Бой с другом', exact: false }).click()
   await winner.getByText('Создать бой').click()
   await expect(winner.locator('.h-16.w-12').first()).not.toHaveText('')
   const code = (await winner.locator('.h-16.w-12').allTextContents()).join('')

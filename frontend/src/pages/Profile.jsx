@@ -156,7 +156,7 @@ export default function Profile() {
 
   return (
     <div className="naval-screen naval-profile">
-      <header className="identity-heading"><NavalWordmark /><div className="identity-title-row"><h1>{t('profile')}</h1><button ref={settingsTrigger} className="identity-settings-button" onClick={() => setSettingsOpen(true)} aria-label={t('settings')} aria-haspopup="dialog"><Settings size={21} /></button></div></header>
+      <header className="identity-heading"><NavalWordmark compact /><div className="identity-title-row"><h1>{t('profile')}</h1><button ref={settingsTrigger} className="identity-settings-button" onClick={() => setSettingsOpen(true)} aria-label={t('settings')} aria-haspopup="dialog"><Settings size={21} /></button></div></header>
       <section className="naval-panel identity-dossier" aria-label={t('profile')}>
         <div className="identity-dossier-main"><CaptainAvatar photo={p.photo} name={p.name} frame={p.equipped.frame} size={76} /><div className="identity-dossier-copy"><h2 title={p.name}>{p.name}</h2><span className="identity-level"><ChevronsUp size={16} />{t('tier', { n: p.level })}</span><div className="identity-rank-line"><NavalRank rating={p.rating} /><span className="identity-score"><Trophy size={15} /><b>{fmt(p.rating)}</b></span></div></div></div>
         <div className="identity-xp"><div><span>{t(maxLevel ? 'identity_max_level' : 'identity_next_level', { n: p.level + 1 })}</span><span>{maxLevel ? t('identity_xp_complete') : <>{fmt(p.levelXp)} / {fmt(p.levelXpNeeded)} <small>XP</small></>}</span></div><div className="identity-xp-track" role="progressbar" aria-label={t('level')} aria-valuemin={0} aria-valuemax={xpMax} aria-valuenow={xpValue}><span style={{ width: `${xpValue / xpMax * 100}%` }} /></div></div>

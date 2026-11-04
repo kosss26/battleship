@@ -25,7 +25,7 @@
 .fleet-collections .naval-section-heading h2 { font-size: 18px; }
 .fleet-collections .naval-section-heading > span { max-width: 42%; }
 .fleet-collection-card { position: relative; isolation: isolate; display: flex; align-items: flex-start; flex-direction: column; justify-content: center; width: 100%; aspect-ratio: 2; padding: 16px; overflow: hidden; text-align: left; border: 1px solid #8faebf; border-radius: 20px; background: #102b40; box-shadow: 0 8px 20px #0003; margin-bottom: 10px; }
-.fleet-collection-card::before { content: ''; position: absolute; z-index: -2; inset: 0; background: url('/art/naval/collections.svg') center top / 100% 200%; }
+.fleet-collection-card::before { content: ''; position: absolute; z-index: -2; inset: 0; background: url('/art/naval/collections.webp') center top / 100% 200%; }
 .fleet-collection-imperial { border-color: #c6a365; }
 .fleet-collection-imperial::before { background-position: center bottom; }
 .fleet-collection-card::after { content: ''; position: absolute; z-index: -1; inset: 0; background: linear-gradient(90deg, #061624ed, #071b2b88 45%, #071b2b05 80%), linear-gradient(0deg, #041323d9, transparent 55%); }

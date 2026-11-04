@@ -147,7 +147,7 @@ export default function Home() {
 
       {/* Ranked hero */}
       <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="naval-hero" aria-labelledby="naval-hero-title">
-        <img src="/art/naval/hero.webp" className="naval-hero-art" alt="" fetchPriority="high" width="1536" height="1024" />
+        <img src="/art/naval/hero.webp" className="naval-hero-art" alt="" fetchPriority="high" width="1152" height="768" />
         <div className="naval-hero-shade" />
         <div className="naval-hero-heading">
           <div className="naval-eyebrow">{t('ranked')}</div>

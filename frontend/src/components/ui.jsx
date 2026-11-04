@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, useDragControls } from 'framer-motion'
 import { useEffect, useId } from 'react'
 import { ChevronLeft, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -124,6 +124,7 @@ export function RankBadge({ rating, size = 'sm' }) {
 }
 
 export function Sheet({ open, onClose, title, children, tall = false }) {
+  const dragControls = useDragControls()
   useEffect(() => {
     if (!open) return
     const onKey = (e) => e.key === 'Escape' && onClose?.()
@@ -137,17 +138,19 @@ export function Sheet({ open, onClose, title, children, tall = false }) {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
           <motion.div
             className={`relative w-full max-w-lg rounded-t-[32px] border-t border-white/10 bg-ink-850 px-5 pt-3 ${tall ? 'max-h-[88vh]' : 'max-h-[80vh]'} overflow-y-auto`}
-            style={{ paddingBottom: 'calc(20px + var(--safe-bottom))' }}
+            style={{ paddingBottom: 'calc(20px + var(--safe-bottom))', touchAction: 'pan-x pan-y', WebkitOverflowScrolling: 'touch', overscrollBehaviorY: 'contain' }}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', stiffness: 380, damping: 36 }}
             drag="y"
+            dragListener={false}
+            dragControls={dragControls}
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 0, bottom: 0.6 }}
             onDragEnd={(_, info) => info.offset.y > 120 && onClose?.()}
           >
-            <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-white/20" />
+            <div className="flex h-6 w-full shrink-0 cursor-grab items-start justify-center" style={{ touchAction: 'none' }} onPointerDown={(e) => dragControls.start(e)} aria-hidden="true"><span className="mt-0.5 h-1.5 w-10 rounded-full bg-white/20" /></div>
             {title && (
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="h-display text-lg">{title}</h3>
@@ -257,6 +260,7 @@ export function PageHeader({ title, right, back = true }) {
 /** Renders a list of reward chips from a summary or reward object */
 export function RewardChips({ reward, size = 'md' }) {
   const l = useL()
+  const t = useT()
   if (!reward) return null
   const big = size === 'lg'
   const chip = `chip ${big ? 'px-3 py-1.5 text-sm' : ''} bg-white/[0.07]`
@@ -265,7 +269,7 @@ export function RewardChips({ reward, size = 'md' }) {
       {reward.gold ? <span className={`${chip} text-amber-200`}><Coin size={big ? 18 : 14} />+{fmt(reward.gold)}</span> : null}
       {reward.gems ? <span className={`${chip} text-fuchsia-200`}><Gem size={big ? 18 : 14} />+{fmt(reward.gems)}</span> : null}
       {reward.xp ? <span className={`${chip} text-cyan-200`}>XP +{fmt(reward.xp)}</span> : null}
-      {reward.passXp && !reward.xp ? <span className={`${chip} text-emerald-200`}>🏆 +{fmt(reward.passXp)}</span> : null}
+      {reward.passXp ? <span className={`${chip} text-emerald-200`}>{t('pass_xp_reward', { n: fmt(reward.passXp) })}</span> : null}
       {Object.entries(reward.boosters || {}).filter(([, n]) => n).map(([id, n]) => (
         <span key={id} className={`${chip} text-sky-200`}>{BOOSTERS[id]?.icon} ×{n}</span>
       ))}

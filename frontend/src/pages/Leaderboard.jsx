@@ -33,7 +33,7 @@ export default function Leaderboard() {
   const score = (e) => type === 'weekly' ? e.score : e.rating
   return (
     <div className="naval-screen naval-leaderboard">
-      <header className="identity-heading"><NavalWordmark /><h1>{t('leaderboard')}</h1></header>
+      <header className="identity-heading"><NavalWordmark compact /><h1>{t('leaderboard')}</h1></header>
       <button className="naval-panel identity-season" onClick={() => setRewards(true)} aria-label={t('season_rewards')}>
         <NavalMedal type="compass" tone="gold" />
         <span className="identity-season-copy"><span>{t('season_n', { n: season.number })}</span><strong>{l(season.name)}</strong><small><CalendarDays size={12} />{t('season_ends_in', { t: formatLeft(season.endsAt, t) })}</small></span>
