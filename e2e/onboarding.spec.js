@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test'
-import { login, uid, expectNoPageErrors } from './helpers.js'
+import { test, expect, login, uid, expectNoPageErrors } from './helpers.js'
 
 test('new player: tutorial, legal links, notifications, training battle', async ({ page }) => {
   await login(page, `Новичок ${uid()}`, { skipTutorial: false })

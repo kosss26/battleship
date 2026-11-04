@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test'
-import { login, newPlayer, uid, fireOnce, resign, sql, expectNoPageErrors } from './helpers.js'
+import { test, expect, login, uid, fireOnce, resign, sql, expectNoPageErrors } from './helpers.js'
 
 test('battle vs AI: placement, shell animation, results, double reward for an ad', async ({ page }) => {
   const name = `Пилот ${uid()}`
@@ -34,11 +33,11 @@ test('battle vs AI: placement, shell animation, results, double reward for an ad
   expectNoPageErrors(page)
 })
 
-test('a win can be turned into a story card', async ({ browser }) => {
+test('a win can be turned into a story card', async ({ player }) => {
   // Deterministic win: a friend duel where the opponent resigns
   const tag = uid()
-  const winner = await newPlayer(browser, `Победитель ${tag}`)
-  const loser = await newPlayer(browser, `Соперник ${tag}`)
+  const winner = await player(`Победитель ${tag}`)
+  const loser = await player(`Соперник ${tag}`)
   await winner.getByText('С другом').click()
   await winner.getByText('Создать бой').click()
   await expect(winner.locator('.h-16.w-12').first()).not.toHaveText('')

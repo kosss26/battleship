@@ -1,10 +1,9 @@
-import { test, expect } from '@playwright/test'
-import { newPlayer, uid, fireOnce, resign, expectNoPageErrors } from './helpers.js'
+import { test, expect, uid, fireOnce, resign, expectNoPageErrors } from './helpers.js'
 
-test('ranked: matchmaking, drag-and-drop, emotes, early forfeit protection', async ({ browser }) => {
+test('ranked: matchmaking, drag-and-drop, emotes, early forfeit protection', async ({ player }) => {
   const tag = uid()
-  const a = await newPlayer(browser, `Анна ${tag}`)
-  const b = await newPlayer(browser, `Борис ${tag}`)
+  const a = await player(`Анна ${tag}`)
+  const b = await player(`Борис ${tag}`)
   await a.getByRole('button', { name: 'В бой' }).click()
   await expect(a.getByText('Поиск соперника')).toBeVisible()
   await b.getByRole('button', { name: 'В бой' }).click()

@@ -1,10 +1,9 @@
-import { test, expect } from '@playwright/test'
-import { newPlayer, uid, userId, expectNoPageErrors } from './helpers.js'
+import { test, expect, uid, userId, expectNoPageErrors } from './helpers.js'
 
-test('duel by 5-digit code, wrong code, and invite link', async ({ browser }) => {
+test('duel by 5-digit code, wrong code, and invite link', async ({ player }) => {
   const tag = uid()
-  const host = await newPlayer(browser, `Хост ${tag}`)
-  const guest = await newPlayer(browser, `Гость ${tag}`)
+  const host = await player(`Хост ${tag}`)
+  const guest = await player(`Гость ${tag}`)
   await host.getByText('С другом').click()
   await host.getByText('Создать бой').click()
   await expect(host.getByText('Скопировать код')).toBeVisible()
@@ -15,15 +14,17 @@ test('duel by 5-digit code, wrong code, and invite link', async ({ browser }) =>
 
   await guest.getByText('С другом').click()
   await guest.getByText('Ввести код').click()
+  await guest.getByLabel('code').click()
   await guest.keyboard.type('00000')
   await expect(guest.getByText('Неверный код или бой уже начался')).toBeVisible()
+  await guest.getByLabel('code').click()
   await guest.keyboard.type(code)
   await expect(guest.getByText('Расстановка флота')).toBeVisible()
   await expect(host.getByText('Расстановка флота')).toBeVisible()
 
   // Link with ?startapp=duel_<code> joins straight away
-  const host2 = await newPlayer(browser, `Хост2 ${tag}`)
-  const linked = await newPlayer(browser, `Ссылка ${tag}`)
+  const host2 = await player(`Хост2 ${tag}`)
+  const linked = await player(`Ссылка ${tag}`)
   await host2.getByText('С другом').click()
   await host2.getByText('Создать бой').click()
   await expect(host2.locator('.h-16.w-12').first()).not.toHaveText('')
@@ -33,10 +34,10 @@ test('duel by 5-digit code, wrong code, and invite link', async ({ browser }) =>
   expectNoPageErrors(host, guest, host2, linked)
 })
 
-test('friends: request by ID, accept, challenge with an invite popup', async ({ browser }) => {
+test('friends: request by ID, accept, challenge with an invite popup', async ({ player }) => {
   const tag = uid()
-  const a = await newPlayer(browser, `Анна ${tag}`)
-  const b = await newPlayer(browser, `Борис ${tag}`)
+  const a = await player(`Анна ${tag}`)
+  const b = await player(`Борис ${tag}`)
   const aId = await userId(`Анна ${tag}`)
 
   await b.goto('/friends')

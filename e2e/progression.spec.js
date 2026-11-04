@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test'
-import { login, uid, userId, sql, expectNoPageErrors } from './helpers.js'
+import { test, expect, login, uid, userId, sql, expectNoPageErrors } from './helpers.js'
 
 test('season banner, rewards sheet and season results', async ({ page }) => {
   const name = `Сезон ${uid()}`
@@ -23,12 +22,12 @@ test('season banner, rewards sheet and season results', async ({ page }) => {
 })
 
 test('campaign part two: rules on the mission, ammo counter and fog in battle', async ({ page }) => {
-  const name = `Кампания ${uid()}`
+  const name = `Мореход ${uid()}`
   await login(page, name)
   const id = await userId(name)
   await sql(`UPDATE users SET data = jsonb_set(data, '{campaign}', (SELECT jsonb_object_agg(g::text, 2) FROM generate_series(1, 50) g)) WHERE id = $1`, [id])
   await page.reload()
-  await page.getByText('Кампания').first().click()
+  await page.getByText('Кампания', { exact: true }).click()
   await expect(page.getByText('Логово Кракена')).toBeVisible()
   await page.getByText('Логово Кракена').scrollIntoViewIfNeeded()
   await page.locator('button', { hasText: /^51/ }).first().click()

@@ -1,15 +1,14 @@
-import { test, expect } from '@playwright/test'
-import { newPlayer, uid, expectNoPageErrors } from './helpers.js'
+import { test, expect, uid, expectNoPageErrors } from './helpers.js'
 
-test('admin panel: hidden from players, analytics, ban/unban', async ({ browser }) => {
+test('admin panel: hidden from players, analytics, ban/unban', async ({ player }) => {
   const tag = uid()
-  const player = await newPlayer(browser, `Игрок ${tag}`)
+  const player = await player(`Игрок ${tag}`)
   await player.goto('/profile')
   await expect(player.getByText('Админ-панель')).toHaveCount(0)
   await player.goto('/admin')
   await expect(player.getByText('Рейтинговый бой')).toBeVisible()
 
-  const admin = await newPlayer(browser, 'Админ Тест')
+  const admin = await player('Админ Тест')
   await admin.goto('/profile')
   await admin.getByText('Админ-панель').click()
   await expect(admin.getByText('Доход (Telegram Stars)')).toBeVisible()

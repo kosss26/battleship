@@ -1,5 +1,22 @@
 import pg from 'pg'
-import { expect } from '@playwright/test'
+import { test as base, expect } from '@playwright/test'
+
+/**
+ * `test` with a `player(name, opts)` fixture: each call opens a separate browser
+ * context (an independent player); all of them are closed after the test.
+ */
+export const test = base.extend({
+  player: async ({ browser }, use) => {
+    const contexts = []
+    await use(async (name, opts) => {
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'ru-RU' })
+      contexts.push(ctx)
+      return login(await ctx.newPage(), name, opts)
+    })
+    for (const ctx of contexts) await ctx.close()
+  },
+})
+export { expect }
 import { DATABASE_URL } from './playwright.config.js'
 
 let pool
@@ -26,13 +43,6 @@ export async function login(page, name, { skipTutorial = true } = {}) {
   }
   page.errors = errors
   return page
-}
-
-/** A second independent player in the same test */
-export async function newPlayer(browser, name, opts) {
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'ru-RU' })
-  const page = await ctx.newPage()
-  return login(page, name, opts)
 }
 
 export async function userId(name) {

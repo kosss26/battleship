@@ -158,7 +158,7 @@ export default function Results({ over }) {
         {(rewards || extra?.ratingDelta || extra?.ratingNote) && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass mb-3 p-4">
             <div className="label mb-2.5">{t('rewards')}</div>
-            {extra?.ratingNote && (
+            {extra?.ratingNote && (extra.ratingNote !== 'early_forfeit' || won) && (
               <div className="mb-3 rounded-2xl bg-amber-400/10 px-3 py-2 text-xs font-semibold text-amber-200">⚠️ {t(`rating_note_${extra.ratingNote}`)}</div>
             )}
             {extra?.ratingDelta ? (
