@@ -99,7 +99,7 @@
 .naval-gems-heading > span { font-size: 10px; }
 .naval-gem-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
 .naval-gem-card { position: relative; isolation: isolate; overflow: hidden; display: flex; align-items: center; flex-direction: column; padding: 8px 11px 11px; min-height: 183px; text-align: center; }
-.naval-gem-art { display: block; width: 120px; height: 100px; flex-shrink: 0; max-width: 100%; background: url('/art/naval/gems.svg') 0 0 / 200% 200%; mask-image: radial-gradient(ellipse at center, #000 40%, transparent 75%); -webkit-mask-image: radial-gradient(ellipse at center, #000 40%, transparent 75%); }
+.naval-gem-art { display: block; width: 144px; height: auto; aspect-ratio: 1; flex-shrink: 0; max-width: 100%; margin: 3px 0 5px; background: url('/art/naval/gems.svg') 0 0 / 200% 200%; }
 .naval-gem-art-1 { background-position: 100% 0; }
 .naval-gem-art-2 { background-position: 0 100%; }
 .naval-gem-art-3 { background-position: 100% 100%; }
@@ -109,8 +109,8 @@
 .naval-price { display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; min-height: 32px; padding: 5px 10px; border: 1px solid #62889c; border-radius: 10px; color: #ffdb83; background: linear-gradient(#234353, #0c2535); font-size: 15px; font-weight: 800; box-shadow: inset 0 1px 0 #d4efff24; margin-top: auto; }
 .naval-product-badge { position: absolute; z-index: 1; top: 7px; left: 7px; border-radius: 13px; padding: 3px 6px; color: #002438; background: #3de3ed; font-size: 8px; font-weight: 800; }
 .naval-product-bonus { position: absolute; z-index: 1; right: 6px; top: 8px; font-size: 8px; color: #c7def1; }
-.naval-gem-card.is-best { grid-column: 1 / -1; min-height: 110px; align-items: flex-start; padding: 29px 13px 12px 44%; border-color: #b69b5b; }
-.naval-gem-card.is-best .naval-gem-art { position: absolute; left: 10px; top: 10px; width: 38%; height: 115px; }
+.naval-gem-card.is-best { grid-column: 1 / -1; min-height: 150px; align-items: flex-start; padding: 29px 13px 12px 44%; border-color: #b69b5b; }
+.naval-gem-card.is-best .naval-gem-art { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); width: 38%; max-width: 144px; height: auto; margin: 0; }
 .naval-gem-card.is-best .naval-price { width: 100%; }
 .naval-gem-card.is-best .naval-gem-name { margin-bottom: 7px; }
 .naval-gem-card.is-best .naval-product-badge { background: #ffda8a; }

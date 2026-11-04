@@ -35,6 +35,9 @@ quadrants; buttons and all text remain HTML, not baked into the artwork.
 product-art atlas. These SVG containers embed compressed WebP images, so the
 artwork can be stored through the GitHub text-tree API without external hosting. Product illustrations are decorative;
 quantities, prices, purchase IDs and ownership state remain data-driven.
+The gem atlas has a true alpha background and tightly framed objects. Square
+sprite cells preserve their proportions; the art uses no painted backplates or
+edge masks and scales up to 144 CSS pixels inside the product cards.
 
 ## Run locally
 
