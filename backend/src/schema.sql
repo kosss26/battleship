@@ -110,3 +110,12 @@ CREATE TABLE IF NOT EXISTS season_results (
 );
 CREATE INDEX IF NOT EXISTS season_results_user_idx ON season_results (user_id, season DESC);
 CREATE INDEX IF NOT EXISTS games_ranked_idx ON games (ended_at) WHERE mode = 'ranked';
+
+CREATE TABLE IF NOT EXISTS ad_views (
+  id         BIGSERIAL PRIMARY KEY,
+  user_id    BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  placement  TEXT NOT NULL,
+  verified   BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ad_views_created_idx ON ad_views (created_at DESC);

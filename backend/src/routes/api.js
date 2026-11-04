@@ -14,6 +14,7 @@ import { listFriends, requestFriend, acceptFriend, removeFriend, makeFriends, fr
 import { notifyById, clearBlocked } from '../services/notify.js'
 import { START_PARAM } from '../../../shared/catalog.js'
 import adminRouter from './admin.js'
+import { adsEnabled, verifiedMode, startAd, completeAd, logAdView, adsgramCallback } from '../services/ads.js'
 import { unclaimedResult, seasonHistory, claimSeason, currentSeasonProgress } from '../services/seasons.js'
 import { seasonInfo } from '../../../shared/catalog.js'
 
@@ -79,8 +80,15 @@ router.get('/config', (req, res) => {
     devLogin: config.allowDevLogin,
     payments: !!config.botToken,
     legal: { operator: config.legalOperator, contact: config.legalContact },
+    ads: { enabled: adsEnabled(), blockId: config.adsgramBlockId || null, fake: adsEnabled() && !config.adsgramBlockId },
   })
 })
+
+// Adsgram "Reward URL": https://<api>/api/ads/adsgram-reward?userid=[userId]&secret=<ADSGRAM_REWARD_SECRET>
+router.get('/ads/adsgram-reward', wrap(async (req, res) => {
+  const ok = await adsgramCallback(Number(req.query.userid), req.query.secret)
+  res.status(ok ? 200 : 403).json({ ok })
+}))
 
 router.post('/telegram/webhook', (req, res) => {
   if (config.webhookSecret && req.get('X-Telegram-Bot-Api-Secret-Token') !== config.webhookSecret) {
@@ -138,6 +146,21 @@ router.post('/me/season/claim', wrap(async (req, res) => {
   const profile = { ...selfView(user), seasonResult: await unclaimedResult(req.userId) }
   notifyProfile(req.userId, profile)
   res.json({ profile, summary })
+}))
+
+/* ───────── rewarded ads ───────── */
+
+router.post('/me/ads/start', wrap(async (req, res) => {
+  const { result } = await mutateUser(req.userId, (u) => startAd(u, String(req.body?.placement || '')))
+  res.json(result)
+}))
+
+router.post('/me/ads/complete', wrap(async (req, res) => {
+  const { user, result } = await mutateUser(req.userId, (u) => completeAd(u, String(req.body?.sessionId || '')))
+  logAdView(req.userId, result.placement, result.verified)
+  const profile = selfView(user)
+  notifyProfile(req.userId, profile)
+  res.json({ profile, summary: result.summary })
 }))
 
 /* ───────── account deletion ───────── */

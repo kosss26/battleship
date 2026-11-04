@@ -270,7 +270,8 @@ export const ACHIEVEMENTS = [
   { id: 'friends_10', stat: 'referrals', goal: 10, icon: '📣', reward: { gems: 60 }, title: { ru: 'Адмирал флотилии', en: 'Flotilla Admiral' }, desc: { ru: 'Пригласи 10 друзей', en: 'Invite 10 friends' } },
   { id: 'duels_5', stat: 'duels', goal: 5, icon: '🫱', reward: { gold: 250 }, title: { ru: 'Свои люди', en: 'Old Friends' }, desc: { ru: 'Сыграй 5 дуэлей с друзьями', en: 'Play 5 duels with friends' } },
   { id: 'camp_10', stat: 'campaignStars', goal: 10, icon: '🗺️', reward: { gold: 300 }, title: { ru: 'Первооткрыватель', en: 'Explorer' }, desc: { ru: 'Собери 10 звёзд кампании', en: 'Earn 10 campaign stars' } },
-  { id: 'camp_90', stat: 'campaignStars', goal: 90, icon: '🌟', reward: { gems: 120 }, title: { ru: 'Покоритель морей', en: 'Sea Conqueror' }, desc: { ru: 'Собери все 90 звёзд кампании', en: 'Earn all 90 campaign stars' } },
+  { id: 'camp_90', stat: 'campaignStars', goal: 90, icon: '🌟', reward: { gems: 120 }, title: { ru: 'Покоритель морей', en: 'Sea Conqueror' }, desc: { ru: 'Собери 90 звёзд кампании', en: 'Earn 90 campaign stars' } },
+  { id: 'camp_180', stat: 'campaignStars', goal: 180, icon: '🐙', reward: { gems: 250 }, title: { ru: 'Укротитель Кракена', en: 'Kraken Tamer' }, desc: { ru: 'Собери все 180 звёзд кампании', en: 'Earn all 180 campaign stars' } },
   { id: 'collector', stat: 'cosmetics', goal: 8, icon: '🎨', reward: { gems: 40 }, title: { ru: 'Коллекционер', en: 'Collector' }, desc: { ru: 'Собери 8 предметов коллекции', en: 'Own 8 collection items' } },
   { id: 'daily_7', stat: 'bestDailyStreak', goal: 7, icon: '📅', reward: { gems: 25 }, title: { ru: 'Верный курс', en: 'Steady Course' }, desc: { ru: 'Заходи 7 дней подряд', en: 'Log in 7 days in a row' } },
 ]
@@ -281,24 +282,68 @@ export const CHAPTERS = [
   { id: 1, icon: '🏝️', name: { ru: 'Тихая бухта', en: 'Quiet Bay' }, color: '#38bdf8' },
   { id: 2, icon: '🌫️', name: { ru: 'Туманный пролив', en: 'Misty Strait' }, color: '#a78bfa' },
   { id: 3, icon: '🌋', name: { ru: 'Огненный архипелаг', en: 'Fire Archipelago' }, color: '#fb923c' },
+  { id: 4, icon: '🪸', name: { ru: 'Туманные рифы', en: 'Fog Reefs' }, color: '#94a3b8' },
+  { id: 5, icon: '⛈️', name: { ru: 'Штормовой фронт', en: 'Storm Front' }, color: '#facc15' },
+  { id: 6, icon: '🐙', name: { ru: 'Логово Кракена', en: "Kraken's Lair" }, color: '#e879f9' },
+]
+
+/**
+ * Special rules for campaign missions 31–60. All are enforced by the server.
+ *  fog        — your misses vanish from the map after FOG_MEMORY of your shots
+ *  noHalo     — cells around sunk ships are not auto-marked
+ *  ammo       — limited number of shots; running out is a defeat
+ *  blitz      — BLITZ_MS per turn, then a random shot is fired for you
+ *  enemyFirst — the enemy opens fire
+ *  noBoosters — boosters are disabled
+ */
+export const MODIFIERS = {
+  fog: { icon: '🌫️', name: { ru: 'Туман войны', en: 'Fog of War' }, desc: { ru: 'Ваши промахи исчезают с карты через 5 выстрелов', en: 'Your misses fade from the map after 5 shots' } },
+  noHalo: { icon: '🙈', name: { ru: 'Без подсказок', en: 'No Hints' }, desc: { ru: 'Клетки вокруг потопленных кораблей не отмечаются', en: 'Cells around sunk ships are not marked' } },
+  ammo: { icon: '🎯', name: { ru: 'Ограниченный боезапас', en: 'Limited Ammo' }, desc: { ru: 'Всего {n} выстрелов — не успели, поражение', en: 'Only {n} shots — run out and you lose' } },
+  blitz: { icon: '⚡', name: { ru: 'Блиц', en: 'Blitz' }, desc: { ru: '10 секунд на ход', en: '10 seconds per turn' } },
+  enemyFirst: { icon: '🏴‍☠️', name: { ru: 'Засада', en: 'Ambush' }, desc: { ru: 'Противник стреляет первым', en: 'The enemy fires first' } },
+  noBoosters: { icon: '🚫', name: { ru: 'Без бустеров', en: 'No Boosters' }, desc: { ru: 'Бустеры недоступны', en: 'Boosters are disabled' } },
+}
+export const FOG_MEMORY = 5
+export const BLITZ_MS = 10_000
+
+// Missions 31–60: [modifiers] per mission, in order
+const HARD_MISSIONS = [
+  // Chapter 4 — Fog Reefs
+  { noHalo: 1 }, { fog: 1 }, { noHalo: 1 }, { fog: 1, enemyFirst: 1 }, { noHalo: 1, enemyFirst: 1 },
+  { fog: 1 }, { fog: 1, noHalo: 1 }, { noHalo: 1, noBoosters: 1 }, { fog: 1, enemyFirst: 1 }, { fog: 1, noHalo: 1, enemyFirst: 1 },
+  // Chapter 5 — Storm Front
+  { blitz: 1 }, { ammo: 80 }, { blitz: 1, enemyFirst: 1 }, { ammo: 76 }, { blitz: 1, noHalo: 1 },
+  { ammo: 74, enemyFirst: 1 }, { blitz: 1, fog: 1 }, { ammo: 74, noHalo: 1 }, { blitz: 1, ammo: 76 }, { blitz: 1, ammo: 72, enemyFirst: 1 },
+  // Chapter 6 — Kraken's Lair
+  { fog: 1, ammo: 80 }, { noHalo: 1, blitz: 1 }, { fog: 1, noHalo: 1, noBoosters: 1 }, { ammo: 72, fog: 1 }, { blitz: 1, fog: 1, noHalo: 1 },
+  { ammo: 70, enemyFirst: 1, noBoosters: 1 }, { fog: 1, noHalo: 1, ammo: 76 }, { blitz: 1, ammo: 72, fog: 1 },
+  { fog: 1, noHalo: 1, blitz: 1, enemyFirst: 1 }, { fog: 1, noHalo: 1, ammo: 74, enemyFirst: 1, noBoosters: 1 },
 ]
 export const LEVELS_PER_CHAPTER = 10
 
 /**
- * Level n (1..30). Stars: 1 = win, 2 = win within `shots2` shots, 3 = win within `shots3` shots.
+ * Level n (1..60). Stars: 1 = win, 2 = win within `shots2` shots, 3 = win within `shots3` shots.
+ * Missions 31+ carry special rules (`mods`).
  */
 export const CAMPAIGN = Array.from({ length: CHAPTERS.length * LEVELS_PER_CHAPTER }, (_, i) => {
   const n = i + 1
   const chapter = Math.ceil(n / LEVELS_PER_CHAPTER)
-  const ai = n <= 6 ? 'easy' : n <= 14 ? 'medium' : n <= 24 ? 'hard' : 'expert'
+  const ai = n <= 6 ? 'easy' : n <= 14 ? 'medium' : n <= 24 ? 'hard' : n <= 30 ? 'expert' : n <= 40 ? 'hard' : 'expert'
   const boss = n % LEVELS_PER_CHAPTER === 0
+  const raw = n > 30 ? HARD_MISSIONS[n - 31] : {}
+  const mods = Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, k === 'ammo' ? v : true]))
+  // Hidden information costs shots, so the star thresholds are looser in the second half
+  const shots2 = n > 30 ? Math.min(58, (mods.ammo || 99) - 8) : Math.max(42, 75 - n)
+  const shots3 = n > 30 ? Math.min(50, (mods.ammo || 99) - 16) : Math.max(34, 60 - n)
   return {
     n,
     chapter,
     ai,
     boss,
-    shots2: Math.max(42, 75 - n),
-    shots3: Math.max(34, 60 - n),
+    mods,
+    shots2,
+    shots3,
     reward: {
       gold: 60 + n * 12 + (boss ? 200 : 0),
       xp: 50 + n * 6,
@@ -383,3 +428,15 @@ export function seasonReward(rating, place) {
 
 /** Soft reset applied at the start of a new season */
 export const seasonResetRating = (rating) => Math.round(1000 + (rating - 1000) / 2)
+
+/* ───────────────────────── Rewarded ads ───────────────────────── */
+
+export const AD_PLACEMENTS = {
+  gold: { daily: 5, reward: { gold: 100 } }, // free gold (home, shop)
+  booster: { daily: 2, reward: { boosters: { radar: 1 } } }, // free booster (shop)
+  double: { daily: 5, maxGold: 300 }, // double the gold from the last battle (results screen)
+}
+export const AD_DAILY_LIMIT = 10 // all placements together
+export const AD_COOLDOWN_MS = 20_000
+export const AD_MIN_WATCH_MS = 4_000 // a claim faster than this after start is rejected
+export const AD_DOUBLE_WINDOW_MS = 15 * 60_000

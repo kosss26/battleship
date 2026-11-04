@@ -11,6 +11,7 @@ import { Avatar, Coin, Gem, Progress, RankBadge, Sheet, fmt, RewardChips, Stars 
 import { MATCH_REWARDS, QUESTS, PASS_XP_PER_TIER, PASS_TIERS, DAILY_REWARDS, CAMPAIGN } from '@shared/catalog.js'
 import { buyStars } from './Shop.jsx'
 import { SeasonChip } from '../components/Season.jsx'
+import { AdButton, useAdsEnabled } from '../components/Ads.jsx'
 
 export function TopBar() {
   const p = useStore((s) => s.profile)
@@ -121,6 +122,7 @@ export default function Home() {
   const p = useStore((s) => s.profile)
   const mutate = useStore((s) => s.mutate)
   const [aiOpen, setAiOpen] = useState(false)
+  const adsEnabled = useAdsEnabled()
 
   const cleared = Object.keys(p.campaign).length
   const stars = Object.values(p.campaign).reduce((a, b) => a + b, 0)
@@ -164,7 +166,7 @@ export default function Home() {
       {/* Modes */}
       <div className="mb-3 grid grid-cols-2 gap-3">
         <ModeCard icon={Bot} title={t('vs_ai')} sub={t('vs_ai_sub')} color="from-emerald-300 to-teal-500" onClick={() => setAiOpen(true)} />
-        <ModeCard icon={Map} title={t('campaign')} sub={t('campaign_sub', { n: cleared })} color="from-amber-300 to-orange-500" onClick={() => navigate('/campaign')}>
+        <ModeCard icon={Map} title={t('campaign')} sub={t('campaign_sub', { n: cleared, total: CAMPAIGN.length })} color="from-amber-300 to-orange-500" onClick={() => navigate('/campaign')}>
           <div className="mt-2 flex items-center gap-1 text-xs font-bold text-amber-200">⭐ {stars}/{CAMPAIGN.length * 3}</div>
         </ModeCard>
       </div>
@@ -185,6 +187,18 @@ export default function Home() {
           </div>
           <span className="btn-sm bg-amber-300 text-ink-950">{t('claim')}</span>
         </motion.button>
+      )}
+
+      {/* Free gold for an ad */}
+      {adsEnabled && (p.ads?.left?.gold ?? 0) > 0 && (
+        <div className="glass mt-3 flex items-center gap-3 p-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-300 to-teal-500 text-2xl">📺</div>
+          <div className="flex-1">
+            <div className="font-extrabold">{t('ad_free_gold')}</div>
+            <div className="text-xs text-slate-400">{t('ad_left', { n: p.ads.left.gold })}</div>
+          </div>
+          <AdButton placement="gold" compact>+100 🪙</AdButton>
+        </div>
       )}
 
       {/* Starter offer */}

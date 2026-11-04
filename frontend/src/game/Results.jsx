@@ -11,6 +11,7 @@ import { shareLink } from '../lib/telegram.js'
 import { startAi, startCampaign } from '../lib/play.js'
 import { RewardChips, Stars, Avatar } from '../components/ui.jsx'
 import Board from '../components/Board.jsx'
+import { AdButton } from '../components/Ads.jsx'
 import { THEMES, SHIP_SKINS } from '@shared/catalog.js'
 
 function Confetti() {
@@ -48,6 +49,7 @@ export default function Results({ over }) {
   const [rematchWait, setRematchWait] = useState(false)
   const [showBoard, setShowBoard] = useState(false)
   const [friendSent, setFriendSent] = useState(false)
+  const doubleGold = useStore((s) => s.profile?.ads?.doubleGold || 0)
   const game = over.state
   const { won, rewards, extra, myStats, durationMs, reason } = over
   const accuracy = myStats.shots ? Math.round((myStats.hits / myStats.shots) * 100) : 0
@@ -171,6 +173,9 @@ export default function Results({ over }) {
               </div>
             ) : null}
             <RewardChips reward={rewards} size="lg" />
+            {doubleGold > 0 && (
+              <AdButton placement="double" className="mt-3 w-full">{t('ad_double', { n: doubleGold })}</AdButton>
+            )}
             {rewards?.levelUps?.length > 0 && (
               <div className="mt-3 rounded-2xl bg-cyan-400/10 py-2 text-center text-sm font-bold text-cyan-200">⬆️ {t('level_up', { n: rewards.levelUps.at(-1) })}</div>
             )}

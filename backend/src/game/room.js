@@ -4,7 +4,7 @@ import {
   inBounds, CELL, publicShip,
 } from '../../../shared/engine.js'
 import { chooseShot } from '../../../shared/ai.js'
-import { BOOSTERS_PER_MATCH } from '../../../shared/catalog.js'
+import { BOOSTERS_PER_MATCH, FOG_MEMORY, BLITZ_MS } from '../../../shared/catalog.js'
 
 export const TIMING = {
   placementPvp: 60_000,
@@ -40,12 +40,13 @@ export function botProfile(difficulty, lang = 'ru') {
  * The room never trusts the client: it owns both boards and validates every action.
  */
 export class GameRoom {
-  constructor({ mode, seats, difficulty = null, level = null, duelCode = null, hooks }) {
+  constructor({ mode, seats, difficulty = null, level = null, duelCode = null, mods = {}, hooks }) {
     this.id = crypto.randomUUID()
     this.mode = mode // ai | campaign | ranked | duel
     this.difficulty = difficulty
     this.level = level
     this.duelCode = duelCode
+    this.mods = mods // campaign special rules, see MODIFIERS in the catalogue
     this.hooks = hooks // { emit(userId, event, payload), onFinish(room), onClose(room) }
     this.phase = 'placement'
     this.turn = 0
@@ -71,6 +72,8 @@ export class GameRoom {
       boostersUsed: 0,
       scans: [],
       lastEmote: 0,
+      missAt: new Map(), // fog: cell key -> shooter's shot number when it was last seen
+      haloHidden: new Set(), // noHalo: auto-marked cells the shooter is not shown
     }))
     if (this.timed) this.setDeadline(TIMING.placementPvp, () => this.placementTimeout())
     else this.touch()
@@ -82,7 +85,32 @@ export class GameRoom {
   }
 
   get boostersAllowed() {
-    return this.mode === 'ai' || this.mode === 'campaign'
+    return (this.mode === 'ai' || this.mode === 'campaign') && !this.mods.noBoosters
+  }
+
+  /** Per-turn time limit for a human, or null */
+  get turnMs() {
+    if (this.timed) return TIMING.turnPvp
+    if (this.mods.blitz) return BLITZ_MS
+    return null
+  }
+
+  /* ───────── hidden information (fog / noHalo) ───────── */
+
+  isHidden(i, r, c) {
+    const seat = this.seats[i]
+    const key = r * 10 + c
+    if (this.mods.noHalo && seat.haloHidden.has(key)) return true
+    if (this.mods.fog && seat.missAt.has(key) && seat.shots - seat.missAt.get(key) >= FOG_MEMORY) return true
+    return false
+  }
+
+  /** The enemy board as seat i is allowed to see it */
+  visibleShots(i) {
+    const board = this.seats[1 - i].board
+    if (!board) return null
+    if (!this.mods.fog && !this.mods.noHalo) return board.shots
+    return board.shots.map((row, r) => row.map((v, c) => (v === CELL.MISS && this.isHidden(i, r, c) ? CELL.EMPTY : v)))
   }
 
   seatOf(userId) {
@@ -152,7 +180,8 @@ export class GameRoom {
     this.startedAt = Date.now()
     // Humans move first against bots; random otherwise
     const botSeat = this.seats.findIndex((s) => s.kind === 'bot')
-    this.turn = botSeat >= 0 ? 1 - botSeat : Math.random() < 0.5 ? 0 : 1
+    if (botSeat >= 0) this.turn = this.mods.enemyFirst ? botSeat : 1 - botSeat
+    else this.turn = Math.random() < 0.5 ? 0 : 1
     this.nextTurn(false)
   }
 
@@ -167,8 +196,8 @@ export class GameRoom {
       this.deadline = null
       const delay = process.env.BOT_FAST ? 5 : 650 + Math.random() * 900
       this.timers.bot = setTimeout(() => this.botMove(), delay)
-    } else if (this.timed) {
-      this.setDeadline(TIMING.turnPvp, () => this.turnTimeout())
+    } else if (this.turnMs) {
+      this.setDeadline(this.turnMs, () => this.turnTimeout())
     } else {
       this.deadline = null
       this.touch()
@@ -188,9 +217,11 @@ export class GameRoom {
     if (this.phase !== 'battle') return
     const seat = this.seats[this.turn]
     seat.timeouts++
-    if (seat.timeouts >= TIMING.maxTimeouts) return this.finish(1 - this.turn, 'timeout')
-    const cells = emptyCells(this.seats[1 - this.turn].board.shots)
+    // In PvP three missed turns forfeit the game; in blitz missions you just lose the shot
+    if (this.timed && seat.timeouts >= TIMING.maxTimeouts) return this.finish(1 - this.turn, 'timeout')
+    const cells = emptyCells(this.visibleShots(this.turn))
     const [r, c] = cells[Math.floor(Math.random() * cells.length)]
+    if (this.seats[1 - this.turn].board.shots[r][c] !== CELL.EMPTY) return this.wastedShot(this.turn, r, c, { auto: true })
     this.applyShot(this.turn, [[r, c]], { auto: true })
   }
 
@@ -199,10 +230,39 @@ export class GameRoom {
     if (i < 0 || this.phase !== 'battle') return { error: 'bad_phase' }
     if (this.turn !== i) return { error: 'not_your_turn' }
     if (!Number.isInteger(r) || !Number.isInteger(c) || !inBounds(r, c)) return { error: 'bad_cell' }
-    if (this.seats[1 - i].board.shots[r][c] !== CELL.EMPTY) return { error: 'already_shot' }
+    const v = this.seats[1 - i].board.shots[r][c]
+    if (v !== CELL.EMPTY) {
+      // Firing into a cell hidden by fog / noHalo is allowed — it is a wasted miss
+      if (v === CELL.MISS && this.isHidden(i, r, c)) {
+        this.seats[i].timeouts = 0
+        this.wastedShot(i, r, c)
+        return { ok: true }
+      }
+      return { error: 'already_shot' }
+    }
     this.seats[i].timeouts = 0
     this.applyShot(i, [[r, c]])
     return { ok: true }
+  }
+
+  /** A shot into an already-known (but hidden) miss: costs a shot and the turn, reveals the cell again */
+  wastedShot(i, r, c, meta = {}) {
+    const shooter = this.seats[i]
+    shooter.shots++
+    shooter.chain = 0
+    const key = r * 10 + c
+    shooter.haloHidden.delete(key)
+    shooter.missAt.set(key, shooter.shots)
+    this.moves.push({ s: i, r, c, x: 'w', t: Date.now() - (this.startedAt || this.createdAt) })
+    for (let k = 0; k < this.seats.length; k++) {
+      this.emitTo(this.seats[k], 'game:shot', { by: k === i ? 'me' : 'opp', results: [{ r, c, result: 'miss' }], wasted: true, ...meta })
+    }
+    if (this.outOfAmmo(i)) return this.finish(1 - i, 'out_of_ammo')
+    this.nextTurn(true)
+  }
+
+  outOfAmmo(i) {
+    return !!this.mods.ammo && this.seats[i].kind === 'human' && this.seats[i].shots >= this.mods.ammo
   }
 
   /**
@@ -277,16 +337,23 @@ export class GameRoom {
       }
       results.push(res)
       this.moves.push({ s: i, r, c, x: res.result[0], t: Date.now() - (this.startedAt || this.createdAt) })
+      if (shooter.kind === 'human') {
+        if (res.result === 'miss') shooter.missAt.set(r * 10 + c, shooter.shots)
+        if (res.around && this.mods.noHalo) for (const [hr, hc] of res.around) shooter.haloHidden.add(hr * 10 + hc)
+      }
     }
     const anyHit = results.some((r) => r.result !== 'miss')
     for (let k = 0; k < this.seats.length; k++) {
+      // With noHalo the shooter is not told which cells around a sunk ship are empty
+      const hideHalo = this.mods.noHalo && k === i
       this.emitTo(this.seats[k], 'game:shot', {
         by: k === i ? 'me' : 'opp',
-        results: results.map(({ r, c, result, ship, around }) => ({ r, c, result, ship, around })),
+        results: results.map(({ r, c, result, ship, around }) => ({ r, c, result, ship, around: hideHalo ? undefined : around })),
         ...meta,
       })
     }
     if (allSunk(target)) return this.finish(i, 'victory')
+    if (this.outOfAmmo(i)) return this.finish(1 - i, 'out_of_ammo')
     this.nextTurn(!anyHit)
   }
 
@@ -366,6 +433,9 @@ export class GameRoom {
       deadline: this.deadline,
       serverNow: Date.now(),
       boostersAllowed: this.boostersAllowed,
+      mods: this.mods,
+      turnMs: this.turnMs,
+      ammoLeft: this.mods.ammo ? Math.max(0, this.mods.ammo - me.shots) : null,
       boostersLeft: this.boostersAllowed ? Math.max(0, BOOSTERS_PER_MATCH - me.boostersUsed) : 0,
       me: {
         profile: me.profile,
@@ -380,7 +450,7 @@ export class GameRoom {
         profile: opp.profile,
         ready: opp.ready,
         connected: opp.connected,
-        shots: opp.board ? opp.board.shots : null,
+        shots: over ? (opp.board ? opp.board.shots : null) : this.visibleShots(i),
         sunk: opp.board ? sunkShips(opp.board) : [],
         remaining: opp.board ? remainingSizes(opp.board) : null,
         ships: over && opp.ships ? opp.ships.map(publicShip) : null,

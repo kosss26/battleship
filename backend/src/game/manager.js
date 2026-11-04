@@ -281,6 +281,7 @@ export function initSockets(server) {
         mode,
         difficulty: mode === 'ai' ? diff : null,
         level: mode === 'campaign' ? Number(level) : null,
+        mods: mode === 'campaign' ? CAMPAIGN.find((l) => l.n === Number(level)).mods : {},
         seats: [{ kind: 'human', userId, profile: publicProfile(u) }, { kind: 'bot', profile: bot }],
       })
       return { room: r.id }

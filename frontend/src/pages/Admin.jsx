@@ -44,7 +44,7 @@ function Overview() {
   const navigate = useNavigate()
   const { data, error, reload } = useLoad(() => api('/admin/dashboard'))
   if (!data) return <Loading error={error} />
-  const { users, payments, live, gamesToday, daily, suspicious = [] } = data
+  const { users, payments, live, gamesToday, daily, suspicious = [], ads } = data
   const modes = { ai: 'ИИ', campaign: 'Кампания', ranked: 'Рейтинг', duel: 'Дуэли' }
   return (
     <div>
@@ -87,6 +87,15 @@ function Overview() {
                 <span className="ml-auto whitespace-nowrap text-xs text-slate-400">{s.games} боёв · {s.early} сдач</span>
               </div>
             ))}
+          </div>
+        </Card>
+      )}
+      {ads && (
+        <Card title="Реклама (Adsgram)">
+          <div className="grid grid-cols-3 gap-2">
+            <Tile label="Просмотров 24ч" value={fmt(ads.day)} accent="text-emerald-300" />
+            <Tile label="За 7 дней" value={fmt(ads.week)} />
+            <Tile label="Зрителей 24ч" value={fmt(ads.viewers_day)} />
           </div>
         </Card>
       )}

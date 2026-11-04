@@ -4,7 +4,7 @@ import { config } from '../config.js'
 import {
   ACHIEVEMENTS, QUESTS, questsForDay, levelFromXp, levelUpReward, rankFor, seasonId, seasonEnds,
   PASS_TIERS, PASS_XP_PER_TIER, DAILY_REWARDS, DEFAULT_EQUIPPED, DEFAULT_OWNED, findCosmetic,
-  BOOSTERS, CAMPAIGN, passRewards, DUEL_REWARDS_PER_DAY,
+  BOOSTERS, CAMPAIGN, passRewards, DUEL_REWARDS_PER_DAY, AD_PLACEMENTS, AD_DAILY_LIMIT, AD_DOUBLE_WINDOW_MS,
 } from '../../../shared/catalog.js'
 
 export const today = (d = new Date()) => d.toISOString().slice(0, 10)
@@ -315,6 +315,15 @@ export function publicProfile(u) {
   }
 }
 
+export function adsView(d) {
+  const ads = d.ads?.day === today() ? d.ads : { counts: {}, total: 0 }
+  const totalLeft = Math.max(0, AD_DAILY_LIMIT - (ads.total || 0))
+  const left = Object.fromEntries(Object.entries(AD_PLACEMENTS).map(([k, p]) => [k, Math.min(totalLeft, Math.max(0, p.daily - (ads.counts?.[k] || 0)))]))
+  const lm = d.lastMatch
+  const doubleGold = lm && !lm.doubled && Date.now() - lm.at < AD_DOUBLE_WINDOW_MS ? Math.min(lm.gold, AD_PLACEMENTS.double.maxGold) : 0
+  return { left, doubleGold, cooldownUntil: (d.ads?.lastAt || 0) }
+}
+
 export const isAdmin = (u) => !!u?.tg_id && config.adminIds.includes(String(u.tg_id))
 
 export function selfView(u) {
@@ -349,6 +358,7 @@ export function selfView(u) {
     settings: d.settings,
     purchases: d.purchases,
     isAdmin: isAdmin(u),
+    ads: adsView(d),
     onboarded: !!d.onboarded || d.stats.games > 0,
     duelRewardsLeft: Math.max(0, DUEL_REWARDS_PER_DAY - (d.duelRewards.day === day ? d.duelRewards.count : 0)),
   }

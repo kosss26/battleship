@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Lock } from 'lucide-react'
-import { CAMPAIGN, CHAPTERS, LEVELS_PER_CHAPTER, CAMPAIGN_STAR_GOLD } from '@shared/catalog.js'
+import { CAMPAIGN, CHAPTERS, LEVELS_PER_CHAPTER, CAMPAIGN_STAR_GOLD, MODIFIERS } from '@shared/catalog.js'
 import { useStore } from '../store/app.js'
 import { useT, useL } from '../lib/i18n.js'
 import { haptic } from '../lib/telegram.js'
@@ -61,6 +61,9 @@ export default function Campaign() {
                       {open ? (lv.boss ? '☠' : lv.n) : <Lock size={18} />}
                     </div>
                     <Stars n={stars} size={11} />
+                    {Object.keys(lv.mods).length > 0 && (
+                      <div className="-mt-0.5 flex gap-px text-[10px] leading-none">{Object.keys(lv.mods).map((k) => <span key={k}>{MODIFIERS[k].icon}</span>)}</div>
+                    )}
                   </motion.button>
                 )
               })}
@@ -76,6 +79,22 @@ export default function Campaign() {
               <span className="text-sm text-slate-400">{t('opponent')}</span>
               <span className="font-bold">{t(`diff_${sel.ai}`)}</span>
             </div>
+            {Object.keys(sel.mods).length > 0 && (
+              <div className="mb-4 rounded-2xl bg-amber-400/[0.07] p-3 ring-1 ring-amber-300/25">
+                <div className="label mb-2 text-amber-200">{t('mission_rules')}</div>
+                <div className="space-y-2">
+                  {Object.entries(sel.mods).map(([k, v]) => (
+                    <div key={k} className="flex items-start gap-2.5">
+                      <span className="text-xl leading-none">{MODIFIERS[k].icon}</span>
+                      <div>
+                        <div className="text-sm font-bold">{l(MODIFIERS[k].name)}</div>
+                        <div className="text-xs text-slate-400">{l(MODIFIERS[k].desc).replace('{n}', v)}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="mb-4 space-y-2">
               {[1, 2, 3].map((n) => (
                 <div key={n} className="flex items-center gap-3 rounded-2xl bg-white/[0.03] p-3">

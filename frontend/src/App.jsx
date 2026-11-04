@@ -8,6 +8,7 @@ import TabBar from './components/TabBar.jsx'
 import Toasts from './components/Toasts.jsx'
 import RewardPopup from './components/RewardPopup.jsx'
 import InvitePopup from './components/InvitePopup.jsx'
+import { FakeAd } from './components/Ads.jsx'
 import Onboarding from './components/Onboarding.jsx'
 import { setMusicMood } from './lib/music.js'
 import { Spinner } from './components/ui.jsx'
@@ -236,6 +237,7 @@ export default function App() {
       <RewardPopup />
       <InvitePopup />
       <SeasonResultPopup />
+      <FakeAd />
       <AnimatePresence>{showTutorial && location.pathname !== '/battle' && <Onboarding key="tutorial" />}</AnimatePresence>
     </div>
   )

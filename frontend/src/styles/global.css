@@ -150,3 +150,18 @@ textarea {
 .ping-ring {
   animation: ping-ring 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
+
+/* Fog of war over the enemy board (campaign rule) */
+.fog-overlay {
+  background:
+    radial-gradient(40% 30% at 20% 30%, rgba(203, 213, 225, 0.30), transparent 70%),
+    radial-gradient(35% 28% at 75% 60%, rgba(203, 213, 225, 0.26), transparent 70%),
+    radial-gradient(30% 25% at 45% 85%, rgba(203, 213, 225, 0.22), transparent 70%);
+  background-size: 200% 200%;
+  animation: fog-drift 14s ease-in-out infinite alternate;
+  mix-blend-mode: screen;
+}
+@keyframes fog-drift {
+  from { background-position: 0% 0%; }
+  to { background-position: 100% 100%; }
+}

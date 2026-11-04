@@ -27,6 +27,10 @@ export const config = {
   webhookSecret: env.WEBHOOK_SECRET || '',
   botPolling: env.BOT_POLLING === 'true',
   // Telegram ids with access to the admin panel: the project owner always, plus anyone in ADMIN_IDS
+  // Rewarded ads (Adsgram). Block id from partner.adsgram.ai; with ADSGRAM_REWARD_SECRET set,
+  // rewards are only granted after Adsgram calls our reward URL (server-to-server confirmation).
+  adsgramBlockId: env.ADSGRAM_BLOCK_ID || '',
+  adsgramRewardSecret: env.ADSGRAM_REWARD_SECRET || '',
   // Shown in the Terms and Privacy Policy
   legalOperator: env.LEGAL_OPERATOR || '',
   legalContact: env.LEGAL_CONTACT || '',

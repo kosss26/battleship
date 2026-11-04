@@ -88,6 +88,7 @@ export async function applyMatchResult(userId, r) {
     const premium = u.data.pass.premium && u.data.pass.season === seasonId()
     const gold = Math.round(base.gold * (premium ? 1 + PREMIUM_GOLD_BONUS : 1))
     grant(u, { gold, xp: base.xp, passXp: base.xp }, summary)
+    u.data.lastMatch = { gold, at: Date.now(), doubled: false }
 
     const accuracy = r.shots ? r.hits / r.shots : 0
     trackQuests(u, {

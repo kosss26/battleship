@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Flag, Smile, Crosshair } from 'lucide-react'
-import { THEMES, SHIP_SKINS, EFFECTS, BOOSTERS } from '@shared/catalog.js'
+import { THEMES, SHIP_SKINS, EFFECTS, BOOSTERS, MODIFIERS } from '@shared/catalog.js'
 import { inBounds } from '@shared/engine.js'
 import Board from '../components/Board.jsx'
 import { Avatar, Modal, Sheet } from '../components/ui.jsx'
@@ -159,7 +159,7 @@ export default function BattleView({ game }) {
             <FleetStatus remaining={game.opp.remaining} compact color="bg-rose-300" />
           </div>
         </div>
-        <TimerRing left={left} active={game.myTurn} total={30} />
+        <TimerRing left={left} active={game.myTurn} total={(game.turnMs || 30000) / 1000} />
         {game.mode !== 'ai' && game.mode !== 'campaign' && (
           <button className="rounded-2xl bg-white/[0.06] p-2.5" onClick={() => setEmoteOpen(true)} aria-label={t('emotes')}>
             <Smile size={20} />
@@ -202,8 +202,23 @@ export default function BattleView({ game }) {
         </AnimatePresence>
       </div>
 
+      {/* Mission rules */}
+      {game.mods && Object.keys(game.mods).length > 0 && (
+        <div className="mb-2 flex flex-wrap items-center gap-1.5">
+          {Object.keys(game.mods).filter((k) => k !== 'ammo').map((k) => (
+            <span key={k} className="chip bg-white/[0.06] text-[11px] text-slate-300">{MODIFIERS[k].icon} {l(MODIFIERS[k].name)}</span>
+          ))}
+          {game.ammoLeft != null && (
+            <span className={`chip ml-auto text-[12px] ${game.ammoLeft <= 10 ? 'bg-rose-500/20 text-rose-200' : 'bg-amber-300/15 text-amber-200'}`}>
+              🎯 {t('ammo_left', { n: game.ammoLeft })}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Enemy board */}
-      <div className={`transition-all duration-300 ${game.myTurn ? '' : 'opacity-80 saturate-[0.85]'}`}>
+      <div className={`relative transition-all duration-300 ${game.myTurn ? '' : 'opacity-80 saturate-[0.85]'}`}>
+        {game.mods?.fog && <div className="fog-overlay pointer-events-none absolute inset-0 z-[45] ml-[18px] mt-[18px] rounded-2xl" />}
         <Board
           shots={game.opp.shots}
           ships={enemyShips}

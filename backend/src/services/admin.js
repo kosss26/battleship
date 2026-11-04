@@ -46,6 +46,11 @@ export async function dashboard() {
   ])
   const users = u[0]
   const pay = p[0]
+  const { rows: adRows } = await query(`SELECT
+      count(*) FILTER (WHERE created_at > now() - interval '1 day')::int AS day,
+      count(*) FILTER (WHERE created_at > now() - interval '7 days')::int AS week,
+      count(DISTINCT user_id) FILTER (WHERE created_at > now() - interval '1 day')::int AS viewers_day
+    FROM ad_views`)
   const { rows: suspicious } = await query(
     `SELECT LEAST(p1, p2) AS a, GREATEST(p1, p2) AS b, count(*)::int AS games,
             count(*) FILTER (WHERE reason <> 'victory' AND shots < 12)::int AS early,
@@ -61,6 +66,7 @@ export async function dashboard() {
     gamesToday: Object.fromEntries(g.map((r) => [r.mode, r.n])),
     payments: { ...pay, conversion: users.total ? +((pay.payers / users.total) * 100).toFixed(2) : 0, arppu: pay.payers ? Math.round(pay.stars_total / pay.payers) : 0 },
     daily,
+    ads: adRows[0],
     suspicious: suspicious.map((r) => ({ a: Number(r.a), b: Number(r.b), aName: r.a_name, bName: r.b_name, games: r.games, early: r.early })),
     live: liveStats(),
     season: seasonId(),

@@ -12,6 +12,7 @@ import { Segmented, Price, Coin, Gem, fmt, Avatar } from '../components/ui.jsx'
 import Ship from '../components/Ship.jsx'
 import { Wallet } from './Home.jsx'
 import { LegalLinks } from '../components/LegalLinks.jsx'
+import { AdButton, useAdsEnabled } from '../components/Ads.jsx'
 
 /** Buys a Telegram Stars product: creates the invoice server-side and opens it */
 export async function buyStars(productId) {
@@ -38,6 +39,29 @@ export async function buyStars(productId) {
   }
 }
 
+function FreeForAds() {
+  const t = useT()
+  const enabled = useAdsEnabled()
+  const left = useStore((s) => s.profile?.ads?.left || {})
+  if (!enabled) return null
+  return (
+    <div className="glass mb-4 p-4">
+      <div className="mb-1 flex items-center gap-2 font-extrabold">📺 {t('ad_free_title')}</div>
+      <div className="mb-3 text-xs text-slate-400">{t('ad_free_sub')}</div>
+      <div className="space-y-2">
+        <div>
+          <AdButton placement="gold" className="w-full">{t('ad_watch_gold')}</AdButton>
+          <div className="mt-1 text-right text-[11px] text-slate-500">{t('ad_left', { n: left.gold ?? 0 })}</div>
+        </div>
+        <div>
+          <AdButton placement="booster" className="w-full">{t('ad_watch_booster')}</AdButton>
+          <div className="mt-1 text-right text-[11px] text-slate-500">{t('ad_left', { n: left.booster ?? 0 })}</div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function Offers() {
   const t = useT()
   const l = useL()
@@ -61,6 +85,8 @@ function Offers() {
           <span className="btn-sm relative bg-white px-5 text-ink-950">⭐ {starter.stars}</span>
         </motion.button>
       )}
+
+      <FreeForAds />
 
       <div className="label mb-2">{t('gems_packs')}</div>
       <div className="grid grid-cols-2 gap-3">
