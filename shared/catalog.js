@@ -116,6 +116,8 @@ export const EFFECTS = [
   { id: 'fx_plasma', rarity: 'rare', price: { gold: 2500 }, name: { ru: 'Плазма', en: 'Plasma' }, icon: '⚡', colors: ['#22d3ee', '#a78bfa'] },
   { id: 'fx_toxic', rarity: 'epic', price: { gems: 150 }, name: { ru: 'Токсин', en: 'Toxic' }, icon: '☢️', colors: ['#84cc16', '#facc15'] },
   { id: 'fx_firework', rarity: 'legendary', price: { gems: 350 }, name: { ru: 'Салют', en: 'Fireworks' }, icon: '🎆', colors: ['#f472b6', '#38bdf8', '#facc15'] },
+  { id: 'fx_arctic', rarity: 'epic', price: { gems: 180 }, model: 'arctic', name: { ru: 'Полярный залп', en: 'Polar Salvo' }, icon: '❄️', colors: ['#64c8ef', '#edfcff', '#478ebd'], description: { ru: 'Ледяной след снаряда, осколки инея, холодные всплески и пена при потоплении.', en: 'An ice-blue shell trail, frost fragments, cold splashes and a foaming sinking wake.' } },
+  { id: 'fx_imperial', rarity: 'legendary', price: { gems: 250 }, model: 'imperial', name: { ru: 'Адмиральский залп', en: 'Admiral’s Salvo' }, icon: '⚓', colors: ['#d5a956', '#fff1c9', '#67879f'], description: { ru: 'Латунный снаряд, тёплые искры, морской всплеск и дым над уходящим под воду корпусом.', en: 'A brass shell, warm sparks, a sea-water splash and smoke above the sinking hull.' } },
 ]
 
 /** Avatar frames */
@@ -143,13 +145,13 @@ export function findCosmetic(id) {
 /** Curated looks. Components use the normal cosmetic purchase/equip endpoints. */
 export const FLEET_COLLECTIONS = [
   {
-    id: 'arctic', themeId: 'theme_arctic', shipId: 'ship_arctic',
+    id: 'arctic', themeId: 'theme_arctic', shipId: 'ship_arctic', effectId: 'fx_arctic',
     name: { ru: 'Арктика', en: 'Arctic' },
     tagline: { ru: 'Холодная сталь. Чистая тактика.', en: 'Cold steel. Clear tactics.' },
     description: { ru: 'Зимний камуфляж, ледяные огни и холодные воды. Все корабли сохраняют обычные размеры и правила боя.', en: 'Winter camouflage, ice-blue lights and polar waters. Ship sizes and battle rules stay the same.' },
   },
   {
-    id: 'imperial', themeId: 'theme_imperial', shipId: 'ship_royal',
+    id: 'imperial', themeId: 'theme_imperial', shipId: 'ship_royal', effectId: 'fx_imperial',
     name: { ru: 'Императорский флот', en: 'Imperial Fleet' },
     tagline: { ru: 'Тёмная сталь. Золотые детали.', en: 'Midnight steel. Golden details.' },
     description: { ru: 'Латунная окантовка, тиковая палуба и глубокое синее море. Королевский скин остаётся доступен его владельцам.', en: 'Brass trim, a teak deck and deep blue water. Existing Royal owners keep their ship skin.' },

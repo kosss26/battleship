@@ -1,0 +1,41 @@
+.combat-impact, .combat-shell, .combat-sink { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+.combat-impact > span, .combat-shell > span, .combat-sink > span { position: absolute; }
+.combat-flash { width: 100%; height: 100%; border-radius: 50%; background: radial-gradient(circle, #fff 0 8%, var(--fx-light) 20%, var(--fx-color) 48%, transparent 72%); animation: combat-flash .48s ease-out both; }
+.combat-impact-ring { width: 85%; height: 85%; border: 1px solid var(--fx-light); border-radius: 50%; animation: combat-ring .68s ease-out both; }
+.combat-impact-mist { width: 100%; height: 100%; border-radius: 50%; background: radial-gradient(circle, var(--fx-smoke), transparent 70%); animation: combat-mist .9s ease-out both; }
+.combat-spark { width: 3px; height: 7px; border-radius: 1px; background: var(--fx-light); box-shadow: 0 0 4px var(--fx-color); animation: combat-spark .65s ease-out var(--delay) both; }
+.combat-impact-arctic .combat-spark { width: 5px; height: 5px; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+.combat-impact-imperial .combat-impact-mist { opacity: .65; }
+.combat-impact-sunk .combat-flash { animation-duration: .6s; }
+.combat-water-ring { width: 70%; height: 55%; border: 1px solid #bde7f5; border-radius: 50%; animation: combat-water .8s ease-out var(--delay) both; }
+.combat-splash-arctic .combat-water-ring { border-color: #e4faff; }
+.combat-droplet { width: 3px; height: 6px; border-radius: 50% 50% 40% 40%; background: #e7f9ff; animation: combat-droplet .58s ease-out var(--delay) both; }
+.combat-water-crown { width: 55%; height: 55%; border-radius: 50%; background: radial-gradient(circle, #e5f9ff90, #82bcda40 35%, transparent 65%); animation: combat-crown .45s ease-out both; }
+.combat-shell-shadow { width: 55%; height: 45%; border-radius: 50%; background: #00101b99; }
+.combat-shell-body { width: 38%; height: 55%; }
+.combat-shell-body > svg { position: relative; filter: drop-shadow(0 0 3px var(--fx-color)); }
+.combat-shell-trail { position: absolute; left: 38%; bottom: 65%; width: 25%; height: 230%; transform: rotate(-12deg); transform-origin: center bottom; background: linear-gradient(0deg, var(--fx-light), var(--fx-color) 35%, transparent); border-radius: 50%; opacity: .75; }
+.combat-burn-arctic { clip-path: polygon(50% 0, 73% 27%, 100% 50%, 73% 73%, 50% 100%, 27% 73%, 0 50%, 27% 27%); }
+.combat-burn-imperial { box-shadow: 0 0 6px #dfb77030; }
+.combat-sink { overflow: visible; }
+.combat-sink-ripple { inset: -7%; border: 1px solid #c8e7f1b3; border-radius: 45%; animation: combat-sink-wave 1.05s ease-out .12s both; }
+.combat-sink-ripple-late { animation-delay: .32s; }
+.combat-sink-mist { inset: -5%; background: radial-gradient(ellipse, #cde9f066, transparent 70%); border-radius: 50%; animation: combat-sink-mist 1.15s ease-out both; }
+.combat-sink-imperial .combat-sink-mist { background: radial-gradient(ellipse, #57748bb3, transparent 70%); }
+.combat-sink-arctic .combat-sink-ripple { border-color: #e4fbffcc; }
+.combat-sink-bubble { width: 4px; height: 4px; border: 1px solid #d9f5ff; border-radius: 50%; animation: combat-bubble .8s ease-out var(--delay) both; }
+.combat-sink-imperial .combat-sink-bubble:nth-child(even) { width: 3px; height: 3px; background: var(--fx-light); border-color: var(--fx-color); }
+@keyframes combat-flash { 0% { transform: scale(.25); opacity: 1; } 35% { opacity: .85; } 100% { transform: scale(2.2); opacity: 0; } }
+@keyframes combat-ring { from { transform: scale(.35); opacity: .9; } to { transform: scale(2.6); opacity: 0; } }
+@keyframes combat-mist { from { transform: translateY(0) scale(.5); opacity: .5; } to { transform: translateY(-10px) scale(2.2); opacity: 0; } }
+@keyframes combat-spark { from { transform: translate(0, 0) rotate(0); opacity: 1; } to { transform: translate(var(--dx), var(--dy)) rotate(var(--turn)); opacity: 0; } }
+@keyframes combat-water { from { transform: scale(.3); opacity: .8; } to { transform: scale(2.5); opacity: 0; } }
+@keyframes combat-droplet { 0% { transform: translate(0, 0) scale(.5); opacity: 1; } 55% { transform: translate(var(--dx), var(--dy)); opacity: .9; } 100% { transform: translate(var(--dx), 3px) scale(.3); opacity: 0; } }
+@keyframes combat-crown { from { transform: scale(.2); opacity: .9; } to { transform: scale(1.7); opacity: 0; } }
+@keyframes combat-sink-wave { from { transform: scale(.85); opacity: .8; } to { transform: scale(1.25); opacity: 0; } }
+@keyframes combat-sink-mist { 0% { transform: translateY(0) scale(.7); opacity: 0; } 25% { opacity: .7; } 100% { transform: translateY(-9px) scale(1.3); opacity: 0; } }
+@keyframes combat-bubble { from { transform: translateY(0) scale(.3); opacity: .9; } to { transform: translateY(-13px) scale(1.8); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .combat-impact *, .combat-shell *, .combat-sink *, .burn, .water-waves, .shake { animation: none !important; transition: none !important; }
+  .combat-impact, .combat-shell, .combat-sink { display: none; }
+}

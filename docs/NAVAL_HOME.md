@@ -71,9 +71,12 @@ The Collection tab includes Arctic and Imperial Fleet looks. The new items are
 `theme_arctic` (3,000 gold) and `ship_royal` (500 gems) retain their IDs, prices
 and ownership. Royal receives the detailed navy/brass ship model as a visual
 upgrade; the new Polar model uses winter camouflage and ice-blue lights.
+The separate `fx_arctic` (180 gems) and `fx_imperial` (250 gems) packs add
+matching shell, hit, miss and sinking animations in the existing effect slot.
 
-Each collection is a curated pair, not a new bundled product: its board and
-ship skin are bought and equipped separately through the existing endpoints.
+Each collection is a curated look, not a new bundled product: its board,
+ship skin and effect pack are bought and equipped separately through the
+existing endpoints. Existing effect ownership and prices are preserved.
 The native modal fitting room renders the real Board and Ship components with
 a deterministic valid fleet. Shots are simulated with the shared engine in
 local component state, with no matchmaking or socket calls. Opening/closing a
@@ -90,3 +93,29 @@ and browser checks for both collections, 320–768px layout, local-only preview,
 focus restoration, pending purchases, ownership/equip states and English text.
 Purchase errors are shown inside the fitting room, so insufficient-balance and
 retry feedback remain visible above the native modal backdrop.
+
+## Combat effects
+
+The fitting room has explicit Hit, Miss and Sinking replay buttons and can
+preview any effect individually on the currently equipped board and ships.
+Preview shots use local engine state only. Matching packs use bounded CSS
+particles, transform/opacity animation, foam, mist and a whole-hull sinking wake.
+The basic and other existing effects retain their original visual treatments.
+
+All shells use the same 300ms flight from `game/animation.js`; impact markers,
+splashes, hull reveal and sinking share the Board's landing clock. Previously
+known hits stay visible while a final shell is airborne, and a newly sunk enemy
+hull/auto-marked halo does not reveal early. Concurrent shots have independent
+timers; completed timers are removed and all work is cancelled on unmount.
+
+When the final ship sinks, results wait for the remaining presentation (at most
+300ms flight + 1400ms impact). The server's completed match state is never
+delayed or changed. Resignations, disconnects and reconnects do not wait for
+unavailable animation history. Reduced motion displays static result markers
+immediately, skips particles/sinking movement and removes the extra result delay.
+
+Validation: production build; pure cosmetic/engine/presentation-timing tests;
+Chromium checks for both packs and their legacy counterparts, independent rapid
+shots, pre-impact hit preservation, delayed wreck/halo reveal, transient cleanup,
+separate effect buy/equip/error-retry flow, 320–768px layout and reduced motion.
+GIF demonstrations are recordings of the running fitting room, not mockups.

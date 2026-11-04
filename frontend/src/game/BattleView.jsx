@@ -159,13 +159,13 @@ export default function BattleView({ game }) {
             <FleetStatus remaining={game.opp.remaining} compact color="bg-rose-300" />
           </div>
         </div>
-        <TimerRing left={left} active={game.myTurn} total={(game.turnMs || 30000) / 1000} />
+        {game.phase !== 'over' && <TimerRing left={left} active={game.myTurn} total={(game.turnMs || 30000) / 1000} />}
         {game.mode !== 'ai' && game.mode !== 'campaign' && (
-          <button className="rounded-2xl bg-white/[0.06] p-2.5" onClick={() => setEmoteOpen(true)} aria-label={t('emotes')}>
+          <button disabled={game.phase === 'over'} className="rounded-2xl bg-white/[0.06] p-2.5 disabled:opacity-40" onClick={() => setEmoteOpen(true)} aria-label={t('emotes')}>
             <Smile size={20} />
           </button>
         )}
-        <button className="rounded-2xl bg-white/[0.06] p-2.5" onClick={() => setResignOpen(true)} aria-label={t('resign')}>
+        <button disabled={game.phase === 'over'} className="rounded-2xl bg-white/[0.06] p-2.5 disabled:opacity-40" onClick={() => setResignOpen(true)} aria-label={t('resign')}>
           <Flag size={20} />
         </button>
       </div>
@@ -196,7 +196,7 @@ export default function BattleView({ game }) {
               }`}
             >
               {game.myTurn ? <Crosshair size={16} /> : <span className="h-2 w-2 animate-pulse rounded-full bg-amber-300" />}
-              {!oppConnected ? t('opp_disconnected', { s: graceLeft }) : game.myTurn ? (booster ? t('booster_pick', { name: l(BOOSTERS[booster.type].name) }) : t('your_turn')) : t('their_turn')}
+              {game.phase === 'over' ? t('fx_finishing') : !oppConnected ? t('opp_disconnected', { s: graceLeft }) : game.myTurn ? (booster ? t('booster_pick', { name: l(BOOSTERS[booster.type].name) }) : t('your_turn')) : t('their_turn')}
             </motion.div>
           )}
         </AnimatePresence>
@@ -221,6 +221,7 @@ export default function BattleView({ game }) {
         {game.mods?.fog && <div className="fog-overlay pointer-events-none absolute inset-0 z-[45] ml-[18px] mt-[18px] rounded-2xl" />}
         <Board
           shots={game.opp.shots}
+          hideNewSunk
           ships={enemyShips}
           skin={skin}
           effect={effect}

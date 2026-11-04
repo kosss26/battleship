@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Check, Eye, RotateCcw } from 'lucide-react'
-import { THEMES, SHIP_SKINS, FLEET_COLLECTIONS, findCosmetic } from '@shared/catalog.js'
+import { useReducedMotion } from 'framer-motion'
+import { X, Check, Eye, RotateCcw, Play } from 'lucide-react'
+import { THEMES, SHIP_SKINS, EFFECTS, FLEET_COLLECTIONS, findCosmetic } from '@shared/catalog.js'
 import { createBoard, randomFleet, fire, shipCells, occupancy } from '@shared/engine.js'
 import { mulberry32 } from '@shared/rng.js'
 import { useStore } from '../store/app.js'
@@ -9,6 +10,7 @@ import { useT, useL, errorText } from '../lib/i18n.js'
 import { Price } from './ui.jsx'
 import { NavalAction, NavalTabs } from './naval.jsx'
 import Board from './Board.jsx'
+import { SHELL_FLIGHT_MS, IMPACT_FX_MS } from '../game/animation.js'
 import '../styles/fleet-collections.css'
 
 function sampleBoard(marked = false) {
@@ -39,11 +41,19 @@ export default function FleetPreview({ selection, onClose }) {
   const [mode, setMode] = useState('fleet')
   const [board, setBoard] = useState(() => sampleBoard())
   const [error, setError] = useState(null)
+  const [feed, setFeed] = useState([])
+  const [boardKey, setBoardKey] = useState(0)
+  const [demoBusy, setDemoBusy] = useState(false)
+  const eventId = useRef(0)
+  const reducedMotion = useReducedMotion()
+  const boardRef = useRef(board)
+  const demoTimer = useRef(null)
   const theme = THEMES.find((x) => x.id === selection.themeId) || THEMES[0]
   const skin = SHIP_SKINS.find((x) => x.id === selection.shipId) || SHIP_SKINS[0]
   const collection = FLEET_COLLECTIONS.find((x) => x.id === selection.collectionId)
+  const effect = EFFECTS.find((x) => x.id === (selection.effectId || collection?.effectId || p.equipped.effect)) || EFFECTS[0]
   const items = useMemo(() => collection
-    ? [findCosmetic(collection.themeId), findCosmetic(collection.shipId)]
+    ? [findCosmetic(collection.themeId), findCosmetic(collection.shipId), findCosmetic(collection.effectId)].filter(Boolean)
     : [findCosmetic(selection.itemId)].filter(Boolean), [collection, selection.itemId])
   const title = collection ? l(collection.name) : l(items[0]?.item.name)
 
@@ -55,19 +65,50 @@ export default function FleetPreview({ selection, onClose }) {
     node.showModal()
     return () => {
       node.close()
+      clearTimeout(demoTimer.current)
       document.body.style.overflow = overflow
       if (previous instanceof HTMLElement && previous.isConnected) previous.focus()
     }
   }, [])
 
-  const setPreviewMode = (value) => { setMode(value); setBoard(sampleBoard(value === 'marks')) }
-  const shoot = (r, c) => {
+  const commitBoard = (next) => { boardRef.current = next; setBoard(next) }
+  const setPreviewMode = (value) => {
+    clearTimeout(demoTimer.current)
+    setDemoBusy(false)
+    setMode(value)
+    setFeed([])
+    setBoardKey((k) => k + 1)
+    commitBoard(sampleBoard(value === 'marks'))
+  }
+  const showShot = (next, r, c) => {
+    const shot = fire(next, r, c)
+    if (!shot.ok) return
+    const event = { ...shot, id: ++eventId.current, by: 'me' }
+    commitBoard(next)
+    setFeed((cur) => [...cur.slice(-20), event])
     setMode('marks')
-    setBoard((current) => {
-      const next = JSON.parse(JSON.stringify(current))
-      fire(next, r, c)
-      return next
-    })
+    clearTimeout(demoTimer.current)
+    setDemoBusy(true)
+    demoTimer.current = setTimeout(() => setDemoBusy(false), reducedMotion ? 120 : SHELL_FLIGHT_MS + IMPACT_FX_MS + 30)
+  }
+  const shoot = (r, c) => {
+    showShot(JSON.parse(JSON.stringify(boardRef.current)), r, c)
+  }
+  const demo = (kind) => {
+    if (demoBusy) return
+    const next = sampleBoard()
+    let r, c
+    if (kind === 'miss') {
+      const occupied = occupancy(next.ships)
+      outer: for (let a = 2; a < 8; a++) for (let b = 2; b < 8; b++) {
+        if (occupied[a][b] === -1) { r = a; c = b; break outer }
+      }
+    } else {
+      const cells = shipCells(next.ships.find((s) => s.size === (kind === 'sunk' ? 3 : 4)))
+      if (kind === 'sunk') cells.slice(0, -1).forEach(([a, b]) => fire(next, a, b))
+      ;[r, c] = kind === 'sunk' ? cells[cells.length - 1] : cells[0]
+    }
+    showShot(next, r, c)
   }
   const perform = async (path, body) => {
     setError(null)
@@ -90,8 +131,11 @@ export default function FleetPreview({ selection, onClose }) {
       <NavalTabs label={t('skins_preview_state')} value={mode} onChange={setPreviewMode}
         options={[{ value: 'fleet', label: t('skins_clean') }, { value: 'marks', label: t('skins_marks') }]} />
       <div className="fleet-preview-board">
-        <Board shots={board.shots} ships={board.ships.map((s, key) => ({ ...s, key, state: s.hits >= s.size ? 'sunk' : 'alive' }))}
-          skin={skin} theme={theme} onCell={shoot} />
+        <Board key={boardKey} shots={board.shots} ships={board.ships.map((s, key) => ({ ...s, key, state: s.hits >= s.size ? 'sunk' : 'alive' }))}
+          skin={skin} theme={theme} effect={effect} feed={feed} onCell={shoot} />
+      </div>
+      <div className="fleet-effect-demo" role="group" aria-label={t('fx_demo')}>
+        {['hit', 'miss', 'sunk'].map((kind) => <button key={kind} data-demo-effect={kind} disabled={demoBusy} onClick={() => demo(kind)}><Play size={11} />{t(`fx_demo_${kind}`)}</button>)}
       </div>
       <div className="fleet-preview-caption"><span>{t('skins_local_demo')}</span><button onClick={() => setPreviewMode('fleet')} aria-label={t('skins_reset')}><RotateCcw size={14} />{t('skins_reset')}</button></div>
       {error && <p className="fleet-preview-error" role="alert">{errorText(error)}</p>}
@@ -100,7 +144,7 @@ export default function FleetPreview({ selection, onClose }) {
           const owned = p.owned.includes(item.id)
           const equipped = p.equipped[slot] === item.id
           return <div className="fleet-preview-item" key={item.id}>
-            <div><span>{t(slot === 'theme' ? 'themes' : 'ships')}</span><strong>{l(item.name)}</strong></div>
+            <div><span>{t({ theme: 'themes', ship: 'ships', effect: 'effects', frame: 'frames' }[slot])}</span><strong>{l(item.name)}</strong></div>
             {equipped ? <span className="fleet-preview-equipped"><Check size={14} />{t('equipped')}</span>
               : owned ? <NavalAction className="naval-button" data-equip-id={item.id} onClick={() => perform('/me/equip', { itemId: item.id })}>{t('equip')}</NavalAction>
                 : item.price ? <NavalAction className="naval-button naval-button-steel" data-buy-id={item.id} onClick={() => perform('/me/shop/buy', { itemId: item.id })}><span>{t('skins_buy')}</span><Price price={item.price} /></NavalAction>
@@ -108,7 +152,7 @@ export default function FleetPreview({ selection, onClose }) {
           </div>
         })}
       </div>
-      <p className="fleet-preview-fair">{collection ? l(collection.description) : t('skins_cosmetic_only')}</p>
+      <p className="fleet-preview-fair">{collection ? l(collection.description) : l(items[0]?.item.description) || t('skins_cosmetic_only')}</p>
       {collection && <p className="fleet-preview-fair">{t('skins_separate_items')}</p>}
     </dialog>, document.body,
   )

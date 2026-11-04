@@ -5,9 +5,10 @@ import { initData, isTelegram, startParam, tgUser, setHapticsEnabled, haptic } f
 import { setSoundEnabled, sfx } from '../lib/sound.js'
 import { setMusicEnabled } from '../lib/music.js'
 import { tr } from '../lib/i18n.js'
+import { SHELL_FLIGHT_MS, finalShotDeadline } from '../game/animation.js'
 
 let toastId = 0
-export const SHELL_FLIGHT_MS = 300
+export { SHELL_FLIGHT_MS } from '../game/animation.js'
 let feedId = 0
 
 const emptySummary = (s) =>
@@ -165,12 +166,15 @@ export const useStore = create((set, get) => ({
       }
     })
     s.on('game:shot', (ev) => {
-      const items = ev.results.map((r) => ({ ...r, by: ev.by, id: ++feedId, booster: ev.booster, auto: ev.auto }))
+      const at = Date.now()
+      const gameId = get().game?.id
+      const items = ev.results.map((r) => ({ ...r, by: ev.by, id: ++feedId, at, booster: ev.booster, auto: ev.auto }))
       set((st) => ({ feed: [...st.feed.slice(-40), ...items] }))
       const worst = items.some((i) => i.result === 'sunk') ? 'sunk' : items.some((i) => i.result === 'hit') ? 'hit' : 'miss'
       // The shell takes ~300 ms to land (see Board), impact feedback is synced to it
       sfx.fire()
       setTimeout(() => {
+        if (get().game?.id !== gameId) return
         sfx[worst]()
         if (worst === 'sunk') haptic.heavy()
         else if (worst === 'hit') (ev.by === 'opp' ? haptic.rigid : haptic.medium)()
@@ -183,8 +187,13 @@ export const useStore = create((set, get) => ({
     })
     s.on('game:over', (o) => {
       set({ over: o, game: o.state })
-      setTimeout(() => (o.won ? sfx.win() : sfx.lose()), 500)
-      ;(o.won ? haptic.success : haptic.error)()
+      const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+      const until = finalShotDeadline(o.state, o, get().feed, reduced)
+      setTimeout(() => {
+        if (get().game?.id !== o.state.id || get().over !== o) return
+        ;(o.won ? sfx.win : sfx.lose)()
+        ;(o.won ? haptic.success : haptic.error)()
+      }, Math.max(500, until - Date.now()))
     })
     s.on('game:emote', ({ emote }) => {
       set({ emote: { emote, at: Date.now() } })

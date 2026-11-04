@@ -61,6 +61,14 @@
 .fleet-preview-equipped { display: flex; align-items: center; gap: 5px; color: #8acbd9; font-size: 11px; }
 .fleet-preview-error { color: #ffd28a; background: #d8962220; border: 1px solid #d7a55470; border-radius: 10px; padding: 9px 11px; margin: 0 0 10px; font-size: 11px; }
 .fleet-preview-fair { font-size: 9px; line-height: 1.6; color: #8faec3; margin: 10px 0 0; }
+.fleet-effect-demo { display: flex; gap: 6px; margin: 7px 0; }
+.fleet-effect-demo button { display: inline-flex; align-items: center; justify-content: center; flex: 1; gap: 4px; min-height: 34px; padding: 6px 4px; border: 1px solid #668da353; border-radius: 9px; background: #b9dfff09; color: #c1deec; font-size: 10px; }
+.fleet-effect-demo button:disabled { opacity: .45; cursor: default; }
+.cosmetic-effect-art { position: relative; display: grid; place-items: center; height: 64px; overflow: hidden; background: radial-gradient(ellipse, #a1d4e60a, transparent 70%); }
+.cosmetic-effect-art > span { position: absolute; }
+.cosmetic-effect-orbit { width: 49px; height: 49px; border: 1px solid var(--effect-color); border-radius: 50%; opacity: .5; box-shadow: 0 0 12px #9dbde615; }
+.cosmetic-effect-core { width: 12px; height: 28px; background: linear-gradient(110deg, var(--effect-light), var(--effect-color)); border-radius: 60% 60% 20% 20%; transform: rotate(-35deg); box-shadow: 0 0 11px var(--effect-color); }
+.cosmetic-effect-trail { width: 6px; height: 32px; transform: translate(10px, 13px) rotate(-35deg); background: linear-gradient(var(--effect-color), transparent); opacity: .5; }
 @media (max-width: 359px) {
   .fleet-collection-card { padding: 12px; }
   .fleet-collection-card > strong { font-size: 20px; margin: 5px 0; }
@@ -69,4 +77,5 @@
   .fleet-preview { padding: 12px; }
   .fleet-preview-heading h2 { font-size: 20px; }
   .fleet-preview-caption { font-size: 8px; }
+  .fleet-effect-demo button { font-size: 9px; gap: 3px; }
 }

@@ -1,9 +1,9 @@
-import { forwardRef, useEffect, useRef, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
-import { SIZE, CELL, COLS, COLS_EN } from '@shared/engine.js'
+import { forwardRef, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { SIZE, CELL, COLS, COLS_EN, shipCells } from '@shared/engine.js'
 import Ship from './Ship.jsx'
-import { Explosion, Splash, Flame, Shell } from './Fx.jsx'
-import { SHELL_FLIGHT_MS } from '../store/app.js'
+import { Explosion, Splash, Flame, Shell, SinkWake, IMPACT_FX_MS } from './Fx.jsx'
+import { SHELL_FLIGHT_MS } from '../game/animation.js'
 import { useLang } from '../lib/i18n.js'
 
 const pct = (n) => `${n * 10}%`
@@ -12,20 +12,20 @@ const pct = (n) => `${n * 10}%`
  * Miss marker: dimmed cell + dot with a splash ring.
  * Centred with flex — framer-motion's `scale` overrides CSS translate-based centring.
  */
-function MissMark() {
+function MissMark({ reducedMotion }) {
   return (
     <span className="absolute inset-[6%] flex items-center justify-center rounded-[22%] bg-black/20">
       <motion.span
         className="absolute h-[62%] w-[62%] rounded-full border-[1.5px]"
         style={{ borderColor: 'var(--miss)', opacity: 0.45 }}
-        initial={{ scale: 0.3 }}
+        initial={reducedMotion ? false : { scale: 0.3 }}
         animate={{ scale: 1 }}
         transition={{ type: 'spring', stiffness: 260, damping: 18 }}
       />
       <motion.span
         className="h-[30%] w-[30%] rounded-full"
         style={{ background: 'var(--miss)', boxShadow: '0 0 6px var(--miss)' }}
-        initial={{ scale: 0 }}
+        initial={reducedMotion ? false : { scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ type: 'spring', stiffness: 400, damping: 20 }}
       />
@@ -34,16 +34,11 @@ function MissMark() {
 }
 
 /** One shot: the shell falls, then the explosion/splash plays on impact */
-function ShotFx({ f, effect, small }) {
-  const [landed, setLanded] = useState(false)
-  useEffect(() => {
-    const id = setTimeout(() => setLanded(true), SHELL_FLIGHT_MS)
-    return () => clearTimeout(id)
-  }, [])
+function ShotFx({ f, effect, small, landed }) {
   return (
-    <div className="absolute" style={{ left: pct(f.c), top: pct(f.r), width: pct(1), height: pct(1) }}>
-      {!landed && <Shell ms={SHELL_FLIGHT_MS} />}
-      {landed && (f.result === 'miss' ? <Splash /> : <Explosion colors={effect?.colors} big={f.result === 'sunk' && !small} />)}
+    <div className="pointer-events-none absolute z-30" style={{ left: pct(f.c), top: pct(f.r), width: pct(1), height: pct(1) }}>
+      {!landed && <Shell ms={SHELL_FLIGHT_MS} effect={effect} />}
+      {landed && (f.result === 'miss' ? <Splash effect={effect} /> : <Explosion effect={effect} colors={effect?.colors} big={f.result === 'sunk' && !small} />)}
     </div>
   )
 }
@@ -57,36 +52,50 @@ function ShotFx({ f, effect, small }) {
  *  highlight  [[r,c]] cells to highlight (booster preview)
  */
 const Board = forwardRef(function Board(
-  { shots, ships = [], skin, effect, feed = [], onCell, highlight = [], scans = [], labels = true, dim = false, small = false, theme, children, onPointerDown, shake },
+  { shots, ships = [], skin, effect, feed = [], onCell, highlight = [], scans = [], labels = true, dim = false, small = false, theme, children, onPointerDown, shake, hideNewSunk = false },
   ref,
 ) {
   const lang = useLang()
+  const reducedMotion = useReducedMotion()
   const [fx, setFx] = useState([])
   const [landing, setLanding] = useState(() => new Set())
   const [hover, setHover] = useState(null)
   const seen = useRef(new Set(feed.map((f) => f.id)))
-  const timers = useRef([])
+  const timers = useRef(new Set())
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const fresh = feed.filter((f) => !seen.current.has(f.id))
-    if (!fresh.length) return
     fresh.forEach((f) => seen.current.add(f.id))
+    if (reducedMotion) {
+      timers.current.forEach(clearTimeout)
+      timers.current.clear()
+      setFx((cur) => cur.length ? [] : cur)
+      setLanding((cur) => cur.size ? new Set() : cur)
+      return
+    }
+    if (!fresh.length) return
     setFx((cur) => [...cur, ...fresh])
     // Hide the result marker until the shell lands
     const keys = fresh.map((f) => f.r * SIZE + f.c)
     setLanding((cur) => new Set([...cur, ...keys]))
     const ids = new Set(fresh.map((f) => f.id))
     // Timers are independent per shot: a quick follow-up shot must not cancel them
-    timers.current.push(
-      setTimeout(() => setLanding((cur) => new Set([...cur].filter((k) => !keys.includes(k)))), SHELL_FLIGHT_MS),
-      setTimeout(() => setFx((cur) => cur.filter((f) => !ids.has(f.id))), SHELL_FLIGHT_MS + 1100),
-    )
-  }, [feed])
+    const schedule = (fn, ms) => {
+      const timer = setTimeout(() => { timers.current.delete(timer); fn() }, ms)
+      timers.current.add(timer)
+    }
+    schedule(() => setLanding((cur) => new Set([...cur].filter((k) => !keys.includes(k)))), SHELL_FLIGHT_MS)
+    schedule(() => setFx((cur) => cur.filter((f) => !ids.has(f.id))), SHELL_FLIGHT_MS + IMPACT_FX_MS)
+  }, [feed, reducedMotion])
 
   useEffect(() => () => timers.current.forEach(clearTimeout), [])
 
   const cols = lang === 'ru' ? COLS : COLS_EN
   const style = theme ? Object.fromEntries(Object.entries(theme.vars).map(([k, v]) => [`--${k}`, v])) : undefined
+  const pendingWrecks = ships.filter((s) => s.state === 'sunk' && shipCells(s).some(([r, c]) => landing.has(r * SIZE + c)))
+  const pendingWreckCells = new Set(pendingWrecks.flatMap((s) => shipCells(s).map(([r, c]) => r * SIZE + c)))
+  const pendingHalo = new Set(fx.filter((f) => f.result === 'sunk' && landing.has(f.r * SIZE + f.c)).flatMap((f) => (f.around || []).map(([r, c]) => r * SIZE + c)))
+  const contains = (s, f) => shipCells(s).some(([r, c]) => r === f.r && c === f.c)
 
   const grid = (
     <div
@@ -108,17 +117,24 @@ const Board = forwardRef(function Board(
       />
 
       {/* ships */}
-      {ships.map((s, i) => (
+      {ships.map((s, i) => {
+        const pendingWreck = pendingWrecks.includes(s)
+        if (hideNewSunk && pendingWreck) return null
+        const state = pendingWreck ? 'alive' : s.state
+        const sinking = !reducedMotion && fx.some((f) => f.result === 'sunk' && !landing.has(f.r * SIZE + f.c) && contains(s, f))
+        return (
         <motion.div
           key={`${s.key ?? i}`}
           className="absolute z-10 p-[1.2%]"
           style={{ left: pct(s.c), top: pct(s.r), width: pct(s.vertical ? 1 : s.size), height: pct(s.vertical ? s.size : 1) }}
-          initial={s.state === 'sunk' ? { scale: 1.2, opacity: 0 } : false}
-          animate={{ scale: 1, opacity: 1 }}
+          data-sinking-hull={sinking || undefined}
+          initial={false}
+          animate={sinking ? { scale: [1, 1.02, .9], opacity: [1, .65, .35], rotate: [0, s.vertical ? -3 : 3, 0] } : { scale: 1, opacity: state === 'sunk' ? .55 : 1, rotate: 0 }}
+          transition={{ duration: reducedMotion ? 0 : sinking ? 1.05 : .15, ease: 'easeOut' }}
         >
-          <Ship size={s.size} vertical={s.vertical} skin={skin} state={s.state} className="h-full w-full" />
+          <Ship size={s.size} vertical={s.vertical} skin={skin} state={state} className="h-full w-full" />
         </motion.div>
-      ))}
+      )})}
 
       {/* highlight (booster area) */}
       {highlight.map(([r, c]) => (
@@ -141,19 +157,20 @@ const Board = forwardRef(function Board(
         {Array.from({ length: SIZE * SIZE }, (_, k) => {
           const r = Math.floor(k / SIZE)
           const c = k % SIZE
-          const v = landing.has(k) ? CELL.EMPTY : shots ? shots[r][c] : CELL.EMPTY
+          const v = landing.has(k) || pendingHalo.has(k) ? CELL.EMPTY : pendingWreckCells.has(k) ? CELL.HIT : shots ? shots[r][c] : CELL.EMPTY
           const canShoot = onCell && (shots ? shots[r][c] : CELL.EMPTY) === CELL.EMPTY
           const Tag = onCell ? 'button' : 'div'
           return (
             <Tag
               key={k}
+              data-shot-state={v}
               {...(onCell
                 ? { type: 'button', tabIndex: -1, onClick: () => canShoot && onCell(r, c), onPointerEnter: () => setHover(k), 'aria-label': `${cols[c]}${r + 1}` }
                 : {})}
               className={`relative outline-none ${canShoot ? 'cursor-crosshair' : 'cursor-default'}`}
             >
-              {v === CELL.MISS && <MissMark />}
-              {v === CELL.HIT && <Flame colors={effect?.colors} />}
+              {v === CELL.MISS && <MissMark reducedMotion={reducedMotion} />}
+              {v === CELL.HIT && <Flame effect={effect} colors={effect?.colors} />}
               {v === CELL.SUNK && (
                 <span className="absolute inset-[8%] flex items-center justify-center rounded-md bg-rose-950/40">
                   <svg viewBox="0 0 24 24" className="h-[60%] w-[60%] opacity-90">
@@ -171,7 +188,11 @@ const Board = forwardRef(function Board(
 
       {/* effects */}
       <AnimatePresence>
-        {fx.map((f) => <ShotFx key={f.id} f={f} effect={effect} small={small} />)}
+        {fx.map((f) => <ShotFx key={f.id} f={f} effect={effect} small={small} landed={!landing.has(f.r * SIZE + f.c)} />)}
+        {fx.filter((f) => f.result === 'sunk' && !landing.has(f.r * SIZE + f.c)).map((f) => {
+          const s = f.ship || ships.find((s) => contains(s, f))
+          return s ? <div key={`sink-${f.id}`} className="pointer-events-none absolute z-30" style={{ left: pct(s.c), top: pct(s.r), width: pct(s.vertical ? 1 : s.size), height: pct(s.vertical ? s.size : 1) }}><SinkWake effect={effect} /></div> : null
+        })}
       </AnimatePresence>
 
       {dim && <div className="pointer-events-none absolute inset-0 z-40 bg-ink-950/35 transition-opacity" />}

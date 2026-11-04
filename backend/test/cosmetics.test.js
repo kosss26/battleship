@@ -12,7 +12,7 @@ const player = () => ({
 test('collection cosmetics purchase and equip without affecting match stats', () => {
   for (const c of FLEET_COLLECTIONS) {
     const u = player()
-    for (const id of [c.themeId, c.shipId]) {
+    for (const id of [c.themeId, c.shipId, c.effectId]) {
       const { slot, item } = findCosmetic(id)
       const gold = u.gold
       const gems = u.gems
@@ -60,4 +60,19 @@ test('existing Arctic and Royal owners keep their items and prices', () => {
   assert.equal(u.gold, gold)
   assert.equal(u.gems, gems)
   assert.equal(u.data.equipped.ship, 'ship_royal')
+})
+
+test('effect packs use the normal ownership checks and cannot be charged twice', () => {
+  for (const id of ['fx_arctic', 'fx_imperial']) {
+    const u = player()
+    assert.throws(() => equip(u, id), { code: 'not_owned' })
+    buyItem(u, id)
+    const after = structuredClone(u)
+    assert.throws(() => buyItem(u, id), { code: 'already_owned' })
+    assert.deepEqual(u, after)
+    equip(u, id)
+    assert.equal(u.data.equipped.effect, id)
+  }
+  assert.deepEqual(findCosmetic('fx_plasma').item.price, { gold: 2500 })
+  assert.deepEqual(findCosmetic('fx_firework').item.price, { gems: 350 })
 })

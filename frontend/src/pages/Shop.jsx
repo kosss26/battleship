@@ -119,6 +119,9 @@ function CosmeticThumbnail({ slot, item }) {
   }
   if (slot === 'ship') return <div className="flex h-16 items-center px-2"><Ship size={4} skin={item} className="h-9 w-full" /></div>
   if (slot === 'effect') {
+    if (item.model) return <div className={`cosmetic-effect-art cosmetic-effect-${item.model}`} style={{ '--effect-color': item.colors[0], '--effect-light': item.colors[1] }}>
+      <span className="cosmetic-effect-orbit" /><span className="cosmetic-effect-core" /><span className="cosmetic-effect-trail" />
+    </div>
     return (
       <div className="flex h-16 items-center justify-center">
         <div className="h-12 w-12 rounded-full" style={{ background: `radial-gradient(circle, #fff 5%, ${item.colors[1]} 30%, ${item.colors[0]} 60%, transparent 72%)` }} />
@@ -150,15 +153,15 @@ function Collection() {
           { value: 'frame', label: t('frames') },
         ]}
       />
-      {['theme', 'ship'].includes(slot) && (
+      {['theme', 'ship', 'effect'].includes(slot) && (
         <section className="fleet-collections" aria-label={t('skins_collections')}>
           <div className="naval-section-heading"><h2>{t('skins_collections')}</h2><span>{t('skins_preview_first')}</span></div>
           {FLEET_COLLECTIONS.map((c) => (
             <button key={c.id} className={`fleet-collection-card fleet-collection-${c.id}`} data-collection-id={c.id}
-              onClick={() => setPreview({ collectionId: c.id, themeId: c.themeId, shipId: c.shipId })}>
+              onClick={() => setPreview({ collectionId: c.id, themeId: c.themeId, shipId: c.shipId, effectId: c.effectId })}>
               <span className="fleet-collection-kicker">{t('skins_collection')}</span>
               <strong>{l(c.name)}</strong><span className="fleet-collection-tagline">{l(c.tagline)}</span>
-              <span className="fleet-collection-footer"><span><Eye size={14} />{t('skins_try')}</span><span>{t('skins_owned', { n: [c.themeId, c.shipId].filter((id) => p.owned.includes(id)).length })}<ChevronRight size={16} /></span></span>
+              <span className="fleet-collection-footer"><span><Eye size={14} />{t('skins_try')}</span><span>{t('skins_owned', { n: [c.themeId, c.shipId, c.effectId].filter((id) => p.owned.includes(id)).length, total: 3 })}<ChevronRight size={16} /></span></span>
             </button>
           ))}
         </section>
@@ -170,8 +173,8 @@ function Collection() {
           const rarity = RARITY[item.rarity]
           return (
             <div key={item.id} className="glass flex flex-col p-3" style={{ boxShadow: equipped ? `0 0 0 2px ${rarity.color}` : undefined }}>
-              {['theme', 'ship'].includes(slot) ? <button className="cosmetic-try" aria-label={`${t('skins_try')}: ${l(item.name)}`}
-                onClick={() => setPreview({ itemId: item.id, themeId: slot === 'theme' ? item.id : p.equipped.theme, shipId: slot === 'ship' ? item.id : p.equipped.ship })}>
+              {['theme', 'ship', 'effect'].includes(slot) ? <button className="cosmetic-try" aria-label={`${t('skins_try')}: ${l(item.name)}`}
+                onClick={() => setPreview({ itemId: item.id, themeId: slot === 'theme' ? item.id : p.equipped.theme, shipId: slot === 'ship' ? item.id : p.equipped.ship, effectId: slot === 'effect' ? item.id : p.equipped.effect })}>
                 <CosmeticThumbnail slot={slot} item={item} /><span><Eye size={12} />{t('skins_try')}</span>
               </button> : <CosmeticThumbnail slot={slot} item={item} />}
               <div className="mt-2 text-sm font-extrabold">{l(item.name)}</div>

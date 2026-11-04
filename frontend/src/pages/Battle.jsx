@@ -1,6 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { useStore } from '../store/app.js'
 import { useT } from '../lib/i18n.js'
 import { confirmClose } from '../lib/telegram.js'
@@ -11,6 +11,7 @@ import { useCountdown } from '../game/parts.jsx'
 import { Avatar, Spinner } from '../components/ui.jsx'
 import Board from '../components/Board.jsx'
 import { THEMES, SHIP_SKINS } from '@shared/catalog.js'
+import { finalShotDeadline } from '../game/animation.js'
 
 function VersusIntro({ game }) {
   const t = useT()
@@ -36,7 +37,18 @@ export default function Battle() {
   const game = useStore((s) => s.game)
   const over = useStore((s) => s.over)
   const profile = useStore((s) => s.profile)
+  const feed = useStore((s) => s.feed)
+  const reducedMotion = useReducedMotion()
+  const [finishedAt, setFinishedAt] = useState(0)
+  const finalAt = finalShotDeadline(game, over, feed, reducedMotion)
+  const holdFinalShot = finalAt > Date.now() && finishedAt !== finalAt
   const left = useCountdown(game?.phase === 'placement' ? game.deadline : null)
+
+  useEffect(() => {
+    if (!finalAt) return
+    const timer = setTimeout(() => setFinishedAt(finalAt), Math.max(0, finalAt - Date.now()))
+    return () => clearTimeout(timer)
+  }, [finalAt])
 
   useEffect(() => {
     if (!game) navigate('/', { replace: true })
@@ -49,8 +61,8 @@ export default function Battle() {
   }, [game?.phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!game) return null
-  if (over && game.phase === 'over') return <Results over={over} />
-  if (game.phase === 'over') {
+  if (over && game.phase === 'over' && !holdFinalShot) return <Results over={over} />
+  if (game.phase === 'over' && !holdFinalShot) {
     return (
       <div className="flex justify-center py-20">
         <Spinner />
