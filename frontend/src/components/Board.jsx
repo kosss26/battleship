@@ -8,6 +8,31 @@ import { useLang } from '../lib/i18n.js'
 
 const pct = (n) => `${n * 10}%`
 
+/**
+ * Miss marker: dimmed cell + dot with a splash ring.
+ * Centred with flex — framer-motion's `scale` overrides CSS translate-based centring.
+ */
+function MissMark() {
+  return (
+    <span className="absolute inset-[6%] flex items-center justify-center rounded-[22%] bg-black/20">
+      <motion.span
+        className="absolute h-[62%] w-[62%] rounded-full border-[1.5px]"
+        style={{ borderColor: 'var(--miss)', opacity: 0.45 }}
+        initial={{ scale: 0.3 }}
+        animate={{ scale: 1 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 18 }}
+      />
+      <motion.span
+        className="h-[30%] w-[30%] rounded-full"
+        style={{ background: 'var(--miss)', boxShadow: '0 0 6px var(--miss)' }}
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+      />
+    </span>
+  )
+}
+
 /** One shot: the shell falls, then the explosion/splash plays on impact */
 function ShotFx({ f, effect, small }) {
   const [landed, setLanded] = useState(false)
@@ -126,9 +151,7 @@ const Board = forwardRef(function Board(
                 : {})}
               className={`relative outline-none ${canShoot ? 'cursor-crosshair' : 'cursor-default'}`}
             >
-              {v === CELL.MISS && (
-                <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute left-1/2 top-1/2 h-[22%] w-[22%] -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: 'var(--miss)', opacity: 0.75 }} />
-              )}
+              {v === CELL.MISS && <MissMark />}
               {v === CELL.HIT && <Flame colors={effect?.colors} />}
               {v === CELL.SUNK && (
                 <span className="absolute inset-[8%] flex items-center justify-center rounded-md bg-rose-950/40">
