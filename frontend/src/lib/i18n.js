@@ -190,6 +190,8 @@ const dict = {
     sound: 'Звук',
     haptics: 'Вибрация',
     friends: 'Друзья',
+    admin_panel: 'Админ-панель',
+    admin_panel_sub: 'Статистика, игроки, платежи, рассылка',
     support: 'Поддержка',
     mode_ai: 'ИИ', mode_ranked: 'Рейтинг', mode_duel: 'Дуэль', mode_campaign: 'Кампания',
 
@@ -407,6 +409,8 @@ const dict = {
     sound: 'Sound',
     haptics: 'Haptics',
     friends: 'Friends',
+    admin_panel: 'Admin panel',
+    admin_panel_sub: 'Stats, players, payments, broadcasts',
     support: 'Support',
     mode_ai: 'AI', mode_ranked: 'Ranked', mode_duel: 'Duel', mode_campaign: 'Campaign',
 

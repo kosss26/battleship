@@ -1,6 +1,6 @@
-import { query, tx } from '../db.js'
+import { tx } from '../db.js'
 import {
-  findCosmetic, BOOSTERS, GOLD_EXCHANGE, findStarProduct, PASS_PREMIUM_GEMS, seasonId,
+  findCosmetic, BOOSTERS, GOLD_EXCHANGE, findStarProduct, PASS_PREMIUM_GEMS, seasonId, DEFAULT_EQUIPPED,
 } from '../../../shared/catalog.js'
 import { mutateUser, grant, newSummary, checkAchievements, GameError } from './users.js'
 
@@ -97,6 +97,61 @@ export async function completeStarPayment({ userId, productId, stars, chargeId, 
   })
 }
 
-export async function markRefunded(chargeId) {
-  await query(`UPDATE payments SET status='refunded' WHERE charge_id=$1`, [chargeId])
+/** Takes back what a purchase granted (as far as the balance allows). Returns what was removed. */
+function revoke(user, p) {
+  const out = { gems: 0, gold: 0, boosters: {}, cosmetics: [], pass: false, shortfall: {} }
+  const take = (key, amount) => {
+    const n = Math.min(user[key], amount)
+    user[key] -= n
+    out[key] += n
+    if (n < amount) out.shortfall[key] = amount - n
+  }
+  if (p.kind === 'gems') take('gems', p.gems)
+  if (p.kind === 'bundle') {
+    take('gems', p.grant.gems || 0)
+    take('gold', p.grant.gold || 0)
+    for (const [id, n] of Object.entries(p.grant.boosters || {})) {
+      const have = user.data.boosters[id] || 0
+      user.data.boosters[id] = Math.max(0, have - n)
+      out.boosters[id] = Math.min(have, n)
+    }
+    for (const id of p.grant.cosmetics || []) {
+      if (!user.data.owned.includes(id)) continue
+      user.data.owned = user.data.owned.filter((x) => x !== id)
+      out.cosmetics.push(id)
+      const found = findCosmetic(id)
+      if (found && user.data.equipped[found.slot] === id) user.data.equipped[found.slot] = DEFAULT_EQUIPPED[found.slot]
+    }
+  }
+  if (p.kind === 'pass') {
+    user.data.pass.premium = false
+    out.pass = true
+  }
+  if (user.data.purchases[p.id]) {
+    user.data.purchases[p.id]--
+    if (!user.data.purchases[p.id]) delete user.data.purchases[p.id]
+  }
+  return out
 }
+
+/**
+ * Marks a payment refunded and revokes its goods. Idempotent: only 'paid' rows are processed.
+ * Returns { payment, revoked, user } or null if nothing to do.
+ */
+export async function refundPayment({ id, chargeId }) {
+  return tx(async (client) => {
+    const { rows } = await client.query(
+      `SELECT * FROM payments WHERE ${id ? 'id = $1' : 'charge_id = $1'} FOR UPDATE`,
+      [id || chargeId],
+    )
+    const pay = rows[0]
+    if (!pay || pay.status !== 'paid') return null
+    const p = findStarProduct(pay.product_id)
+    const { user, result } = await mutateUser(Number(pay.user_id), (u) => (p ? revoke(u, p) : {}), client, { allowBanned: true })
+    await client.query(`UPDATE payments SET status='refunded', refunded_at=now(), revoked=$2 WHERE id=$1`, [pay.id, result])
+    return { payment: pay, revoked: result, user }
+  })
+}
+
+/** Used when Telegram reports a refund made outside the admin panel */
+export const markRefunded = (chargeId) => refundPayment({ chargeId })

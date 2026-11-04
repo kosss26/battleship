@@ -164,11 +164,14 @@ export function initSockets(server) {
     for (const [code, d] of duels) if (now - d.createdAt > 30 * 60_000) duels.delete(code)
   }, 60_000).unref()
 
-  io.use((socket, next) => {
+  io.use(async (socket, next) => {
     try {
       const token = socket.handshake.auth?.token
       const payload = jwt.verify(token, config.jwtSecret)
       socket.userId = Number(payload.uid)
+      const u = await getUser(socket.userId)
+      if (!u) return next(new Error('unauthorized'))
+      if (u.banned) return next(new Error('banned'))
       next()
     } catch {
       next(new Error('unauthorized'))
@@ -356,6 +359,14 @@ export function initSockets(server) {
       activeRoom(userId)?.disconnected(userId)
     })
   })
+}
+
+/** Ends the user's session: resigns an active game, drops them from queues and disconnects */
+export function kickUser(userId) {
+  queue.delete(userId)
+  for (const [c, d] of duels) if (d.hostId === userId) duels.delete(c)
+  activeRoom(userId)?.resign(userId)
+  io?.in(`u:${userId}`).disconnectSockets(true)
 }
 
 export function notifyProfile(userId, profile) {

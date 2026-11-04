@@ -11,6 +11,7 @@ import { buyItem, equip } from '../services/shop.js'
 import { createStarInvoice, handleUpdate } from '../services/bot.js'
 import { notifyProfile } from '../game/manager.js'
 import { START_PARAM } from '../../../shared/catalog.js'
+import adminRouter from './admin.js'
 
 const router = express.Router()
 
@@ -235,6 +236,8 @@ router.get('/leaderboard', auth, rateLimit(60, 60_000), wrap(async (req, res) =>
     myRating: me.rating,
   })
 }))
+
+router.use('/admin', adminRouter({ auth, wrap }))
 
 router.get('/users/:id', auth, wrap(async (req, res) => {
   const u = await getUser(Number(req.params.id))

@@ -5,6 +5,7 @@ import { findStarProduct } from '../../../shared/catalog.js'
 import { getUser, selfView } from './users.js'
 import { validateStarPurchase, completeStarPayment, markRefunded } from './shop.js'
 import { notifyProfile, stats as liveStats } from '../game/manager.js'
+import { refund } from './admin.js'
 
 const TEXT = {
   ru: {
@@ -63,10 +64,16 @@ export async function handleUpdate(update) {
     const live = liveStats()
     await botApi('sendMessage', { chat_id: msg.chat.id, text: `👥 ${rows[0].users} users, DAU ${rows[0].dau}\n⭐ ${rows[0].stars} stars\n🎮 rooms ${live.rooms}, queue ${live.queue}, sockets ${live.online}` })
   } else if (text.startsWith('/refund ') && config.adminIds.includes(String(msg.from.id))) {
-    const [, tgUserId, chargeId] = text.split(' ')
-    await botApi('refundStarPayment', { user_id: Number(tgUserId), telegram_payment_charge_id: chargeId })
-    await markRefunded(chargeId)
-    await botApi('sendMessage', { chat_id: msg.chat.id, text: 'Refunded' })
+    const [, , chargeId] = text.split(' ')
+    const { rows } = await query('SELECT id FROM payments WHERE charge_id = $1', [chargeId])
+    const adminId = await userIdByTg(msg.from.id)
+    try {
+      if (!rows[0] || !adminId) throw new Error('payment not found')
+      const revoked = await refund({ id: adminId }, Number(rows[0].id), 'bot command')
+      await botApi('sendMessage', { chat_id: msg.chat.id, text: `Refunded. Revoked: ${JSON.stringify(revoked)}` })
+    } catch (e) {
+      await botApi('sendMessage', { chat_id: msg.chat.id, text: `Refund failed: ${e.code || e.message}` })
+    }
   } else if (msg.chat.type === 'private') {
     await botApi('sendMessage', { chat_id: msg.chat.id, text: '⚓', reply_markup: playMarkup(lang) })
   }

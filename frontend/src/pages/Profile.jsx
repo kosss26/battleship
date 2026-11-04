@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, Globe, Volume2, Vibrate, Users, Award, LifeBuoy } from 'lucide-react'
+import { ChevronRight, Globe, Volume2, Vibrate, Users, Award, LifeBuoy, ShieldCheck } from 'lucide-react'
 import { ACHIEVEMENTS } from '@shared/catalog.js'
 import { useStore } from '../store/app.js'
 import { useT } from '../lib/i18n.js'
@@ -60,13 +60,16 @@ export default function Profile() {
   const accuracy = s.shots ? Math.round((s.hits / s.shots) * 100) : 0
   const achCount = Object.keys(p.achievements).length
 
-  const Row = ({ icon: Icon, label, right, onClick }) => (
-    <button onClick={onClick} className="flex w-full items-center gap-3 px-4 py-3.5 text-left">
-      <Icon size={20} className="text-slate-400" />
-      <span className="flex-1 text-sm font-bold">{label}</span>
-      {right ?? <ChevronRight size={18} className="text-slate-500" />}
-    </button>
-  )
+  const Row = ({ icon: Icon, label, right, onClick }) => {
+    const Tag = onClick ? 'button' : 'div'
+    return (
+      <Tag onClick={onClick} className="flex w-full items-center gap-3 px-4 py-3.5 text-left">
+        <Icon size={20} className="text-slate-400" />
+        <span className="flex-1 text-sm font-bold">{label}</span>
+        {right ?? <ChevronRight size={18} className="text-slate-500" />}
+      </Tag>
+    )
+  }
 
   return (
     <div>
@@ -99,6 +102,17 @@ export default function Profile() {
         <Stat label={t('sunk_total')} value={s.sunk} />
         <Stat label={t('best_streak')} value={s.bestStreak} />
       </div>
+
+      {p.isAdmin && (
+        <button onClick={() => navigate('/admin')} className="mb-4 flex w-full items-center gap-3 rounded-3xl bg-gradient-to-r from-emerald-400/20 to-cyan-400/10 p-4 text-left ring-1 ring-emerald-300/30">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-400 text-ink-950"><ShieldCheck size={22} /></div>
+          <div className="flex-1">
+            <div className="font-extrabold">{t('admin_panel')}</div>
+            <div className="text-xs text-slate-400">{t('admin_panel_sub')}</div>
+          </div>
+          <ChevronRight size={18} className="text-slate-500" />
+        </button>
+      )}
 
       <div className="glass mb-4 divide-y divide-white/[0.05] p-0">
         <Row icon={Award} label={t('achievements')} onClick={() => navigate('/achievements')} right={<span className="chip bg-amber-300/15 text-amber-200">{achCount}/{ACHIEVEMENTS.length}</span>} />

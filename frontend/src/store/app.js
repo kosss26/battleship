@@ -54,7 +54,7 @@ export const useStore = create((set, get) => ({
       set({ status: 'need_tg' })
     } catch (e) {
       console.error(e)
-      set({ status: e instanceof ApiError && e.status === 401 ? 'need_tg' : 'error' })
+      set({ status: e?.code === 'banned' ? 'banned' : e instanceof ApiError && e.status === 401 ? 'need_tg' : 'error' })
     }
   },
 
@@ -132,10 +132,15 @@ export const useStore = create((set, get) => ({
       set({ connected: true })
       request('game:resume')
     })
-    s.on('disconnect', () => set({ connected: false }))
+    s.on('disconnect', (reason) => {
+      set({ connected: false })
+      // Server-side kick (e.g. ban): reconnect so the handshake reports the reason
+      if (reason === 'io server disconnect') setTimeout(() => s.connect(), 500)
+    })
     s.on('connect_error', (err) => {
       set({ connected: false })
       if (err?.message === 'unauthorized') get().boot()
+      if (err?.message === 'banned') set({ status: 'banned' })
     })
     s.on('profile', (p) => get().setProfile(p))
     s.on('game:state', (st) => {

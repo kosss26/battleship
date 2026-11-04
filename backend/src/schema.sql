@@ -56,3 +56,18 @@ CREATE TABLE IF NOT EXISTS payments (
   created_at         TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS payments_user_idx ON payments (user_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS admin_log (
+  id          BIGSERIAL PRIMARY KEY,
+  admin_id    BIGINT NOT NULL REFERENCES users(id),
+  action      TEXT NOT NULL,
+  target_id   BIGINT REFERENCES users(id),
+  details     JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS admin_log_created_idx ON admin_log (created_at DESC);
+CREATE INDEX IF NOT EXISTS admin_log_target_idx ON admin_log (target_id, created_at DESC);
+
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS refunded_at TIMESTAMPTZ;
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS revoked JSONB;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS ban_reason TEXT;

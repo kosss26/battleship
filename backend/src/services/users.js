@@ -1,5 +1,6 @@
 import crypto from 'crypto'
 import { query, tx } from '../db.js'
+import { config } from '../config.js'
 import {
   ACHIEVEMENTS, QUESTS, questsForDay, levelFromXp, levelUpReward, rankFor, seasonId, seasonEnds,
   PASS_TIERS, PASS_XP_PER_TIER, DAILY_REWARDS, DEFAULT_EQUIPPED, DEFAULT_OWNED, findCosmetic,
@@ -74,12 +75,12 @@ export async function getUsers(ids) {
  * Locks the user row, runs `fn(user)` which mutates the object, then persists it.
  * Everything that changes balances goes through here, so it is atomic.
  */
-export async function mutateUser(id, fn, client = null) {
+export async function mutateUser(id, fn, client = null, { allowBanned = false } = {}) {
   const run = async (c) => {
     const { rows } = await c.query('SELECT * FROM users WHERE id = $1 FOR UPDATE', [id])
     const user = rowToUser(rows[0])
     if (!user) throw new GameError('user_not_found', 404)
-    if (user.banned) throw new GameError('banned', 403)
+    if (user.banned && !allowBanned) throw new GameError('banned', 403)
     syncPeriodic(user)
     const result = await fn(user, c)
     const lvl = levelFromXp(user.xp)
@@ -313,6 +314,8 @@ export function publicProfile(u) {
   }
 }
 
+export const isAdmin = (u) => !!u?.tg_id && config.adminIds.includes(String(u.tg_id))
+
 export function selfView(u) {
   const d = u.data
   const lvl = levelFromXp(u.xp)
@@ -344,6 +347,7 @@ export function selfView(u) {
     achievements: d.achievements,
     settings: d.settings,
     purchases: d.purchases,
+    isAdmin: isAdmin(u),
     duelRewardsLeft: Math.max(0, DUEL_REWARDS_PER_DAY - (d.duelRewards.day === day ? d.duelRewards.count : 0)),
   }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Routes, Route, useLocation, useNavigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useStore } from './store/app.js'
 import { backButton, openLink } from './lib/telegram.js'
@@ -19,6 +19,8 @@ import Achievements from './pages/Achievements.jsx'
 import Duel from './pages/Duel.jsx'
 import Search from './pages/Search.jsx'
 import Battle from './pages/Battle.jsx'
+import Admin from './pages/Admin.jsx'
+import AdminUser from './pages/AdminUser.jsx'
 import { START_PARAM } from '@shared/catalog.js'
 
 const TABS = ['/', '/quests', '/shop', '/top', '/profile']
@@ -97,6 +99,7 @@ export default function App() {
   const boot = useStore((s) => s.boot)
   const game = useStore((s) => s.game)
   const connected = useStore((s) => s.connected)
+  const isAdmin = useStore((s) => !!s.profile?.isAdmin)
 
   useEffect(() => {
     boot()
@@ -128,6 +131,14 @@ export default function App() {
   if (status === 'boot') return <Splash text={t('loading')} />
   if (status === 'dev_login') return <DevLogin />
   if (status === 'need_tg') return <NeedTelegram />
+  if (status === 'banned') {
+    return (
+      <div className="app-bg flex min-h-screen flex-col items-center justify-center gap-3 px-8 text-center">
+        <div className="text-5xl">⛔</div>
+        <div className="font-bold text-slate-200">{t('err_banned')}</div>
+      </div>
+    )
+  }
   if (status === 'error') {
     return (
       <div className="app-bg flex min-h-screen flex-col items-center justify-center gap-4 px-8 text-center">
@@ -185,6 +196,8 @@ export default function App() {
               <Route path="/duel/:code" element={<Duel />} />
               <Route path="/search" element={<Search />} />
               <Route path="/battle" element={<Battle />} />
+              <Route path="/admin" element={isAdmin ? <Admin /> : <Navigate to="/" replace />} />
+              <Route path="/admin/user/:id" element={isAdmin ? <AdminUser /> : <Navigate to="/" replace />} />
               <Route path="*" element={<Home />} />
             </Routes>
           </motion.div>
