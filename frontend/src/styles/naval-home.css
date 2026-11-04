@@ -1,0 +1,131 @@
+/* Naval home concept. Scoped so the battle board and other screens keep their theme. */
+.naval-home-shell.app-bg {
+  background: radial-gradient(ellipse at 85% 18%, #12314788, transparent 55%),
+    radial-gradient(ellipse at 5% 75%, #16425744, transparent 60%), #06131f;
+}
+.naval-home-shell > .grid-bg { display: none; }
+.naval-home-shell > main { padding-top: calc(var(--safe-top) + 8px) !important; }
+.naval-home {
+  --naval-edge: #668fa5;
+  --naval-muted: #b1c6d3;
+  color: #f3f7fa;
+  font-family: Manrope, system-ui, sans-serif;
+}
+.naval-home button { -webkit-tap-highlight-color: transparent; }
+.naval-home button:focus-visible,
+.naval-tabbar a:focus-visible,
+.naval-home summary:focus-visible { outline: 2px solid #56f2ff; outline-offset: 4px; }
+.naval-header { margin-bottom: 13px; }
+.naval-wordmark { display: flex; justify-content: center; align-items: center; gap: 13px; padding: 0 30px 10px; }
+.naval-wordmark > span:not(.naval-wordmark-line) { display: flex; align-items: center; flex-direction: column; }
+.naval-wordmark svg { color: #c7dce8; height: 12px; margin-bottom: -1px; }
+.naval-wordmark b {
+  font-family: Manrope, system-ui, sans-serif;
+  font-size: 23px; font-weight: 900; font-style: italic; letter-spacing: 1.2px; line-height: 1.1;
+  background: linear-gradient(#fff 35%, #c1d1dd 60%, #fff 72%, #829ba9);
+  background-clip: text; -webkit-background-clip: text; color: transparent;
+  filter: drop-shadow(0 2px 2px #0008);
+}
+.naval-wordmark-line { width: 33px; height: 2px; background: linear-gradient(90deg, transparent, #aac2d3); transform: skewX(-30deg); }
+.naval-wordmark-line:last-child { transform: rotate(180deg) skewX(-30deg); }
+.naval-player-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.naval-player { display: flex; align-items: center; gap: 9px; min-width: 0; text-align: left; flex: 1; }
+.naval-player-copy { display: flex; flex-direction: column; min-width: 0; gap: 3px; }
+.naval-player-copy strong { font-size: 17px; line-height: 1.2; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.naval-player-copy > span { display: flex; gap: 4px; align-items: center; color: var(--naval-muted); font-size: 11px; white-space: nowrap; }
+.naval-player-copy svg { color: #36e5ef; }
+.naval-art { display: block; background-image: url('/art/naval/modes.webp'); background-size: 200% 200%; background-repeat: no-repeat; }
+.naval-art-radar { background-position: 0 0; }
+.naval-art-island { background-position: 100% 0; }
+.naval-art-fleet { background-position: 0 100%; }
+.naval-art-captain { background-position: 100% 100%; }
+.naval-avatar { display: block; width: 50px; height: 50px; flex-shrink: 0; padding: 2px; border-radius: 50%; background: linear-gradient(135deg, #66f5ff, #2b7587); box-shadow: 0 0 12px #00c9e215; }
+.naval-avatar .naval-art { width: 100%; height: 100%; border-radius: 50%; }
+.naval-wallet { display: flex; gap: 5px; }
+.naval-wallet button { display: flex; align-items: center; gap: 5px; padding: 7px 6px; border-radius: 12px; border: 1px solid #59798d; background: linear-gradient(#294556, #0a1c29 65%); box-shadow: inset 0 1px 0 #bdd7e633, 0 3px 7px #0005; font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.naval-wallet button:first-child { color: #ffda86; }
+.naval-wallet button > svg:last-child { color: #e2edf4; border-left: 1px solid #7994a13d; padding-left: 3px; width: 20px; }
+.naval-hero { position: relative; isolation: isolate; display: flex; flex-direction: column; justify-content: space-between; min-height: 280px; height: clamp(280px, 74vw, 340px); overflow: hidden; border-radius: 22px; border: 1px solid var(--naval-edge); background: #092334; box-shadow: inset 0 0 0 1px #c3ebff10, 0 12px 25px #0003; }
+.naval-hero-art { position: absolute; z-index: -3; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 65% 50%; }
+.naval-hero-shade { position: absolute; z-index: -2; inset: 0; background: linear-gradient(180deg, #05172450, transparent 52%, #03131ad9 81%, #03131a 100%), linear-gradient(110deg, #0615216e, transparent 65%); }
+.naval-hero-heading { padding: 17px 16px 0; }
+.naval-eyebrow { display: flex; align-items: center; gap: 8px; color: #29edfa; font-size: 11px; line-height: 1.3; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; }
+.naval-eyebrow::before { content: ''; width: 3px; height: 12px; border-radius: 1px; background: #29edfa; box-shadow: 0 0 10px #29edfa50; }
+.naval-hero h1 { margin: 7px 0 5px; font-size: clamp(25px, 7.2vw, 35px); line-height: 1.15; letter-spacing: -1px; font-weight: 800; text-shadow: 0 2px 10px #00101980; }
+.naval-hero-heading p { max-width: 62%; margin: 0; font-size: 12px; line-height: 1.5; color: #c6d6e1; text-shadow: 0 1px 5px #000; }
+.naval-hero-bottom { padding: 0 12px 12px; }
+.naval-rank { display: flex; align-items: center; gap: 9px; width: fit-content; max-width: 100%; min-height: 39px; margin-bottom: 9px; padding: 2px 11px 2px 2px; border-radius: 10px; background: linear-gradient(90deg, #0b2134e8, #09243486); border: 1px solid #8db8d22b; box-shadow: 0 3px 10px #0003; font-size: 12px; }
+.naval-rank strong { font-weight: 800; }
+.naval-rank > svg:not(:last-child) { color: #ffd279; }
+.naval-rank > span:not([class]) { font-variant-numeric: tabular-nums; font-weight: 800; }
+.naval-rank > svg:last-child { color: #96c5d9; }
+.naval-rank-shield { position: relative; display: grid; place-items: center; width: 34px; height: 34px; color: #e0eef6; filter: drop-shadow(0 1px 3px #000); }
+.naval-rank-shield svg:last-child { position: absolute; color: #b4d0e0; }
+.naval-rank-divider { width: 1px; height: 19px; background: #9ebdd33d; }
+.naval-battle-button { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 51px; border-radius: 14px; border: 1px solid #8afaff; background: linear-gradient(135deg, #26f0f5, #04c9e4 65%, #02acc9); color: #002237; font-size: 22px; line-height: 1; font-weight: 900; text-transform: uppercase; letter-spacing: .6px; box-shadow: inset 0 1px 3px #c4ffffb3, 0 0 20px #00d7ec26, 0 4px 10px #00141f66; transition: filter .15s, transform .15s; }
+.naval-battle-button:hover { filter: brightness(1.09); }
+.naval-battle-button:active { transform: scale(.98); }
+.naval-modes h2 { margin: 16px 3px 10px; font-size: 21px; line-height: 1.2; letter-spacing: -.6px; font-weight: 800; }
+.naval-mode-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }
+.naval-mode { position: relative; isolation: isolate; display: flex; align-items: center; width: 100%; min-height: 94px; padding: 12px 8px 12px 43%; text-align: left; overflow: hidden; border-radius: 17px; border: 1px solid #658ba1; background: linear-gradient(135deg, #183548, #0b202e); box-shadow: inset 0 1px 0 #e0f7ff14, 0 4px 12px #0002; }
+.naval-mode > .naval-art { position: absolute; z-index: -2; left: 0; top: 50%; transform: translateY(-50%); width: 100px; height: 100px; mask-image: linear-gradient(90deg, #000 65%, transparent); -webkit-mask-image: linear-gradient(90deg, #000 65%, transparent); }
+.naval-mode-copy { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.naval-mode-copy strong { font-size: 14px; line-height: 1.2; font-weight: 800; letter-spacing: -.35px; }
+.naval-mode-copy > span { font-size: 10px; line-height: 1.5; color: #c0d1dc; }
+.naval-mode-wide { min-height: 72px; padding: 13px 33px 13px 43%; }
+.naval-mode-wide > .naval-art { width: 45%; height: auto; aspect-ratio: 1; mask-image: linear-gradient(90deg, #000 50%, transparent); -webkit-mask-image: linear-gradient(90deg, #000 50%, transparent); }
+.naval-mode-wide strong { font-size: 17px; }
+.naval-mode-wide .naval-mode-copy > span { font-size: 12px; }
+.naval-mode-arrow { position: absolute; right: 12px; top: calc(50% - 11px); color: #bdd4e2; }
+.naval-daily { display: flex; align-items: center; width: 100%; gap: 10px; margin-top: 11px; padding: 12px 10px; min-height: 76px; text-align: left; border-radius: 17px; border: 1px solid #d39a43; background: radial-gradient(ellipse at 0 0, #93612935, transparent 70%), linear-gradient(120deg, #30281d, #17242d 60%, #352919); box-shadow: inset 0 1px 0 #ffde9e38, 0 5px 16px #0003; }
+.naval-daily-icon { display: grid; place-items: center; flex-shrink: 0; width: 42px; height: 43px; color: #ffcf65; border-right: 1px solid #bd934f6b; padding-right: 9px; filter: drop-shadow(0 2px 4px #ffa20b33); }
+.naval-daily-copy { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 4px; }
+.naval-daily-copy > strong { font-size: 12px; font-weight: 800; line-height: 1.4; }
+.naval-daily-rewards { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; color: #c7d2db; font-size: 10px; }
+.naval-daily-rewards .chip { padding: 1px 4px; font-size: 10px; }
+.naval-daily-rewards svg { width: 12px; height: 12px; }
+.naval-claim-button { display: grid; place-items: center; flex-shrink: 0; min-width: 70px; height: 35px; padding: 0 10px; border-radius: 10px; border: 1px solid #ffe49b; background: linear-gradient(135deg, #ffe079, #ffbd3d 60%, #e8940f); box-shadow: inset 0 1px 3px #fff7ce88, 0 3px 9px #0004; color: #462900; font-size: 12px; font-weight: 900; }
+.naval-daily:disabled { cursor: wait; }
+.naval-more { margin-top: 13px; border-top: 1px solid #8da8b124; }
+.naval-more summary { display: flex; justify-content: space-between; gap: 10px; align-items: center; min-height: 44px; padding: 9px 3px; color: #a8c1cf; font-size: 11px; cursor: pointer; list-style: none; }
+.naval-more summary::-webkit-details-marker { display: none; }
+.naval-more[open] summary > svg { transform: rotate(90deg); }
+.naval-more-content { padding-bottom: 8px; }
+.naval-season-link { display: flex; width: 100%; justify-content: space-between; align-items: center; margin-top: 12px; padding: 10px 0; }
+.naval-tabbar { padding-left: 0; padding-right: 0; padding-bottom: var(--safe-bottom) !important; background: linear-gradient(180deg, transparent, #05141feb 30%); }
+.naval-tabbar > div { max-width: 512px; min-height: 76px; padding: 6px 3px 8px; border-radius: 20px 20px 0 0; border: 1px solid #62899c73; border-bottom: 0; background: linear-gradient(180deg, #102b3bea, #06131ff5); box-shadow: 0 -7px 25px #00101d60; }
+.naval-tabbar a { padding: 8px 0 9px; gap: 5px; }
+.naval-tabbar a > span:last-child { font-size: 10px; font-weight: 600; }
+.naval-tabbar a[aria-current='page']::after { content: ''; position: absolute; bottom: 0; height: 2px; width: 65%; border-radius: 2px; background: #25e5f1; box-shadow: 0 0 9px #13d9ed4d; }
+.naval-tabbar a[aria-current='page'] svg { filter: drop-shadow(0 0 5px #0ce3f955); }
+@media (min-width: 420px) {
+  .naval-player-copy strong { font-size: 19px; }
+  .naval-wallet button { font-size: 14px; padding: 7px; }
+  .naval-mode { min-height: 100px; }
+  .naval-mode-copy strong { font-size: 16px; }
+  .naval-mode-copy > span { font-size: 11px; }
+  .naval-daily-copy > strong { font-size: 14px; }
+}
+@media (max-width: 359px) {
+  .naval-player-row { gap: 6px; }
+  .naval-player { gap: 6px; }
+  .naval-avatar { width: 40px; height: 40px; }
+  .naval-player-copy strong { font-size: 13px; }
+  .naval-wallet { gap: 3px; }
+  .naval-wallet button { font-size: 10px; gap: 3px; padding: 6px 4px; }
+  .naval-wallet button > svg:first-child { width: 16px; height: 16px; }
+  .naval-wallet button > svg:last-child { width: 16px; }
+  .naval-mode { padding-left: 39%; }
+  .naval-mode-copy strong { font-size: 12px; }
+  .naval-mode-copy > span { font-size: 9px; }
+  .naval-mode-wide { padding-left: 40%; }
+  .naval-mode-wide strong { font-size: 15px; }
+  .naval-daily { gap: 7px; padding: 10px 8px; }
+  .naval-daily-icon { width: 33px; padding-right: 6px; }
+  .naval-daily-copy > strong { font-size: 10px; }
+  .naval-claim-button { min-width: 58px; padding: 0 6px; font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .naval-home *, .naval-home *::before, .naval-home *::after,
+  .naval-tabbar * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

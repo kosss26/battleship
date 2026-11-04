@@ -179,7 +179,7 @@ export default function App() {
 
   const showTabs = isRoot
   return (
-    <div className="app-bg min-h-screen">
+    <div className={`app-bg min-h-screen${location.pathname === '/' ? ' naval-home-shell' : ''}`}>
       <div className="grid-bg pointer-events-none fixed inset-0 opacity-60" />
       <AnimatePresence>
         {!connected && (

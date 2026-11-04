@@ -1,6 +1,6 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Anchor, ScrollText, ShoppingBag, Trophy, User } from 'lucide-react'
+import { Anchor, ScrollText, ShoppingBag, Trophy, User, Home, ClipboardCheck, ShoppingCart, BarChart3, UserRound } from 'lucide-react'
 import { useStore } from '../store/app.js'
 import { useT } from '../lib/i18n.js'
 import { haptic } from '../lib/telegram.js'
@@ -25,27 +25,28 @@ export function useQuestBadge() {
 
 export default function TabBar() {
   const t = useT()
+  const naval = useLocation().pathname === '/'
   const badge = useQuestBadge()
   const friendsBadge = useStore((s) => s.friendsBadge)
   const tabs = [
-    { to: '/', icon: Anchor, label: t('tab_home') },
-    { to: '/quests', icon: ScrollText, label: t('tab_quests'), badge },
-    { to: '/shop', icon: ShoppingBag, label: t('tab_shop') },
-    { to: '/top', icon: Trophy, label: t('tab_top') },
-    { to: '/profile', icon: User, label: t('tab_profile'), badge: friendsBadge },
+    { to: '/', icon: naval ? Home : Anchor, label: t(naval ? 'home_nav' : 'tab_home') },
+    { to: '/quests', icon: naval ? ClipboardCheck : ScrollText, label: t('tab_quests'), badge },
+    { to: '/shop', icon: naval ? ShoppingCart : ShoppingBag, label: t('tab_shop') },
+    { to: '/top', icon: naval ? BarChart3 : Trophy, label: t('tab_top') },
+    { to: '/profile', icon: naval ? UserRound : User, label: t('tab_profile'), badge: friendsBadge },
   ]
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 flex justify-center px-3" style={{ paddingBottom: 'calc(10px + var(--safe-bottom))' }}>
+    <nav className={`fixed bottom-0 left-0 right-0 z-40 flex justify-center px-3${naval ? ' naval-tabbar' : ''}`} style={{ paddingBottom: 'calc(10px + var(--safe-bottom))' }}>
       <div className="glass-strong flex w-full max-w-lg items-stretch justify-between rounded-[26px] px-1.5 py-1.5">
         {tabs.map(({ to, icon: Icon, label, badge: b }) => (
           <NavLink key={to} to={to} end onClick={() => haptic.tap()} className="relative flex flex-1 flex-col items-center gap-0.5 rounded-2xl py-2">
             {({ isActive }) => (
               <>
-                {isActive && (
+                {isActive && !naval && (
                   <motion.div layoutId="tab-bg" className="absolute inset-0 rounded-2xl bg-white/[0.08]" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />
                 )}
                 <div className="relative">
-                  <Icon size={22} strokeWidth={isActive ? 2.4 : 1.8} className={isActive ? 'text-cyan-300' : 'text-slate-400'} />
+                  <Icon size={naval ? 25 : 22} strokeWidth={isActive ? 2.1 : 1.6} className={isActive ? 'text-cyan-300' : 'text-slate-400'} />
                   {b > 0 && (
                     <span className="absolute -right-2.5 -top-1.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-black text-white ring-2 ring-ink-850">
                       {b > 9 ? '9+' : b}
