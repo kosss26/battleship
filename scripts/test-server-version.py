@@ -31,6 +31,14 @@ if a[0]=='exec':
  assert a[1]=='battleship-db' and a[2]=='pg_dump'
  print('-- Offline fixture dump\nSELECT 1;');save();sys.exit(0)
 if a[0]=='run':
+ if '--entrypoint' in a:
+  assert '--network' in a and a[a.index('--network')+1]=='none'
+  assert a[a.index('--entrypoint')+1]=='node'
+  assert '/app/backend/src/index.js' in a[-1]
+  fail=p.parent/'fail-preflight-once'
+  if fail.exists(): fail.unlink();save();sys.exit(13)
+  s['preflights']=s.get('preflights',0)+1
+  save();sys.exit(0)
  tree=pathlib.Path(a[a.index('-v')+1].split(':')[0]);out=tree/'frontend/dist';(out/'assets').mkdir(parents=True)
  (out/'index.html').write_text('<html>test build</html>');(out/'assets/app.js').write_text('console.log(1)')
  save();sys.exit(0)
@@ -48,6 +56,10 @@ if a[0]=='compose':
   tree=pathlib.Path(override['build']['context'])
   assert (tree/'server-patch').read_text()=='preserved\n'
   assert (tree/'frontend/version').read_text()=='design\n'
+  for folder in ['backend', 'shared']:
+   for source in [tree/folder, *(tree/folder).rglob('*')]:
+    assert source.stat().st_mode & 0o004, source
+    if source.is_dir(): assert source.stat().st_mode & 0o001, source
   s['builds']=s.get('builds',0)+1
   s['images'][override['image']]='sha256:'+hashlib.sha256(override['image'].encode()).hexdigest()
  elif 'up' in a:
@@ -83,6 +95,10 @@ with tempfile.TemporaryDirectory(prefix='battleship-switch-test-') as tmp:
         run(['git', 'config', 'user.email', 'test@localhost'], repo)
     (seed / 'frontend').mkdir()
     (seed / 'frontend/version').write_text('original\n')
+    (seed / 'backend/src').mkdir(parents=True)
+    (seed / 'backend/src/index.js').write_text('console.log("server")\n')
+    (seed / 'shared').mkdir()
+    (seed / 'shared/catalog.js').write_text('export const items = []\n')
     (seed / '.gitignore').write_text('frontend/dist/\n')
     run(['git', 'add', '.'], seed)
     run(['git', 'commit', '-m', 'Original'], seed)
@@ -191,3 +207,13 @@ with tempfile.TemporaryDirectory(prefix='battleship-switch-test-') as tmp:
     assert not any('down' in c or 'prune' in c for c in calls)
     assert all(c[-1] == 'backend' and '--no-deps' in c for c in calls if c[0] == 'compose' and 'up' in c)
     print('Build failure leaves live version intact; no database restart, compose down or volume deletion: pass', flush=True)
+
+    before = json.loads(docker_state.read_text())
+    (base / 'fail-preflight-once').touch()
+    switch('deploy', False)
+    after = json.loads(docker_state.read_text())
+    assert after['active'] == original_id
+    assert ((web / 'current') / 'index.html').read_text() == 'original front'
+    assert not any(c[0]=='compose' and 'up' in c for c in after['calls'][len(before['calls']):])
+    assert after['preflights'] >= 2
+    print('Source modes allow image user access; failed offline image preflight never restarts live backend: pass', flush=True)

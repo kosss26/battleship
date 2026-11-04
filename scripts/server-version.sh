@@ -204,6 +204,10 @@ deploy_test() {
     git -C "$worktree" merge --abort || true
     die 'Конфликт с серверными патчами. Работающая версия не менялась.'
   fi
+  # Git inherits our private umask. COPY preserves these modes, but the server
+  # image runs as USER node. Make only application source traversable/readable;
+  # STATE, Compose snapshots, backups and environment files stay private.
+  chmod -R a+rX "$worktree/backend" "$worktree/shared"
   image=$TAG_PREFIX:preview-${source:0:10}-$STAMP
   python3 - "$STATE/build-override.json" "$worktree" "$(read_state build-context)" "$(read_state build-dockerfile)" "$image" <<'PY'
 import json, pathlib, sys
@@ -216,6 +220,20 @@ PY
   say 'Собираю отдельный образ backend'
   with_override "$STATE/build-override.json" build backend
   image_id "$image" >/dev/null
+  say 'Проверяю чтение исходников от пользователя Docker-образа без сети'
+  docker run --rm --network none --entrypoint node "$image" --input-type=module -e '
+    import fs from "node:fs";
+    function check(path) {
+      const info = fs.statSync(path);
+      fs.accessSync(path, fs.constants.R_OK | (info.isDirectory() ? fs.constants.X_OK : 0));
+      if (info.isDirectory()) for (const name of fs.readdirSync(path)) check(`${path}/${name}`);
+    }
+    fs.readFileSync("/app/backend/src/index.js", "utf8");
+    check("/app/backend/src");
+    check("/app/shared");
+    await import("/app/shared/catalog.js");
+    console.log("Backend source access: OK");
+  '
   say 'Собираю интерфейс в отдельной папке'
   docker run --rm -v "$worktree:/src" -w /src -e "VITE_API_URL=$DOMAIN/api" -e "VITE_WS_URL=$DOMAIN" node:20-alpine sh -c 'npm ci --no-audit --no-fund && npm run build'
   [[ -f "$worktree/frontend/dist/index.html" ]] || die 'Сборка интерфейса не создала index.html'
