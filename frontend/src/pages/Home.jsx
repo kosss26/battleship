@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Anchor, Swords, ChevronRight, ChevronsUp, Gift, Plus, Shield, Trophy, LoaderCircle } from 'lucide-react'
+import { Anchor, Swords, ChevronRight, ChevronsUp, Gift, Shield, Trophy, LoaderCircle } from 'lucide-react'
 import { useStore } from '../store/app.js'
 import { useT, useL } from '../lib/i18n.js'
 import { haptic } from '../lib/telegram.js'
@@ -12,7 +12,7 @@ import { MATCH_REWARDS, QUESTS, PASS_XP_PER_TIER, PASS_TIERS, DAILY_REWARDS, CAM
 import { buyStars } from './Shop.jsx'
 import { SeasonChip } from '../components/Season.jsx'
 import { AdButton, useAdsEnabled } from '../components/Ads.jsx'
-import '../styles/naval-home.css'
+import { NavalWordmark, NavalWallet } from '../components/naval.jsx'
 
 export function TopBar() {
   const t = useT()
@@ -21,11 +21,7 @@ export function TopBar() {
   const frame = FRAMES.find((f) => f.id === p.equipped.frame)?.ring
   return (
     <header className="naval-header">
-      <div className="naval-wordmark" aria-label="Battleship">
-        <span className="naval-wordmark-line" />
-        <span><Anchor size={17} aria-hidden="true" /><b>BATTLESHIP</b></span>
-        <span className="naval-wordmark-line" />
-      </div>
+      <NavalWordmark />
       <div className="naval-player-row">
         <button onClick={() => navigate('/profile')} className="naval-player" aria-label={t('tab_profile')}>
           {p.photo ? <Avatar photo={p.photo} name={p.name} frame={p.equipped.frame} size={50} /> : (
@@ -38,14 +34,7 @@ export function TopBar() {
             <span><ChevronsUp size={14} aria-hidden="true" />{t('tier', { n: p.level })}</span>
           </span>
         </button>
-        <div className="naval-wallet" aria-label={t('tab_shop')}>
-          <button onClick={() => navigate('/shop')} aria-label={`${t('home_gold')}: ${p.gold}. ${t('tab_shop')}`}>
-            <Coin size={20} /><span>{fmt(p.gold)}</span><Plus size={17} aria-hidden="true" />
-          </button>
-          <button onClick={() => navigate('/shop')} aria-label={`${t('home_gems')}: ${p.gems}. ${t('tab_shop')}`}>
-            <Gem size={20} /><span>{fmt(p.gems)}</span><Plus size={17} aria-hidden="true" />
-          </button>
-        </div>
+        <NavalWallet />
       </div>
     </header>
   )

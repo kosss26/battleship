@@ -28,6 +28,7 @@ import Legal from './pages/Legal.jsx'
 import SeasonResultPopup from './components/SeasonResultPopup.jsx'
 import AdminUser from './pages/AdminUser.jsx'
 import { START_PARAM } from '@shared/catalog.js'
+import { isNavalRoute } from './components/naval.jsx'
 
 const TABS = ['/', '/quests', '/shop', '/top', '/profile']
 
@@ -179,7 +180,7 @@ export default function App() {
 
   const showTabs = isRoot
   return (
-    <div className={`app-bg min-h-screen${location.pathname === '/' ? ' naval-home-shell' : ''}`}>
+    <div className={`app-bg min-h-screen${isNavalRoute(location.pathname) ? ' naval-home-shell' : ''}`}>
       <div className="grid-bg pointer-events-none fixed inset-0 opacity-60" />
       <AnimatePresence>
         {!connected && (

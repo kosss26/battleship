@@ -5,6 +5,7 @@ import { useStore } from '../store/app.js'
 import { useT } from '../lib/i18n.js'
 import { haptic } from '../lib/telegram.js'
 import { QUESTS, PASS_XP_PER_TIER } from '@shared/catalog.js'
+import { isNavalRoute } from './naval.jsx'
 
 export function useQuestBadge() {
   const p = useStore((s) => s.profile)
@@ -25,7 +26,7 @@ export function useQuestBadge() {
 
 export default function TabBar() {
   const t = useT()
-  const naval = useLocation().pathname === '/'
+  const naval = isNavalRoute(useLocation().pathname)
   const badge = useQuestBadge()
   const friendsBadge = useStore((s) => s.friendsBadge)
   const tabs = [
