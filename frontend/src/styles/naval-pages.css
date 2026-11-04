@@ -17,8 +17,8 @@
 .naval-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 16px 3px 10px; }
 .naval-section-heading h2 { font-size: 21px; font-weight: 800; line-height: 1.2; letter-spacing: -.6px; }
 .naval-section-heading > span { display: inline-flex; align-items: center; gap: 4px; color: var(--naval-muted); font-size: 9px; line-height: 1.4; text-align: right; }
-.naval-daily-panel { padding: 13px 10px 12px; overflow: hidden; }
-.naval-daily-banner { position: relative; display: flex; gap: 10px; align-items: center; min-height: 53px; margin: -13px -10px 12px; padding: 12px 13px; background: linear-gradient(90deg, #102a3e, #0d2435d9 50%, #0b223345), url('/art/naval/hero.webp') right 46% / cover; }
+.naval-panel.naval-daily-panel { padding: 13px 10px 12px; overflow: hidden; background: linear-gradient(110deg, #0b2234f5 12%, #0d2637d9 55%, #0b2234ad), url('/art/naval/hero.webp') center 48% / cover; }
+.naval-daily-banner { position: relative; display: flex; gap: 10px; align-items: center; min-height: 53px; margin: -13px -10px 12px; padding: 12px 13px; }
 .naval-daily-banner > svg { flex-shrink: 0; color: #ffd279; filter: drop-shadow(0 0 6px #ffbf2840); }
 .naval-daily-banner h2 { font-size: 15px; font-weight: 800; line-height: 1.25; }
 .naval-daily-banner p { margin-top: 3px; color: #b9cfdd; font-size: 10px; }
@@ -47,9 +47,9 @@
 .naval-mission-claimed { color: #6fdde5; }
 .naval-mission .chip { background: transparent; padding: 0 4px 0 0; font-size: 10px; }
 .naval-mission .chip svg { width: 13px; height: 13px; }
-.naval-pass { overflow: hidden; margin-top: 13px; padding: 0 11px 0; }
-.naval-pass-heading { position: relative; isolation: isolate; min-height: 137px; margin: 0 -11px; padding: 14px 14px 12px; background: linear-gradient(90deg, #0b2234, #0b2234e6 50%, #0b223411), url('/art/naval/hero.webp') center 48% / cover; }
-.naval-pass-heading::after { content: ''; position: absolute; z-index: -1; top: 6px; right: -2px; width: 108px; height: 126px; background: url('/art/naval/modes.webp') 100% 100% / 200% 200%; mask-image: linear-gradient(90deg, transparent, #000 40%), linear-gradient(#000 60%, transparent); mask-composite: intersect; -webkit-mask-image: linear-gradient(90deg, transparent, #000 40%); }
+.naval-panel.naval-pass { position: relative; isolation: isolate; overflow: hidden; margin-top: 13px; padding: 0 11px 0; background: linear-gradient(110deg, #0b2234fa 15%, #0b2234e6 58%, #0b2234bd), url('/art/naval/hero.webp') 60% center / cover; }
+.naval-pass-heading { position: relative; isolation: isolate; min-height: 145px; margin: 0 -11px; padding: 14px 14px 12px; }
+.naval-pass-heading::after { content: ''; position: absolute; z-index: -1; top: 6px; right: 0; width: 124px; height: 124px; background: url('/art/naval/modes.webp') 100% 100% / 200% 200%; mask-image: radial-gradient(ellipse 85% 90% at 80% 25%, #000 25%, #000c 50%, transparent 100%); -webkit-mask-image: radial-gradient(ellipse 85% 90% at 80% 25%, #000 25%, #000c 50%, transparent 100%); }
 .naval-pass-heading .naval-eyebrow { font-size: 9px; letter-spacing: 1px; }
 .naval-pass h2 { position: relative; font-size: 23px; line-height: 1.2; font-weight: 800; letter-spacing: -.5px; margin: 7px 0 8px; }
 .naval-pass-progress-label { display: flex; gap: 12px; width: 70%; justify-content: space-between; font-size: 10px; color: #c9dce6; margin-bottom: 6px; }
