@@ -173,9 +173,9 @@ test('friend duel via code', async () => {
   const sa = await connect(a.token)
   const sb = await connect(b.token)
   const { code } = await call(sa, 'duel:create')
-  assert.equal(code.length, 6)
-  assert.equal((await call(sb, 'duel:join', { code: 'ZZZZZZ' })).error, 'duel_not_found')
-  const j = await call(sb, 'duel:join', { code })
+  assert.match(code, /^\d{5}$/)
+  assert.equal((await call(sb, 'duel:join', { code: '00000' })).error, 'duel_not_found')
+  const j = await call(sb, 'duel:join', { code: ` ${code.slice(0, 2)} ${code.slice(2)} ` }) // spaces are ignored
   assert.ok(j.room)
   await until(() => sa.state?.mode === 'duel' && sb.state?.mode === 'duel')
   await call(sa, 'game:resign')

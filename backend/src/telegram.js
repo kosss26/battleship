@@ -53,7 +53,13 @@ export async function botApi(method, payload = {}) {
 
 /** Direct Mini App link, e.g. https://t.me/bot/play?startapp=ref_ABC */
 export function appLink(startParam = '') {
-  if (!config.botUsername) return config.webappUrl
+  if (!config.botUsername) {
+    // No bot configured: point straight at the web app, keeping the start parameter
+    if (!startParam) return config.webappUrl
+    const url = new URL(config.webappUrl)
+    url.searchParams.set('startapp', startParam)
+    return url.toString()
+  }
   const base = `https://t.me/${config.botUsername}/${config.appShortName}`
   return startParam ? `${base}?startapp=${encodeURIComponent(startParam)}` : base
 }

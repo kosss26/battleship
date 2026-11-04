@@ -187,7 +187,7 @@ router.get('/me/referrals', wrap(async (req, res) => {
 }))
 
 router.get('/duel-link/:code', auth, (req, res) => {
-  res.json({ link: appLink(`${START_PARAM.duel}${String(req.params.code).toUpperCase()}`) })
+  res.json({ link: appLink(`${START_PARAM.duel}${String(req.params.code).replace(/\D/g, '')}`) })
 })
 
 /* ───────── leaderboards & profiles ───────── */

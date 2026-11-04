@@ -11,6 +11,7 @@ const rooms = new Map() // roomId -> GameRoom
 const userRoom = new Map() // userId -> roomId
 const queue = new Map() // userId -> { rating, games, since, profile }
 const duels = new Map() // code -> { hostId, createdAt, profile }
+const joinAttempts = new Map() // userId -> [timestamps of failed duel joins]
 
 let io = null
 
@@ -162,6 +163,7 @@ export function initSockets(server) {
   setInterval(() => {
     const now = Date.now()
     for (const [code, d] of duels) if (now - d.createdAt > 30 * 60_000) duels.delete(code)
+    joinAttempts.clear()
   }, 60_000).unref()
 
   io.use(async (socket, next) => {
@@ -258,7 +260,8 @@ export function initSockets(server) {
         }
       }
       let code
-      do code = crypto.randomBytes(4).toString('hex').toUpperCase().slice(0, 6)
+      // 5-digit numeric code, easy to dictate or type
+      do code = String(crypto.randomInt(10000, 100000))
       while (duels.has(code))
       duels.set(code, { hostId: userId, createdAt: Date.now(), profile: publicProfile(u) })
       return { code }
@@ -269,9 +272,17 @@ export function initSockets(server) {
     }))
 
     socket.on('duel:join', guard(async ({ code }) => {
-      const key = String(code || '').toUpperCase()
+      const key = String(code || '').replace(/\D/g, '')
+      // Throttle wrong guesses so short numeric codes cannot be brute-forced
+      const now = Date.now()
+      const attempts = (joinAttempts.get(userId) || []).filter((t) => now - t < 60_000)
+      if (attempts.length >= 10) throw new GameError('too_many_attempts')
       const duel = duels.get(key)
-      if (!duel) throw new GameError('duel_not_found')
+      if (!duel) {
+        attempts.push(now)
+        joinAttempts.set(userId, attempts)
+        throw new GameError('duel_not_found')
+      }
       if (duel.hostId === userId) return { hosting: true }
       ensureFree()
       if (activeRoom(duel.hostId)) throw new GameError('host_busy')
