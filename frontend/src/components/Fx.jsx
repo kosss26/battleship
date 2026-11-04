@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import { motion } from 'framer-motion'
 
 const particles = Array.from({ length: 10 }, (_, i) => {
@@ -82,8 +83,9 @@ export function Flame({ colors = ['#f97316', '#facc15'] }) {
  */
 export function Shell({ ms = 300 }) {
   const d = ms / 1000
+  const gid = `shell-${useId().replace(/:/g, '')}`
   return (
-    <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center">
+    <div data-shell className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center">
       <motion.div
         className="absolute rounded-full bg-black/50 blur-[2px]"
         style={{ width: '55%', height: '55%' }}
@@ -100,13 +102,13 @@ export function Shell({ ms = 300 }) {
       >
         <svg viewBox="0 0 24 24" className="h-full w-full drop-shadow-[0_0_6px_rgba(251,191,36,0.9)]">
           <defs>
-            <radialGradient id="shell-g" cx="35%" cy="35%" r="70%">
+            <radialGradient id={gid} cx="35%" cy="35%" r="70%">
               <stop offset="0" stopColor="#fff7ed" />
               <stop offset="0.4" stopColor="#fbbf24" />
               <stop offset="1" stopColor="#b45309" />
             </radialGradient>
           </defs>
-          <circle cx="12" cy="12" r="9" fill="url(#shell-g)" stroke="#78350f" strokeWidth="1.2" />
+          <circle cx="12" cy="12" r="9" fill={`url(#${gid})`} stroke="#78350f" strokeWidth="1.2" />
         </svg>
       </motion.div>
     </div>

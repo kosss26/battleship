@@ -12,8 +12,9 @@ test('battle vs AI: placement, shell animation, results, double reward for an ad
 
   // The shell is in the air for ~300 ms, then the marker appears
   await page.locator('button[aria-label="Д5"]').click()
-  await expect(page.locator('#shell-g')).toHaveCount(1)
-  await expect(page.locator('#shell-g')).toHaveCount(0, { timeout: 3000 })
+  // (the bot answers instantly in tests, so its shell may be in the air too)
+  await expect(page.locator('[data-shell]').first()).toBeVisible()
+  await expect(page.locator('[data-shell]')).toHaveCount(0, { timeout: 3000 })
 
   for (let i = 0; i < 6; i++) {
     await fireOnce(page)
