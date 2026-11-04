@@ -12,6 +12,7 @@ import { startAi, startCampaign } from '../lib/play.js'
 import { RewardChips, Stars, Avatar } from '../components/ui.jsx'
 import Board from '../components/Board.jsx'
 import { AdButton } from '../components/Ads.jsx'
+import { StoryButton, HomeScreenPrompt, inviteLink } from '../components/Share.jsx'
 import { THEMES, SHIP_SKINS } from '@shared/catalog.js'
 
 function Confetti() {
@@ -91,8 +92,7 @@ export default function Results({ over }) {
   }
 
   const share = () => {
-    const base = config?.appLink || location.origin
-    const link = base.includes('t.me/') ? `${base}?startapp=ref_${profile.refCode}` : base
+    const link = inviteLink(config, profile)
     shareLink(link, won ? t('share_text_win', { shots: myStats.shots, acc: accuracy }) : t('share_text'))
   }
 
@@ -221,6 +221,8 @@ export default function Results({ over }) {
         <button className="btn-primary mb-2 w-full text-base" onClick={again} disabled={rematchWait}>
           {game.mode === 'duel' ? <Swords size={20} /> : <RotateCcw size={20} />} {againLabel}
         </button>
+        {won && <StoryButton over={over} className="mb-2 w-full" />}
+        <HomeScreenPrompt games={profile.stats.games} />
         <div className="grid grid-cols-2 gap-2">
           <button className="btn-ghost" onClick={home}><Home size={18} /> {t('home')}</button>
           <button className="btn-ghost" onClick={share}><Share2 size={18} /> {t('share')}</button>

@@ -10,6 +10,9 @@ import { api } from '../lib/api.js'
 import { openLink, requestWriteAccess, isTelegram } from '../lib/telegram.js'
 import { Avatar, Progress, RankBadge, Toggle, Segmented, Empty, Spinner, Modal } from '../components/ui.jsx'
 import { SeasonEmblem } from '../components/Season.jsx'
+import { useHomeScreenAvailable } from '../components/Share.jsx'
+import { addToHomeScreen } from '../lib/telegram.js'
+import { Smartphone } from 'lucide-react'
 
 function Stat({ label, value }) {
   return (
@@ -132,6 +135,7 @@ export default function Profile() {
   const updateSettings = useStore((s) => s.updateSettings)
   const friendsBadge = useStore((s) => s.friendsBadge)
   const [deleting, setDeleting] = useState(false)
+  const homeAvailable = useHomeScreenAvailable()
   const s = p.stats
   const winrate = s.games ? Math.round((s.wins / s.games) * 100) : 0
   const accuracy = s.shots ? Math.round((s.hits / s.shots) * 100) : 0
@@ -195,6 +199,7 @@ export default function Profile() {
         <Row icon={Award} label={t('achievements')} onClick={() => navigate('/achievements')} right={<span className="chip bg-amber-300/15 text-amber-200">{achCount}/{ACHIEVEMENTS.length}</span>} />
         <Row icon={Users} label={t('friends')} onClick={() => navigate('/friends')} right={friendsBadge ? <span className="chip bg-rose-500 text-white">{friendsBadge}</span> : undefined} />
         <Row icon={GraduationCap} label={t('how_to_play')} onClick={() => useStore.setState({ showTutorial: true })} />
+        {homeAvailable && <Row icon={Smartphone} label={t('home_screen')} onClick={() => addToHomeScreen(() => useStore.getState().toast(t('home_screen_added'), 'success'))} />}
       </div>
 
       <SeasonHistory />

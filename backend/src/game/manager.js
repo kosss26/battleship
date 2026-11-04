@@ -8,6 +8,7 @@ import { areFriends } from '../services/friends.js'
 import { notifyById } from '../services/notify.js'
 import { applyMatchResult, saveGame } from '../services/match.js'
 import { query } from '../db.js'
+import { trackActivity } from '../services/analytics.js'
 import { eloDelta } from '../services/elo.js'
 
 const rooms = new Map() // roomId -> GameRoom
@@ -231,6 +232,7 @@ export function initSockets(server) {
     const userId = socket.userId
     socket.join(`u:${userId}`)
     online.set(userId, (online.get(userId) || 0) + 1)
+    trackActivity(userId)
 
     activeRoom(userId)?.reconnected(userId)
 

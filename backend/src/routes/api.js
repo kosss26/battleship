@@ -1,4 +1,5 @@
 import express from 'express'
+import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
 import { config } from '../config.js'
 import { query } from '../db.js'
@@ -14,6 +15,7 @@ import { listFriends, requestFriend, acceptFriend, removeFriend, makeFriends, fr
 import { notifyById, clearBlocked } from '../services/notify.js'
 import { START_PARAM } from '../../../shared/catalog.js'
 import adminRouter from './admin.js'
+import { trackActivity } from '../services/analytics.js'
 import { adsEnabled, verifiedMode, startAd, completeAd, logAdView, adsgramCallback } from '../services/ads.js'
 import { unclaimedResult, seasonHistory, claimSeason, currentSeasonProgress } from '../services/seasons.js'
 import { seasonInfo } from '../../../shared/catalog.js'
@@ -21,7 +23,10 @@ import { seasonInfo } from '../../../shared/catalog.js'
 const router = express.Router()
 
 /** Own profile plus an unclaimed season result, if any */
-const fullSelf = async (id) => ({ ...(await freshSelf(id)), seasonResult: await unclaimedResult(id) })
+const fullSelf = async (id) => {
+  trackActivity(id)
+  return { ...(await freshSelf(id)), seasonResult: await unclaimedResult(id) }
+}
 
 const sign = (userId) => jwt.sign({ uid: userId }, config.jwtSecret, { expiresIn: '30d' })
 
@@ -83,6 +88,14 @@ router.get('/config', (req, res) => {
     ads: { enabled: adsEnabled(), blockId: config.adsgramBlockId || null, fake: adsEnabled() && !config.adsgramBlockId },
   })
 })
+
+router.get('/share/card/:id.png', wrap(async (req, res) => {
+  if (!/^[0-9a-f-]{36}$/.test(req.params.id)) return res.sendStatus(404)
+  const { rows } = await query('SELECT png FROM share_cards WHERE id = $1', [req.params.id])
+  if (!rows[0]) return res.sendStatus(404)
+  res.set({ 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=604800, immutable', 'Cross-Origin-Resource-Policy': 'cross-origin' })
+  res.send(rows[0].png)
+}))
 
 // Adsgram "Reward URL": https://<api>/api/ads/adsgram-reward?userid=[userId]&secret=<ADSGRAM_REWARD_SECRET>
 router.get('/ads/adsgram-reward', wrap(async (req, res) => {
@@ -161,6 +174,25 @@ router.post('/me/ads/complete', wrap(async (req, res) => {
   const profile = selfView(user)
   notifyProfile(req.userId, profile)
   res.json({ profile, summary: result.summary })
+}))
+
+/* ───────── story cards ───────── */
+
+const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+
+/** Uploads a rendered victory card (PNG) and returns a public URL for Telegram's shareToStory */
+router.post('/me/share-card', express.raw({ type: 'image/png', limit: '3mb' }), wrap(async (req, res) => {
+  const png = req.body
+  if (!Buffer.isBuffer(png) || png.length < 40 || !png.subarray(0, 8).equals(PNG_MAGIC)) {
+    return res.status(400).json({ error: 'bad_image' })
+  }
+  const { rows } = await query(`SELECT count(*)::int AS n FROM share_cards WHERE user_id = $1 AND created_at > now() - interval '1 hour'`, [req.userId])
+  if (rows[0].n >= 20) return res.status(429).json({ error: 'rate_limited' })
+  const id = crypto.randomUUID()
+  await query('INSERT INTO share_cards (id, user_id, png) VALUES ($1,$2,$3)', [id, req.userId, png])
+  query(`DELETE FROM share_cards WHERE created_at < now() - interval '7 days'`).catch(() => {})
+  const base = config.publicUrl || `${req.protocol}://${req.get('host')}`
+  res.json({ url: `${base}/api/share/card/${id}.png` })
 }))
 
 /* ───────── account deletion ───────── */

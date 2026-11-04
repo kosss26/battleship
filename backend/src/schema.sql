@@ -119,3 +119,25 @@ CREATE TABLE IF NOT EXISTS ad_views (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS ad_views_created_idx ON ad_views (created_at DESC);
+
+-- One row per player per active day (UTC) — the basis for DAU and retention
+CREATE TABLE IF NOT EXISTS user_activity (
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  day     DATE NOT NULL,
+  PRIMARY KEY (user_id, day)
+);
+CREATE INDEX IF NOT EXISTS user_activity_day_idx ON user_activity (day);
+INSERT INTO user_activity (user_id, day)
+  SELECT id, created_at::date FROM users
+  UNION SELECT id, last_seen::date FROM users
+  ON CONFLICT DO NOTHING;
+
+-- Victory cards for Telegram Stories (kept for a week)
+CREATE TABLE IF NOT EXISTS share_cards (
+  id         UUID PRIMARY KEY,
+  user_id    BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  png        BYTEA NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS share_cards_created_idx ON share_cards (created_at);
+CREATE INDEX IF NOT EXISTS share_cards_user_idx ON share_cards (user_id, created_at DESC);

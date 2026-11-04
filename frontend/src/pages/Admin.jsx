@@ -4,6 +4,7 @@ import { Search, RefreshCw, Send, ChevronRight, ShieldCheck } from 'lucide-react
 import { api, post } from '../lib/api.js'
 import { useStore } from '../store/app.js'
 import { Avatar, PageHeader, Segmented, Spinner, Empty, Toggle, fmt } from '../components/ui.jsx'
+import Analytics from '../admin/Analytics.jsx'
 import { Card, Tile, fmtDate, ACTION_LABELS, PRODUCT_LABELS, useConfirm, adminError, inputCls } from '../admin/common.jsx'
 
 function useLoad(fn, deps = []) {
@@ -374,14 +375,16 @@ export default function Admin() {
           onChange={select}
           options={[
             { value: 'overview', label: 'Обзор' },
+            { value: 'analytics', label: 'Данные' },
             { value: 'players', label: 'Игроки' },
             { value: 'payments', label: 'Платежи' },
-            { value: 'broadcast', label: 'Рассылка' },
+            { value: 'broadcast', label: 'Пуши' },
             { value: 'log', label: 'Журнал' },
           ]}
         />
       </div>
       {tab === 'overview' && <Overview />}
+      {tab === 'analytics' && <Analytics />}
       {tab === 'players' && <Players />}
       {tab === 'payments' && <Payments />}
       {tab === 'broadcast' && <Broadcast />}

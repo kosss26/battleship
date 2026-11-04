@@ -43,3 +43,20 @@ export async function api(path, { method = 'GET', body } = {}) {
 
 export const post = (path, body) => api(path, { method: 'POST', body: body || {} })
 export const patch = (path, body) => api(path, { method: 'PATCH', body })
+
+/** POSTs a binary body (e.g. a PNG) and returns the JSON response */
+export async function upload(path, blob, type) {
+  let res
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': type, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: blob,
+    })
+  } catch {
+    throw new ApiError('network', 0)
+  }
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) throw new ApiError(json.error || 'server_error', res.status)
+  return json
+}

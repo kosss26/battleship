@@ -107,6 +107,41 @@ export function requestWriteAccess() {
   })
 }
 
+/** Stories can be posted from the mobile Telegram apps (Bot API 7.8+) */
+export const canShareStory = () => !!tg?.shareToStory && supports('7.8') && ['ios', 'android', 'android_x'].includes(tg.platform)
+
+export function shareToStory(mediaUrl, { text, widgetUrl, widgetName } = {}) {
+  const params = { text }
+  // Links in stories are only allowed for Telegram Premium users
+  if (widgetUrl && tg?.initDataUnsafe?.user?.is_premium) params.widget_link = { url: widgetUrl, name: widgetName }
+  tg.shareToStory(mediaUrl, params)
+}
+
+/** Home screen shortcut (Bot API 8.0+). Resolves 'unsupported' | 'unknown' | 'added' | 'missed' */
+export function homeScreenStatus() {
+  return new Promise((resolve) => {
+    if (!tg?.checkHomeScreenStatus || !supports('8.0')) return resolve('unsupported')
+    try {
+      tg.checkHomeScreenStatus((status) => resolve(status || 'unknown'))
+    } catch {
+      resolve('unsupported')
+    }
+  })
+}
+
+export function addToHomeScreen(onAdded) {
+  if (!tg?.addToHomeScreen || !supports('8.0')) return false
+  if (onAdded) {
+    const handler = () => {
+      tg.offEvent('homeScreenAdded', handler)
+      onAdded()
+    }
+    tg.onEvent('homeScreenAdded', handler)
+  }
+  tg.addToHomeScreen()
+  return true
+}
+
 export function confirmClose(on) {
   if (!supports('6.2')) return
   if (on) tg.enableClosingConfirmation()

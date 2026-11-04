@@ -3,6 +3,7 @@ import {
   requireAdmin, dashboard, searchUsers, userDetail, setBan, adjustUser, listPayments, refund,
   adminLog, broadcast, broadcastJobs,
 } from '../services/admin.js'
+import { analytics } from '../services/analytics.js'
 import { GameError } from '../services/users.js'
 
 /** Every route here re-checks that the caller's Telegram id is listed in ADMIN_IDS */
@@ -19,6 +20,7 @@ export default function adminRouter({ auth, wrap }) {
   })
 
   router.get('/dashboard', wrap(async (req, res) => res.json(await dashboard())))
+  router.get('/analytics', wrap(async (req, res) => res.json(await analytics(Number(req.query.days) || 30))))
   router.get('/users', wrap(async (req, res) => res.json({ users: await searchUsers(req.query.q) })))
   router.get('/users/:id', wrap(async (req, res) => res.json(await userDetail(Number(req.params.id)))))
   router.post('/users/:id/ban', wrap(async (req, res) => {

@@ -11,10 +11,12 @@
     "start": "npm --prefix backend start",
     "dev": "concurrently -n api,web -c cyan,magenta \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
     "build": "npm --prefix frontend run build",
-    "test": "npm --prefix backend test"
+    "test": "npm --prefix backend test",
+    "e2e": "playwright test -c e2e/playwright.config.js"
   },
   "license": "UNLICENSED",
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "concurrently": "^8.2.2"
   }
 }

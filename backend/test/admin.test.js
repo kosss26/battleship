@@ -117,3 +117,27 @@ test('refund revokes purchased goods once', async () => {
   const dry = await api('/admin/broadcast', { token: admin.token, method: 'POST', body: { segment: 'payers', dryRun: true } })
   assert.equal(dry.body.recipients, 0, 'refunded buyer is no longer a payer')
 })
+
+test('analytics: retention cohorts, funnel and KPIs (admin only)', async () => {
+  const admin = await login('Root Admin')
+  const player = await login('Cohort Player')
+  assert.equal((await api('/admin/analytics', { token: player.token })).status, 403)
+  // A player who registered 8 days ago and came back on days 1 and 7
+  await query(`UPDATE users SET created_at = now() - interval '8 days' WHERE id = $1`, [player.profile.id])
+  await query(`DELETE FROM user_activity WHERE user_id = $1`, [player.profile.id])
+  await query(
+    `INSERT INTO user_activity (user_id, day) VALUES ($1, current_date - 8), ($1, current_date - 7), ($1, current_date - 1)`,
+    [player.profile.id],
+  )
+  const a = (await api('/admin/analytics?days=30', { token: admin.token })).body
+  assert.equal(a.days, 30)
+  assert.equal(a.daily.length, 30)
+  const cohort = a.cohorts.find((c) => c.size === 1 && c.d1 === 100)
+  assert.ok(cohort, JSON.stringify(a.cohorts))
+  assert.equal(cohort.d7, 100)
+  assert.equal(cohort.d14, null, 'not mature yet')
+  assert.ok(a.funnel.registered >= 2)
+  assert.ok(a.funnel.returned >= 1)
+  assert.ok(a.kpi.mau >= 2)
+  assert.ok(Array.isArray(a.products))
+})

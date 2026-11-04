@@ -150,3 +150,20 @@ test('reminder rules', async () => {
   assert.ok(n1 >= 1)
   assert.equal(n2, 0)
 })
+
+test('story card upload and public download', async () => {
+  const u = await login('Story Teller')
+  // 1×1 transparent PNG
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64')
+  const up = await fetch(`${BASE}/api/me/share-card`, { method: 'POST', headers: { 'Content-Type': 'image/png', Authorization: `Bearer ${u.token}` }, body: png })
+  assert.equal(up.status, 200)
+  const { url } = await up.json()
+  assert.match(url, /\/api\/share\/card\/[0-9a-f-]{36}\.png$/)
+  const dl = await fetch(url)
+  assert.equal(dl.headers.get('content-type'), 'image/png')
+  assert.deepEqual(Buffer.from(await dl.arrayBuffer()), png)
+  const bad = await fetch(`${BASE}/api/me/share-card`, { method: 'POST', headers: { 'Content-Type': 'image/png', Authorization: `Bearer ${u.token}` }, body: Buffer.from('not a png at all, definitely not a png file here........................................................') })
+  assert.equal(bad.status, 400)
+  const anon = await fetch(`${BASE}/api/me/share-card`, { method: 'POST', headers: { 'Content-Type': 'image/png' }, body: png })
+  assert.equal(anon.status, 401)
+})
