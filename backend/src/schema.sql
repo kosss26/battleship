@@ -71,3 +71,21 @@ CREATE INDEX IF NOT EXISTS admin_log_target_idx ON admin_log (target_id, created
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS refunded_at TIMESTAMPTZ;
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS revoked JSONB;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS ban_reason TEXT;
+
+CREATE TABLE IF NOT EXISTS friendships (
+  a            BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  b            BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status       TEXT NOT NULL DEFAULT 'pending',
+  requested_by BIGINT NOT NULL,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (a, b),
+  CHECK (a < b)
+);
+CREATE INDEX IF NOT EXISTS friendships_b_idx ON friendships (b);
+
+-- Players who joined via an invite link are friends with the inviter
+INSERT INTO friendships (a, b, status, requested_by)
+  SELECT LEAST(id, referred_by), GREATEST(id, referred_by), 'accepted', referred_by
+    FROM users WHERE referred_by IS NOT NULL AND referred_by <> id
+  ON CONFLICT DO NOTHING;

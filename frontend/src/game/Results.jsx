@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Home, RotateCcw, Share2, Swords, ChevronRight } from 'lucide-react'
+import { Home, RotateCcw, Share2, Swords, ChevronRight, UserPlus } from 'lucide-react'
+import { post } from '../lib/api.js'
 import { useNavigate } from 'react-router-dom'
 import { ACHIEVEMENTS, QUESTS, CAMPAIGN } from '@shared/catalog.js'
 import { useStore } from '../store/app.js'
@@ -46,6 +47,7 @@ export default function Results({ over }) {
   const rematchOffered = useStore((s) => s.rematchOffered)
   const [rematchWait, setRematchWait] = useState(false)
   const [showBoard, setShowBoard] = useState(false)
+  const [friendSent, setFriendSent] = useState(false)
   const game = over.state
   const { won, rewards, extra, myStats, durationMs, reason } = over
   const accuracy = myStats.shots ? Math.round((myStats.hits / myStats.shots) * 100) : 0
@@ -120,6 +122,22 @@ export default function Results({ over }) {
           <div className="flex-1 truncate text-right text-sm font-bold">{game.opp.profile.name}</div>
           <Avatar photo={game.opp.profile.photo} name={game.opp.profile.name} frame={game.opp.profile.frame} size={36} />
         </div>
+        {!game.opp.profile.bot && typeof game.opp.profile.id === 'number' && !friendSent && (
+          <button
+            className="mb-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-white/[0.04] py-2.5 text-sm font-bold text-cyan-200"
+            onClick={async () => {
+              try {
+                const r = await post('/me/friends', { id: game.opp.profile.id })
+                useStore.getState().toast(r.status === 'accepted' ? t('friend_added') : t('request_sent'), 'success')
+              } catch (e) {
+                useStore.getState().toast(e.code || 'error_generic', 'error')
+              }
+              setFriendSent(true)
+            }}
+          >
+            <UserPlus size={16} /> {t('add_to_friends')}: {game.opp.profile.name}
+          </button>
+        )}
 
         <div className="mb-3 grid grid-cols-4 gap-2">
           {[

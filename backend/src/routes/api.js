@@ -4,12 +4,14 @@ import { config } from '../config.js'
 import { query } from '../db.js'
 import { verifyInitData, appLink } from '../telegram.js'
 import {
-  upsertTelegramUser, getUser, mutateUser, selfView, publicProfile, freshSelf,
+  upsertTelegramUser, getUser, mutateUser, selfView, publicProfile, freshSelf, displayName,
   claimDaily, claimQuest, claimPass, GameError,
 } from '../services/users.js'
 import { buyItem, equip } from '../services/shop.js'
 import { createStarInvoice, handleUpdate } from '../services/bot.js'
-import { notifyProfile } from '../game/manager.js'
+import { notifyProfile, presence, isOnline, emitToUser as emitFriends } from '../game/manager.js'
+import { listFriends, requestFriend, acceptFriend, removeFriend, makeFriends, friendIds } from '../services/friends.js'
+import { notifyById, clearBlocked } from '../services/notify.js'
 import { START_PARAM } from '../../../shared/catalog.js'
 import adminRouter from './admin.js'
 
@@ -95,6 +97,8 @@ router.post('/auth/telegram', rateLimit(30, 60_000), wrap(async (req, res) => {
   if (!verified) return res.status(401).json({ error: 'invalid_init_data' })
   const { user, isNew } = await upsertTelegramUser(verified.user, { refCode: refFrom(verified.startParam, req.body?.ref) })
   if (user.banned) return res.status(403).json({ error: 'banned' })
+  if (isNew && user.referred_by) await makeFriends(user.id, user.referred_by)
+  if (!isNew) clearBlocked(user.id).catch(() => {})
   res.json({ token: sign(user.id), profile: await freshSelf(user.id), isNew, startParam: verified.startParam })
 }))
 
@@ -107,6 +111,7 @@ router.post('/auth/dev', wrap(async (req, res) => {
     { id: devId, first_name: name, language_code: req.body?.lang || 'ru' },
     { refCode: req.body?.ref },
   )
+  if (isNew && user.referred_by) await makeFriends(user.id, user.referred_by)
   res.json({ token: sign(user.id), profile: await freshSelf(user.id), isNew })
 }))
 
@@ -117,9 +122,45 @@ router.use('/me', auth, rateLimit(120, 60_000))
 router.get('/me', wrap(async (req, res) => res.json({ profile: await freshSelf(req.userId) })))
 
 router.patch('/me/settings', mutation((u, req) => {
-  const { language, sound, haptics, music } = req.body || {}
+  const { language, sound, haptics, music, notify } = req.body || {}
   if (language && ['ru', 'en'].includes(language)) u.language = language
-  for (const [k, v] of Object.entries({ sound, haptics, music })) if (typeof v === 'boolean') u.data.settings[k] = v
+  for (const [k, v] of Object.entries({ sound, haptics, music, notify })) if (typeof v === 'boolean') u.data.settings[k] = v
+}))
+
+router.post('/me/onboarded', mutation((u) => {
+  u.data.onboarded = true
+}))
+
+/* ───────── friends ───────── */
+
+router.get('/me/friends', wrap(async (req, res) => res.json(await listFriends(req.userId, presence))))
+
+router.post('/me/friends', wrap(async (req, res) => {
+  const me = await getUser(req.userId)
+  const { status, target } = await requestFriend(req.userId, Number(req.body?.id))
+  const from = displayName(me)
+  if (status === 'requested') {
+    emitFriends(target.id, 'friend:request', { from: publicProfile(me) })
+    if (!isOnline(target.id)) notifyById(target.id, 'friend_request', { from })
+  } else {
+    emitFriends(target.id, 'friend:accepted', { from: publicProfile(me) })
+    if (!isOnline(target.id)) notifyById(target.id, 'friend_accepted', { from })
+  }
+  res.json({ status, ...(await listFriends(req.userId, presence)) })
+}))
+
+router.post('/me/friends/:id/accept', wrap(async (req, res) => {
+  const other = Number(req.params.id)
+  await acceptFriend(req.userId, other)
+  const me = await getUser(req.userId)
+  emitFriends(other, 'friend:accepted', { from: publicProfile(me) })
+  if (!isOnline(other)) notifyById(other, 'friend_accepted', { from: displayName(me) })
+  res.json(await listFriends(req.userId, presence))
+}))
+
+router.delete('/me/friends/:id', wrap(async (req, res) => {
+  await removeFriend(req.userId, Number(req.params.id))
+  res.json(await listFriends(req.userId, presence))
 }))
 
 router.post('/me/equip', mutation((u, req) => equip(u, String(req.body?.itemId || ''))))
@@ -203,11 +244,10 @@ router.get('/leaderboard', auth, rateLimit(60, 60_000), wrap(async (req, res) =>
         GROUP BY u.id ORDER BY score DESC, u.rating DESC LIMIT 100`,
     ))
   } else if (type === 'friends') {
+    const ids = [req.userId, ...(await friendIds(req.userId))]
     ;({ rows } = await query(
-      `SELECT u.*, u.rating AS score FROM users u
-        WHERE (u.id = $1 OR u.referred_by = $1 OR u.id = $2) AND NOT u.banned
-        ORDER BY u.rating DESC LIMIT 100`,
-      [req.userId, me.referred_by || 0],
+      `SELECT u.*, u.rating AS score FROM users u WHERE u.id = ANY($1) AND NOT u.banned ORDER BY u.rating DESC LIMIT 200`,
+      [ids],
     ))
   } else {
     ;({ rows } = await query(

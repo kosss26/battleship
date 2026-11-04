@@ -75,3 +75,40 @@ export function Flame({ colors = ['#f97316', '#facc15'] }) {
     </div>
   )
 }
+
+/**
+ * A shell falling onto the cell (top-down view): it shrinks as it "drops",
+ * while its shadow on the water grows and sharpens. Lands after `ms`.
+ */
+export function Shell({ ms = 300 }) {
+  const d = ms / 1000
+  return (
+    <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center">
+      <motion.div
+        className="absolute rounded-full bg-black/50 blur-[2px]"
+        style={{ width: '55%', height: '55%' }}
+        initial={{ scale: 0.2, opacity: 0 }}
+        animate={{ scale: 1, opacity: [0, 0.6, 0] }}
+        transition={{ duration: d, ease: 'easeIn', opacity: { times: [0, 0.85, 1], duration: d } }}
+      />
+      <motion.div
+        className="absolute"
+        style={{ width: '46%', height: '46%' }}
+        initial={{ scale: 3.2, y: -26, x: -10, opacity: 0, rotate: -35 }}
+        animate={{ scale: 0.55, y: 0, x: 0, opacity: [0, 1, 1], rotate: 0 }}
+        transition={{ duration: d, ease: [0.55, 0, 0.9, 0.4] }}
+      >
+        <svg viewBox="0 0 24 24" className="h-full w-full drop-shadow-[0_0_6px_rgba(251,191,36,0.9)]">
+          <defs>
+            <radialGradient id="shell-g" cx="35%" cy="35%" r="70%">
+              <stop offset="0" stopColor="#fff7ed" />
+              <stop offset="0.4" stopColor="#fbbf24" />
+              <stop offset="1" stopColor="#b45309" />
+            </radialGradient>
+          </defs>
+          <circle cx="12" cy="12" r="9" fill="url(#shell-g)" stroke="#78350f" strokeWidth="1.2" />
+        </svg>
+      </motion.div>
+    </div>
+  )
+}

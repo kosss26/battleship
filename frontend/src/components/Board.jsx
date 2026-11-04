@@ -2,10 +2,26 @@ import { forwardRef, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { SIZE, CELL, COLS, COLS_EN } from '@shared/engine.js'
 import Ship from './Ship.jsx'
-import { Explosion, Splash, Flame } from './Fx.jsx'
+import { Explosion, Splash, Flame, Shell } from './Fx.jsx'
+import { SHELL_FLIGHT_MS } from '../store/app.js'
 import { useLang } from '../lib/i18n.js'
 
 const pct = (n) => `${n * 10}%`
+
+/** One shot: the shell falls, then the explosion/splash plays on impact */
+function ShotFx({ f, effect, small }) {
+  const [landed, setLanded] = useState(false)
+  useEffect(() => {
+    const id = setTimeout(() => setLanded(true), SHELL_FLIGHT_MS)
+    return () => clearTimeout(id)
+  }, [])
+  return (
+    <div className="absolute" style={{ left: pct(f.c), top: pct(f.r), width: pct(1), height: pct(1) }}>
+      {!landed && <Shell ms={SHELL_FLIGHT_MS} />}
+      {landed && (f.result === 'miss' ? <Splash /> : <Explosion colors={effect?.colors} big={f.result === 'sunk' && !small} />)}
+    </div>
+  )
+}
 
 /**
  * Battle grid.
@@ -21,18 +37,28 @@ const Board = forwardRef(function Board(
 ) {
   const lang = useLang()
   const [fx, setFx] = useState([])
+  const [landing, setLanding] = useState(() => new Set())
   const [hover, setHover] = useState(null)
   const seen = useRef(new Set(feed.map((f) => f.id)))
+  const timers = useRef([])
 
   useEffect(() => {
     const fresh = feed.filter((f) => !seen.current.has(f.id))
     if (!fresh.length) return
     fresh.forEach((f) => seen.current.add(f.id))
     setFx((cur) => [...cur, ...fresh])
+    // Hide the result marker until the shell lands
+    const keys = fresh.map((f) => f.r * SIZE + f.c)
+    setLanding((cur) => new Set([...cur, ...keys]))
     const ids = new Set(fresh.map((f) => f.id))
-    const t = setTimeout(() => setFx((cur) => cur.filter((f) => !ids.has(f.id))), 1100)
-    return () => clearTimeout(t)
+    // Timers are independent per shot: a quick follow-up shot must not cancel them
+    timers.current.push(
+      setTimeout(() => setLanding((cur) => new Set([...cur].filter((k) => !keys.includes(k)))), SHELL_FLIGHT_MS),
+      setTimeout(() => setFx((cur) => cur.filter((f) => !ids.has(f.id))), SHELL_FLIGHT_MS + 1100),
+    )
   }, [feed])
+
+  useEffect(() => () => timers.current.forEach(clearTimeout), [])
 
   const cols = lang === 'ru' ? COLS : COLS_EN
   const style = theme ? Object.fromEntries(Object.entries(theme.vars).map(([k, v]) => [`--${k}`, v])) : undefined
@@ -89,8 +115,8 @@ const Board = forwardRef(function Board(
         {Array.from({ length: SIZE * SIZE }, (_, k) => {
           const r = Math.floor(k / SIZE)
           const c = k % SIZE
-          const v = shots ? shots[r][c] : CELL.EMPTY
-          const canShoot = onCell && v === CELL.EMPTY
+          const v = landing.has(k) ? CELL.EMPTY : shots ? shots[r][c] : CELL.EMPTY
+          const canShoot = onCell && (shots ? shots[r][c] : CELL.EMPTY) === CELL.EMPTY
           const Tag = onCell ? 'button' : 'div'
           return (
             <Tag
@@ -121,11 +147,7 @@ const Board = forwardRef(function Board(
 
       {/* effects */}
       <AnimatePresence>
-        {fx.map((f) => (
-          <div key={f.id} className="absolute" style={{ left: pct(f.c), top: pct(f.r), width: pct(1), height: pct(1) }}>
-            {f.result === 'miss' ? <Splash /> : <Explosion colors={effect?.colors} big={f.result === 'sunk'} />}
-          </div>
-        ))}
+        {fx.map((f) => <ShotFx key={f.id} f={f} effect={effect} small={small} />)}
       </AnimatePresence>
 
       {dim && <div className="pointer-events-none absolute inset-0 z-40 bg-ink-950/35 transition-opacity" />}

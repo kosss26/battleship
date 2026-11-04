@@ -26,12 +26,13 @@ export function useQuestBadge() {
 export default function TabBar() {
   const t = useT()
   const badge = useQuestBadge()
+  const friendsBadge = useStore((s) => s.friendsBadge)
   const tabs = [
     { to: '/', icon: Anchor, label: t('tab_home') },
     { to: '/quests', icon: ScrollText, label: t('tab_quests'), badge },
     { to: '/shop', icon: ShoppingBag, label: t('tab_shop') },
     { to: '/top', icon: Trophy, label: t('tab_top') },
-    { to: '/profile', icon: User, label: t('tab_profile') },
+    { to: '/profile', icon: User, label: t('tab_profile'), badge: friendsBadge },
   ]
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 flex justify-center px-3" style={{ paddingBottom: 'calc(10px + var(--safe-bottom))' }}>

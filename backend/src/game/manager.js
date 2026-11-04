@@ -3,7 +3,9 @@ import jwt from 'jsonwebtoken'
 import { config } from '../config.js'
 import { GameRoom, botProfile } from './room.js'
 import { CAMPAIGN, AI_DIFFICULTIES } from './constants.js'
-import { getUser, publicProfile, mutateUser, selfView, GameError } from '../services/users.js'
+import { getUser, publicProfile, mutateUser, selfView, GameError, displayName } from '../services/users.js'
+import { areFriends } from '../services/friends.js'
+import { notifyById } from '../services/notify.js'
 import { applyMatchResult, saveGame } from '../services/match.js'
 import { eloDelta } from '../services/elo.js'
 
@@ -12,10 +14,19 @@ const userRoom = new Map() // userId -> roomId
 const queue = new Map() // userId -> { rating, games, since, profile }
 const duels = new Map() // code -> { hostId, createdAt, profile }
 const joinAttempts = new Map() // userId -> [timestamps of failed duel joins]
+const online = new Map() // userId -> number of open sockets
+const inviteSent = new Map() // `${from}:${to}` -> timestamp (anti-spam)
 
 let io = null
 
 const emit = (userId, event, payload) => io?.to(`u:${userId}`).emit(event, payload)
+
+/** Online / in-game status for the friends list */
+export const presence = (userId) => ({
+  online: (online.get(userId) || 0) > 0,
+  inGame: !!activeRoom(userId),
+})
+export const isOnline = (userId) => (online.get(userId) || 0) > 0
 
 export const stats = () => ({ rooms: rooms.size, queue: queue.size, duels: duels.size, online: io?.engine.clientsCount || 0 })
 
@@ -164,6 +175,7 @@ export function initSockets(server) {
     const now = Date.now()
     for (const [code, d] of duels) if (now - d.createdAt > 30 * 60_000) duels.delete(code)
     joinAttempts.clear()
+    for (const [k, t] of inviteSent) if (now - t > 60_000) inviteSent.delete(k)
   }, 60_000).unref()
 
   io.use(async (socket, next) => {
@@ -183,6 +195,7 @@ export function initSockets(server) {
   io.on('connection', async (socket) => {
     const userId = socket.userId
     socket.join(`u:${userId}`)
+    online.set(userId, (online.get(userId) || 0) + 1)
 
     activeRoom(userId)?.reconnected(userId)
 
@@ -249,26 +262,58 @@ export function initSockets(server) {
       queue.delete(userId)
     }))
 
-    socket.on('duel:create', guard(async () => {
+    const openDuel = async () => {
       ensureFree()
       const u = await loadProfile()
-      // Idempotent: a host has at most one open invite
       for (const [c, d] of duels) {
         if (d.hostId === userId) {
+          clearTimeout(d.closing)
+          d.closing = null
           d.createdAt = Date.now()
-          return { code: c }
+          return { code: c, profile: d.profile, user: u }
         }
       }
       let code
-      // 5-digit numeric code, easy to dictate or type
       do code = String(crypto.randomInt(10000, 100000))
       while (duels.has(code))
       duels.set(code, { hostId: userId, createdAt: Date.now(), profile: publicProfile(u) })
+      return { code, profile: publicProfile(u), user: u }
+    }
+
+    socket.on('duel:invite', guard(async ({ friendId }) => {
+      const fid = Number(friendId)
+      if (!(await areFriends(userId, fid))) throw new GameError('not_friends')
+      const key = `${userId}:${fid}`
+      if (Date.now() - (inviteSent.get(key) || 0) < 15_000) throw new GameError('invite_cooldown')
+      if (activeRoom(fid)) throw new GameError('friend_in_game')
+      const { code, profile, user } = await openDuel()
+      duels.get(code).invited = fid
+      inviteSent.set(key, Date.now())
+      emit(fid, 'duel:invite', { code, from: profile })
+      if (!isOnline(fid)) notifyById(fid, 'duel_invite', { from: displayName(user), code }, { startParam: `duel_${code}` })
       return { code }
     }))
 
+    socket.on('duel:decline', guard(async ({ code }) => {
+      const d = duels.get(String(code || ''))
+      if (d && d.invited === userId) emit(d.hostId, 'duel:declined', { userId })
+    }))
+
+    socket.on('duel:create', guard(async () => {
+      const { code } = await openDuel()
+      return { code }
+    }))
+
+    // Cancelling is deferred: if the host's screen re-opens the duel right away
+    // (remount, quick back/forward), the same code — already sent to a friend — stays valid.
     socket.on('duel:cancel', guard(async () => {
-      for (const [c, d] of duels) if (d.hostId === userId) duels.delete(c)
+      for (const [c, d] of duels) {
+        if (d.hostId !== userId) continue
+        clearTimeout(d.closing)
+        d.closing = setTimeout(() => {
+          if (duels.get(c) === d) duels.delete(c)
+        }, 3000)
+      }
     }))
 
     socket.on('duel:join', guard(async ({ code }) => {
@@ -287,6 +332,7 @@ export function initSockets(server) {
       ensureFree()
       if (activeRoom(duel.hostId)) throw new GameError('host_busy')
       const u = await loadProfile()
+      clearTimeout(duel.closing)
       duels.delete(key)
       const r = createRoom({
         mode: 'duel',
@@ -364,6 +410,9 @@ export function initSockets(server) {
     }))
 
     socket.on('disconnect', async () => {
+      const n = (online.get(userId) || 1) - 1
+      if (n > 0) online.set(userId, n)
+      else online.delete(userId)
       const sockets = await io.in(`u:${userId}`).fetchSockets()
       if (sockets.length) return
       queue.delete(userId)
@@ -379,6 +428,8 @@ export function kickUser(userId) {
   activeRoom(userId)?.resign(userId)
   io?.in(`u:${userId}`).disconnectSockets(true)
 }
+
+export const emitToUser = (userId, event, payload) => emit(userId, event, payload)
 
 export function notifyProfile(userId, profile) {
   emit(userId, 'profile', profile)

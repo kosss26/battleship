@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { FriendRow, useChallenge } from './Friends.jsx'
 import { motion } from 'framer-motion'
 import { Send, Copy, Swords, Plus, KeyRound, ChevronRight } from 'lucide-react'
 import { useStore } from '../store/app.js'
@@ -98,9 +99,26 @@ function Choice({ icon: Icon, title, sub, color, onClick }) {
   )
 }
 
+function OnlineFriends() {
+  const t = useT()
+  const challenge = useChallenge()
+  const [list, setList] = useState([])
+  useEffect(() => {
+    api('/me/friends').then((d) => setList(d.friends.filter((f) => f.online))).catch(() => {})
+  }, [])
+  if (!list.length) return null
+  return (
+    <div className="mt-5">
+      <div className="label mb-2">{t('friends_online')}</div>
+      <div className="space-y-2">{list.map((f) => <FriendRow key={f.id} f={f} onChallenge={challenge} />)}</div>
+    </div>
+  )
+}
+
 function Host() {
   const t = useT()
   const navigate = useNavigate()
+  const invited = useLocation().state?.invited
   const p = useStore((s) => s.profile)
   const connected = useStore((s) => s.connected)
   const toast = useStore((s) => s.toast)
@@ -133,15 +151,21 @@ function Host() {
         <div className="relative mb-5 flex items-center justify-center gap-4">
           <Avatar photo={p.photo} name={p.name} frame={p.equipped.frame} size={60} />
           <Swords className="text-fuchsia-300" size={26} />
-          <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.6, repeat: Infinity }} className="flex h-[60px] w-[60px] items-center justify-center rounded-full border-2 border-dashed border-white/25 text-2xl">
-            ?
-          </motion.div>
+          {invited ? (
+            <motion.div animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 1.6, repeat: Infinity }}>
+              <Avatar photo={invited.photo} name={invited.name} frame={invited.frame} size={60} />
+            </motion.div>
+          ) : (
+            <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.6, repeat: Infinity }} className="flex h-[60px] w-[60px] items-center justify-center rounded-full border-2 border-dashed border-white/25 text-2xl">
+              ?
+            </motion.div>
+          )}
         </div>
         <div className="label mb-2">{t('duel_code')}</div>
         {code ? <CodeDigits code={code} /> : <div className="flex h-16 items-center justify-center"><Spinner /></div>}
         <p className="mt-4 text-sm text-slate-300">{t('duel_host_hint')}</p>
         <div className="mt-4 flex items-center justify-center gap-2 text-sm text-slate-400">
-          <Spinner size={16} /> {t('waiting_friend')}
+          <Spinner size={16} /> {invited ? t('invite_sent_to', { name: invited.name }) : t('waiting_friend')}
         </div>
       </div>
       <button
@@ -245,6 +269,7 @@ export default function Duel() {
           <p className="mb-5 text-sm text-slate-400">{t('duel_sub')}</p>
           <Choice icon={Plus} title={t('duel_create')} sub={t('duel_create_sub')} color="from-fuchsia-400 to-violet-500" onClick={() => navigate('/duel/new')} />
           <Choice icon={KeyRound} title={t('duel_join')} sub={t('duel_join_sub')} color="from-cyan-300 to-blue-500" onClick={() => navigate('/duel/join')} />
+          <OnlineFriends />
         </motion.div>
       )}
       {mode === 'host' && <Host />}

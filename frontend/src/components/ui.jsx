@@ -186,8 +186,20 @@ export function Modal({ open, onClose, children, className = '' }) {
 }
 
 export function Segmented({ value, onChange, options, className = '' }) {
+  // Indicator is positioned by index (no shared layoutId): layout animations inside a page
+  // that is exiting an AnimatePresence transition can stall the route change.
+  const idx = Math.max(0, options.findIndex((o) => o.value === value))
+  const w = 100 / options.length
   return (
-    <div className={`flex rounded-2xl bg-white/[0.05] p-1 ${className}`}>
+    <div className={`relative flex rounded-2xl bg-white/[0.05] p-1 ${className}`}>
+      <div className="pointer-events-none absolute inset-1">
+        <motion.div
+          className="absolute inset-y-0 rounded-xl bg-gradient-to-r from-cyan-300 to-sky-400"
+          initial={false}
+          animate={{ left: `${idx * w}%`, width: `${w}%` }}
+          transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+        />
+      </div>
       {options.map((o) => (
         <button
           key={o.value}
@@ -197,10 +209,7 @@ export function Segmented({ value, onChange, options, className = '' }) {
           }}
           className={`relative flex-1 whitespace-nowrap rounded-xl px-1 py-2 text-[12.5px] font-bold transition-colors ${value === o.value ? 'text-ink-950' : 'text-slate-300'}`}
         >
-          {value === o.value && (
-            <motion.div layoutId={`seg-${options.map((x) => x.value).join()}`} className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-300 to-sky-400" transition={{ type: 'spring', stiffness: 500, damping: 35 }} />
-          )}
-          <span className="relative">{o.label}</span>
+          {o.label}
         </button>
       ))}
     </div>

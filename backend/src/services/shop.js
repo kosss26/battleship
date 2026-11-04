@@ -147,7 +147,7 @@ export async function refundPayment({ id, chargeId }) {
     const pay = rows[0]
     if (!pay || pay.status !== 'paid') return null
     const p = findStarProduct(pay.product_id)
-    const { user, result } = await mutateUser(Number(pay.user_id), (u) => (p ? revoke(u, p) : {}), client, { allowBanned: true })
+    const { user, result } = await mutateUser(Number(pay.user_id), (u) => (p ? revoke(u, p) : {}), client, { allowBanned: true, touch: false })
     await client.query(`UPDATE payments SET status='refunded', refunded_at=now(), revoked=$2 WHERE id=$1`, [pay.id, result])
     return { payment: pay, revoked: result, user }
   })

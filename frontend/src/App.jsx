@@ -7,6 +7,9 @@ import { useT, errorText } from './lib/i18n.js'
 import TabBar from './components/TabBar.jsx'
 import Toasts from './components/Toasts.jsx'
 import RewardPopup from './components/RewardPopup.jsx'
+import InvitePopup from './components/InvitePopup.jsx'
+import Onboarding from './components/Onboarding.jsx'
+import { setMusicMood } from './lib/music.js'
 import { Spinner } from './components/ui.jsx'
 import Home from './pages/Home.jsx'
 import Quests from './pages/Quests.jsx'
@@ -100,6 +103,7 @@ export default function App() {
   const game = useStore((s) => s.game)
   const connected = useStore((s) => s.connected)
   const isAdmin = useStore((s) => !!s.profile?.isAdmin)
+  const showTutorial = useStore((s) => s.status === 'ready' && (!s.profile?.onboarded || s.showTutorial))
 
   useEffect(() => {
     boot()
@@ -116,6 +120,11 @@ export default function App() {
   useEffect(() => {
     if (game && game.phase !== 'over' && location.pathname !== '/battle') navigate('/battle')
   }, [game?.id, game?.phase]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Music: tense theme during an active battle, calm theme elsewhere
+  useEffect(() => {
+    setMusicMood(game && game.phase === 'battle' ? 'battle' : 'menu')
+  }, [game?.phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Telegram back button
   const isRoot = TABS.includes(location.pathname)
@@ -206,6 +215,8 @@ export default function App() {
       {showTabs && <TabBar />}
       <Toasts />
       <RewardPopup />
+      <InvitePopup />
+      <AnimatePresence>{showTutorial && location.pathname !== '/battle' && <Onboarding key="tutorial" />}</AnimatePresence>
     </div>
   )
 }

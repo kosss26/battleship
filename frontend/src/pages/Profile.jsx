@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, Globe, Volume2, Vibrate, Users, Award, LifeBuoy, ShieldCheck } from 'lucide-react'
+import { ChevronRight, Globe, Volume2, Vibrate, Users, Award, LifeBuoy, ShieldCheck, Music, Bell, GraduationCap } from 'lucide-react'
+import { requestWriteAccess, isTelegram } from '../lib/telegram.js'
 import { ACHIEVEMENTS } from '@shared/catalog.js'
 import { useStore } from '../store/app.js'
 import { useT } from '../lib/i18n.js'
@@ -55,6 +56,7 @@ export default function Profile() {
   const p = useStore((s) => s.profile)
   const config = useStore((s) => s.config)
   const updateSettings = useStore((s) => s.updateSettings)
+  const friendsBadge = useStore((s) => s.friendsBadge)
   const s = p.stats
   const winrate = s.games ? Math.round((s.wins / s.games) * 100) : 0
   const accuracy = s.shots ? Math.round((s.hits / s.shots) * 100) : 0
@@ -116,7 +118,8 @@ export default function Profile() {
 
       <div className="glass mb-4 divide-y divide-white/[0.05] p-0">
         <Row icon={Award} label={t('achievements')} onClick={() => navigate('/achievements')} right={<span className="chip bg-amber-300/15 text-amber-200">{achCount}/{ACHIEVEMENTS.length}</span>} />
-        <Row icon={Users} label={t('friends')} onClick={() => navigate('/friends')} />
+        <Row icon={Users} label={t('friends')} onClick={() => navigate('/friends')} right={friendsBadge ? <span className="chip bg-rose-500 text-white">{friendsBadge}</span> : undefined} />
+        <Row icon={GraduationCap} label={t('how_to_play')} onClick={() => useStore.setState({ showTutorial: true })} />
       </div>
 
       <div className="label mb-2 px-1">{t('history')}</div>
@@ -130,7 +133,21 @@ export default function Profile() {
           <Segmented className="w-32" value={p.language} onChange={(v) => updateSettings({ language: v })} options={[{ value: 'ru', label: 'RU' }, { value: 'en', label: 'EN' }]} />
         </div>
         <Row icon={Volume2} label={t('sound')} right={<Toggle on={p.settings.sound} onChange={(v) => updateSettings({ sound: v })} />} />
+        <Row icon={Music} label={t('music')} right={<Toggle on={p.settings.music !== false} onChange={(v) => updateSettings({ music: v })} />} />
         <Row icon={Vibrate} label={t('haptics')} right={<Toggle on={p.settings.haptics} onChange={(v) => updateSettings({ haptics: v })} />} />
+        <Row
+          icon={Bell}
+          label={t('notifications')}
+          right={
+            <Toggle
+              on={p.settings.notify !== false}
+              onChange={async (v) => {
+                if (v && isTelegram() && !(await requestWriteAccess())) return useStore.getState().toast(t('notif_denied'))
+                updateSettings({ notify: v })
+              }}
+            />
+          }
+        />
         {config?.botUsername && <Row icon={LifeBuoy} label={t('support')} onClick={() => openLink(`https://t.me/${config.botUsername}`)} />}
       </div>
       <div className="pb-2 text-center text-[11px] text-slate-600">Battleship Online · v2.0 · ID {p.id}</div>

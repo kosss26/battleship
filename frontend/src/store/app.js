@@ -3,8 +3,11 @@ import { api, post, patch, setToken, getToken, ApiError } from '../lib/api.js'
 import { getSocket, request } from '../lib/socket.js'
 import { initData, isTelegram, startParam, tgUser, setHapticsEnabled, haptic } from '../lib/telegram.js'
 import { setSoundEnabled, sfx } from '../lib/sound.js'
+import { setMusicEnabled } from '../lib/music.js'
+import { tr } from '../lib/i18n.js'
 
 let toastId = 0
+export const SHELL_FLIGHT_MS = 300
 let feedId = 0
 
 const emptySummary = (s) =>
@@ -28,6 +31,8 @@ export const useStore = create((set, get) => ({
   radar: null,
 
   mm: null,
+  invite: null,
+  friendsBadge: 0,
   toasts: [],
   reward: null,
 
@@ -78,6 +83,7 @@ export const useStore = create((set, get) => ({
     if (!profile) return
     setSoundEnabled(profile.settings?.sound !== false)
     setHapticsEnabled(profile.settings?.haptics !== false)
+    setMusicEnabled(profile.settings?.music !== false)
     set({ profile })
   },
 
@@ -160,11 +166,14 @@ export const useStore = create((set, get) => ({
       const items = ev.results.map((r) => ({ ...r, by: ev.by, id: ++feedId, booster: ev.booster, auto: ev.auto }))
       set((st) => ({ feed: [...st.feed.slice(-40), ...items] }))
       const worst = items.some((i) => i.result === 'sunk') ? 'sunk' : items.some((i) => i.result === 'hit') ? 'hit' : 'miss'
+      // The shell takes ~300 ms to land (see Board), impact feedback is synced to it
       sfx.fire()
-      setTimeout(() => sfx[worst](), 120)
-      if (worst === 'sunk') haptic.heavy()
-      else if (worst === 'hit') (ev.by === 'opp' ? haptic.rigid : haptic.medium)()
-      else haptic.light()
+      setTimeout(() => {
+        sfx[worst]()
+        if (worst === 'sunk') haptic.heavy()
+        else if (worst === 'hit') (ev.by === 'opp' ? haptic.rigid : haptic.medium)()
+        else haptic.light()
+      }, SHELL_FLIGHT_MS)
     })
     s.on('game:radar', (r) => {
       sfx.radar()
@@ -181,6 +190,22 @@ export const useStore = create((set, get) => ({
     })
     s.on('game:opponent', ({ connected, graceMs }) => set({ oppConnected: connected, oppGraceUntil: connected ? null : Date.now() + graceMs }))
     s.on('game:rematch', () => set({ rematchOffered: true }))
+    s.on('duel:invite', ({ code, from }) => {
+      if (get().game && get().game.phase !== 'over') return
+      sfx.found()
+      haptic.success()
+      set({ invite: { code, from, at: Date.now() } })
+    })
+    s.on('duel:declined', () => get().toast(tr('invite_declined')))
+    s.on('friend:request', ({ from }) => {
+      haptic.light()
+      set((st) => ({ friendsBadge: st.friendsBadge + 1 }))
+      get().toast(tr('friend_request_from', { name: from.name }))
+    })
+    s.on('friend:accepted', ({ from }) => {
+      haptic.success()
+      get().toast(tr('friend_accepted_from', { name: from.name }), 'success')
+    })
     s.on('mm:status', (m) => set((st) => ({ mm: st.mm ? { ...st.mm, ...m } : st.mm })))
     s.on('mm:found', () => {
       sfx.found()

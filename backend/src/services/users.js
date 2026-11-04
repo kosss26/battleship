@@ -36,7 +36,8 @@ function defaultData() {
     quests: { day: null, items: {} },
     pass: { season: null, xp: 0, premium: false, free: [], prem: [] },
     achievements: {},
-    settings: { sound: true, haptics: true, music: false },
+    settings: { sound: true, haptics: true, music: true, notify: true },
+    onboarded: false,
     purchases: {},
     duelRewards: { day: null, count: 0 },
     refRewarded: false,
@@ -75,7 +76,7 @@ export async function getUsers(ids) {
  * Locks the user row, runs `fn(user)` which mutates the object, then persists it.
  * Everything that changes balances goes through here, so it is atomic.
  */
-export async function mutateUser(id, fn, client = null, { allowBanned = false } = {}) {
+export async function mutateUser(id, fn, client = null, { allowBanned = false, touch = true } = {}) {
   const run = async (c) => {
     const { rows } = await c.query('SELECT * FROM users WHERE id = $1 FOR UPDATE', [id])
     const user = rowToUser(rows[0])
@@ -88,7 +89,7 @@ export async function mutateUser(id, fn, client = null, { allowBanned = false } 
     user.peak_rating = Math.max(user.peak_rating, user.rating)
     await c.query(
       `UPDATE users SET gold=$2, gems=$3, xp=$4, level=$5, rating=$6, peak_rating=$7, games=$8, wins=$9,
-        data=$10, language=$11, last_seen=now() WHERE id=$1`,
+        data=$10, language=$11${touch ? ', last_seen=now()' : ''} WHERE id=$1`,
       [id, user.gold, user.gems, user.xp, user.level, user.rating, user.peak_rating, user.data.stats.games,
         user.data.stats.wins, user.data, user.language],
     )
@@ -348,6 +349,7 @@ export function selfView(u) {
     settings: d.settings,
     purchases: d.purchases,
     isAdmin: isAdmin(u),
+    onboarded: !!d.onboarded || d.stats.games > 0,
     duelRewardsLeft: Math.max(0, DUEL_REWARDS_PER_DAY - (d.duelRewards.day === day ? d.duelRewards.count : 0)),
   }
 }

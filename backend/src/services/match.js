@@ -2,7 +2,8 @@ import { query } from '../db.js'
 import {
   MATCH_REWARDS, CAMPAIGN, CAMPAIGN_STAR_GOLD, PREMIUM_GOLD_BONUS, DUEL_REWARDS_PER_DAY, seasonId,
 } from '../../../shared/catalog.js'
-import { mutateUser, grant, newSummary, trackQuests, checkAchievements } from './users.js'
+import { mutateUser, grant, newSummary, trackQuests, checkAchievements, displayName } from './users.js'
+import { notifyById } from './notify.js'
 import { applyDelta } from './elo.js'
 
 export function campaignStars(level, won, shots) {
@@ -108,11 +109,14 @@ export async function applyMatchResult(userId, r) {
 
   // Referral reward goes to the inviter once the invitee has played a match
   if (result.extra.referrer) {
+    const gems = user.tg_premium ? 25 : 10
     await mutateUser(result.extra.referrer, (inviter) => {
       inviter.data.stats.referrals++
-      const s = grant(inviter, { gold: 500, gems: user.tg_premium ? 25 : 10 })
+      const s = grant(inviter, { gold: 500, gems })
       checkAchievements(inviter, s)
-    }).catch((e) => console.error('[referral]', e.message))
+    }, null, { touch: false })
+      .then(() => notifyById(result.extra.referrer, 'referral_joined', { from: displayName(user), gems }))
+      .catch((e) => console.error('[referral]', e.message))
   }
   delete result.extra.referrer
   return { user, ...result }

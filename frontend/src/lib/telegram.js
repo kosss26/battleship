@@ -95,6 +95,18 @@ export async function copyText(text) {
   }
 }
 
+/** Asks permission for the bot to send messages. Resolves true if allowed. */
+export function requestWriteAccess() {
+  return new Promise((resolve) => {
+    if (!tg?.requestWriteAccess || !supports('6.9')) return resolve(false)
+    try {
+      tg.requestWriteAccess((granted) => resolve(!!granted))
+    } catch {
+      resolve(false)
+    }
+  })
+}
+
 export function confirmClose(on) {
   if (!supports('6.2')) return
   if (on) tg.enableClosingConfirmation()

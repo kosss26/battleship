@@ -176,7 +176,7 @@ export async function adjustUser(admin, id, changes = {}, reason = '') {
         u.rating = r
       }
     }
-  }, null, { allowBanned: true })
+  }, null, { allowBanned: true, touch: false })
   if (!Object.keys(applied).length) throw new GameError('nothing_changed')
   await logAction(admin.id, 'adjust', id, { ...applied, reason })
   notifyProfile(id, selfView(user))

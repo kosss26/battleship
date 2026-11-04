@@ -44,6 +44,19 @@ export default function BattleView({ game }) {
   const [pending, setPending] = useState(false)
   const left = useCountdown(game.deadline)
   const lastFeed = useRef(feed.length ? feed[feed.length - 1].id : 0)
+  const myBoardRef = useRef(null)
+
+  // Shake my board when it gets hit (restart the CSS animation without remounting)
+  useEffect(() => {
+    const el = myBoardRef.current
+    if (!shakeMine || !el) return
+    const id = setTimeout(() => {
+      el.classList.remove('shake')
+      void el.offsetWidth
+      el.classList.add('shake')
+    }, 300)
+    return () => clearTimeout(id)
+  }, [shakeMine])
 
   // Banners for notable events
   useEffect(() => {
@@ -238,7 +251,9 @@ export default function BattleView({ game }) {
       {/* My fleet */}
       <div className="mt-3 flex gap-3">
         <div className="w-[46%] shrink-0">
-          <Board shots={game.me.shots} ships={myShips} skin={skin} effect={effect} feed={myFeed} theme={theme} labels={false} small shake={shakeMine} key={`mine-${shakeMine}`} />
+          <div ref={myBoardRef}>
+            <Board shots={game.me.shots} ships={myShips} skin={skin} effect={effect} feed={myFeed} theme={theme} labels={false} small />
+          </div>
         </div>
         <div className="flex flex-1 flex-col justify-between py-1">
           <div>
