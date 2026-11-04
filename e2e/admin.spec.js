@@ -1,14 +1,14 @@
 import { test, expect, uid, expectNoPageErrors } from './helpers.js'
 
-test('admin panel: hidden from players, analytics, ban/unban', async ({ player }) => {
+test('admin panel: hidden from players, analytics, ban/unban', async ({ newPlayer }) => {
   const tag = uid()
-  const player = await player(`Игрок ${tag}`)
+  const player = await newPlayer(`Игрок ${tag}`)
   await player.goto('/profile')
   await expect(player.getByText('Админ-панель')).toHaveCount(0)
   await player.goto('/admin')
   await expect(player.getByText('Рейтинговый бой')).toBeVisible()
 
-  const admin = await player('Админ Тест')
+  const admin = await newPlayer('Админ Тест')
   await admin.goto('/profile')
   await admin.getByText('Админ-панель').click()
   await expect(admin.getByText('Доход (Telegram Stars)')).toBeVisible()

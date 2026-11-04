@@ -1,9 +1,9 @@
 import { test, expect, uid, fireOnce, resign, expectNoPageErrors } from './helpers.js'
 
-test('ranked: matchmaking, drag-and-drop, emotes, early forfeit protection', async ({ player }) => {
+test('ranked: matchmaking, drag-and-drop, emotes, early forfeit protection', async ({ newPlayer }) => {
   const tag = uid()
-  const a = await player(`Анна ${tag}`)
-  const b = await player(`Борис ${tag}`)
+  const a = await newPlayer(`Анна ${tag}`)
+  const b = await newPlayer(`Борис ${tag}`)
   await a.getByRole('button', { name: 'В бой' }).click()
   await expect(a.getByText('Поиск соперника')).toBeVisible()
   await b.getByRole('button', { name: 'В бой' }).click()

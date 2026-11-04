@@ -33,12 +33,12 @@ test('battle vs AI: placement, shell animation, results, double reward for an ad
   expectNoPageErrors(page)
 })
 
-test('a win can be turned into a story card', async ({ player }) => {
+test('a win can be turned into a story card', async ({ newPlayer }) => {
   // Deterministic win: a friend duel where the opponent resigns
   const tag = uid()
-  const winner = await player(`Победитель ${tag}`)
-  const loser = await player(`Соперник ${tag}`)
-  await winner.getByText('С другом').click()
+  const winner = await newPlayer(`Победитель ${tag}`)
+  const loser = await newPlayer(`Соперник ${tag}`)
+  await winner.getByText('С другом', { exact: true }).click()
   await winner.getByText('Создать бой').click()
   await expect(winner.locator('.h-16.w-12').first()).not.toHaveText('')
   const code = (await winner.locator('.h-16.w-12').allTextContents()).join('')

@@ -2,11 +2,11 @@ import pg from 'pg'
 import { test as base, expect } from '@playwright/test'
 
 /**
- * `test` with a `player(name, opts)` fixture: each call opens a separate browser
+ * `test` with a `newPlayer(name, opts)` fixture: each call opens a separate browser
  * context (an independent player); all of them are closed after the test.
  */
 export const test = base.extend({
-  player: async ({ browser }, use) => {
+  newPlayer: async ({ browser }, use) => {
     const contexts = []
     await use(async (name, opts) => {
       const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'ru-RU' })
