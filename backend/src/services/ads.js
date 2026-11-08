@@ -12,7 +12,8 @@ import {
 } from '../../../shared/catalog.js'
 import { mutateUser, grant, newSummary, GameError, today } from './users.js'
 
-export const adsEnabled = () => !!config.adsgramBlockId || config.allowDevLogin
+export const adsEnabled = () => (!!config.adsgramBlockId || config.allowDevLogin)
+  && (!config.isProd || !!config.adsgramRewardSecret)
 export const verifiedMode = () => !!config.adsgramRewardSecret
 
 function dayState(u) {

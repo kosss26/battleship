@@ -13,10 +13,13 @@ export default function Search() {
   const p = useStore((s) => s.profile)
   const mm = useStore((s) => s.mm)
   const game = useStore((s) => s.game)
+  const connected = useStore((s) => s.connected)
+  const [switching, setSwitching] = useState(false)
   const [since] = useState(Date.now())
   const [now, setNow] = useState(Date.now())
 
   useEffect(() => {
+    if (!connected) return
     useStore.setState({ mm: { since: Date.now(), inQueue: 1 } })
     joinQueue().then((res) => {
       if (res.error) navigate(-1)
@@ -27,7 +30,7 @@ export default function Search() {
       if (!useStore.getState().game) leaveQueue()
       useStore.setState({ mm: null })
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [connected]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const secs = Math.floor((now - since) / 1000)
   const long = secs >= 30
@@ -66,9 +69,13 @@ export default function Search() {
           <p className="mb-3 text-sm text-slate-300">{t('long_wait')}</p>
           <button
             className="btn-ghost w-full"
+            disabled={switching || !connected}
             onClick={async () => {
-              await leaveQueue()
-              await startAi('medium')
+              setSwitching(true)
+              try {
+                const left = await leaveQueue()
+                if (!left.error) await startAi('medium')
+              } finally { setSwitching(false) }
             }}
           >
             <Bot size={18} /> {t('play_ai_instead')}

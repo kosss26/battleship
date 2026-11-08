@@ -1,4 +1,5 @@
-import { tx } from '../db.js'
+import crypto from 'crypto'
+import { tx, query } from '../db.js'
 import {
   findCosmetic, BOOSTERS, GOLD_EXCHANGE, findStarProduct, PASS_PREMIUM_GEMS, seasonId, DEFAULT_EQUIPPED,
 } from '../../../shared/catalog.js'
@@ -39,6 +40,8 @@ export function buyItem(user, itemId, qty = 1) {
     if (user.data.pass.premium && user.data.pass.season === seasonId()) throw new GameError('already_owned')
     pay(user, { gems: PASS_PREMIUM_GEMS })
     user.data.pass.premium = true
+    user.data.pass.premiumSource = 'gems'
+    user.data.pass.premiumChargeId = null
     return summary
   }
   const found = findCosmetic(itemId)
@@ -67,11 +70,15 @@ export function validateStarPurchase(user, productId) {
   return p
 }
 
-function fulfill(user, p) {
+function fulfill(user, p, chargeId) {
   const summary = newSummary()
   if (p.kind === 'gems') grant(user, { gems: p.gems }, summary)
   else if (p.kind === 'bundle') grant(user, p.grant, summary)
-  else if (p.kind === 'pass') user.data.pass.premium = true
+  else if (p.kind === 'pass') {
+    user.data.pass.premium = true
+    user.data.pass.premiumSource = 'stars'
+    user.data.pass.premiumChargeId = chargeId
+  }
   user.data.purchases[p.id] = (user.data.purchases[p.id] || 0) + 1
   checkAchievements(user, summary)
   return summary
@@ -81,24 +88,67 @@ function fulfill(user, p) {
  * Idempotent: the same charge id is credited only once.
  * Returns { user, summary } or null if this charge was already processed.
  */
-export async function completeStarPayment({ userId, productId, stars, chargeId, payload }) {
-  return tx(async (client) => {
-    const ins = await client.query(
-      `INSERT INTO payments (user_id, product_id, stars, charge_id, payload) VALUES ($1,$2,$3,$4,$5)
-       ON CONFLICT (charge_id) DO NOTHING RETURNING id`,
-      [userId, productId, stars, chargeId, payload || {}],
-    )
+export async function createInvoiceRecord(user, productId) {
+  const p = validateStarPurchase(user, productId)
+  const id = crypto.randomUUID()
+  await query(`INSERT INTO star_invoices(id,user_id,product_id,stars,season,product) VALUES($1,$2,$3,$4,$5,$6)`,
+    [id, user.id, p.id, p.stars, p.kind === 'pass' ? seasonId() : null, p])
+  return { id, product: p }
+}
+
+export async function invoiceProduct(payload, userId, { checkout = false } = {}, client = null) {
+  let p, season
+  if (payload?.i) {
+    const { rows } = await (client || { query }).query('SELECT * FROM star_invoices WHERE id=$1 AND user_id=$2', [payload.i, userId])
+    const inv = rows[0]
+    if (!inv) throw new GameError('invoice_not_found')
+    if (checkout && Date.now() - new Date(inv.created_at).getTime() > 24 * 60 * 60_000) throw new GameError('invoice_expired')
+    p = inv.product; season = inv.season
+  } else {
+    // Existing invoices issued before the ledger migration remain payable.
+    p = findStarProduct(payload?.p)
+    season = p?.kind === 'pass' ? seasonId(payload?.t ? new Date(payload.t) : new Date()) : null
+  }
+  if (!p) throw new GameError('item_not_found')
+  if (checkout && p.kind === 'pass' && season !== seasonId()) throw new GameError('invoice_expired')
+  return { product: p, season }
+}
+
+export async function completeStarPayment({ userId, productId, stars, chargeId, payload = {}, buyerTgId = null }) {
+  return tx(async client => {
+    const { product: p, season } = await invoiceProduct({ ...payload, p: payload.p || productId }, userId, {}, client)
+    if (p.stars !== stars) throw new Error(`Price mismatch for ${p.id}`)
+    const entitlement = { product: p, season, delivered: true }
+    const ins = await client.query(`INSERT INTO payments(user_id,product_id,stars,charge_id,payload,entitlement,buyer_tg_id)
+      VALUES($1,$2,$3,$4,$5,$6,COALESCE($7::bigint,(SELECT tg_id FROM users WHERE id=$1))) ON CONFLICT(charge_id) DO NOTHING RETURNING id`,
+      [userId,p.id,stars,chargeId,payload,entitlement,buyerTgId])
     if (!ins.rows.length) return null
-    const p = findStarProduct(productId)
-    if (!p) throw new Error(`Unknown product ${productId}`)
-    if (p.stars !== stars) throw new Error(`Price mismatch for ${productId}: ${stars}`)
-    const { user, result } = await mutateUser(userId, (u) => fulfill(u, p), client)
-    return { user, summary: result }
+    // Delivery and refund webhooks can arrive out of order.
+    await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [chargeId])
+    const alreadyRefunded = (await client.query('SELECT 1 FROM payment_refund_notices WHERE charge_id=$1', [chargeId])).rows.length > 0
+    let refundPending = false
+    const { user, result } = await mutateUser(userId, u => {
+      refundPending = (p.kind === 'pass' && (season !== seasonId() || u.data.pass.premium))
+        || (p.oncePerUser && !!u.data.purchases[p.id])
+        || !!u.data.deletedAt || (buyerTgId != null && Number(u.tg_id) !== Number(buyerTgId))
+      if (alreadyRefunded) return null
+      if (refundPending) return null
+      return fulfill(u, p, chargeId)
+    }, client, { allowBanned: true })
+    if (refundPending || alreadyRefunded) await client.query(`UPDATE payments SET status=$2,
+      refund_requested_at=CASE WHEN $2='refund_pending' THEN now() ELSE NULL END,
+      entitlement=jsonb_set(entitlement,'{delivered}','false') WHERE id=$1`, [ins.rows[0].id, alreadyRefunded ? 'refunded' : 'refund_pending'])
+    return { user, summary: result, refundPending, refunded: alreadyRefunded }
   })
 }
 
+export async function queueRefund(id) {
+  const { rows } = await query(`UPDATE payments SET status='refund_pending', refund_requested_at=now() WHERE id=$1 AND status='paid' RETURNING id`, [id])
+  return !!rows.length
+}
+
 /** Takes back what a purchase granted (as far as the balance allows). Returns what was removed. */
-function revoke(user, p) {
+function revoke(user, p, pay) {
   const out = { gems: 0, gold: 0, boosters: {}, cosmetics: [], pass: false, shortfall: {} }
   const take = (key, amount) => {
     const n = Math.min(user[key], amount)
@@ -124,8 +174,13 @@ function revoke(user, p) {
     }
   }
   if (p.kind === 'pass') {
-    user.data.pass.premium = false
-    out.pass = true
+    const boughtSeason = pay.entitlement?.season || seasonId(new Date(pay.payload?.t || pay.created_at))
+    const pass = user.data.pass
+    if (pass.season === boughtSeason && (!pass.premiumSource || pass.premiumSource === 'stars')
+      && (!pass.premiumChargeId || pass.premiumChargeId === pay.charge_id)) {
+      pass.premium = false
+      out.pass = true
+    }
   }
   if (user.data.purchases[p.id]) {
     user.data.purchases[p.id]--
@@ -145,13 +200,19 @@ export async function refundPayment({ id, chargeId }) {
       [id || chargeId],
     )
     const pay = rows[0]
-    if (!pay || pay.status !== 'paid') return null
-    const p = findStarProduct(pay.product_id)
-    const { user, result } = await mutateUser(Number(pay.user_id), (u) => (p ? revoke(u, p) : {}), client, { allowBanned: true, touch: false })
+    if (!pay || !['paid', 'refund_pending'].includes(pay.status)) return null
+    const p = pay.entitlement?.product || findStarProduct(pay.product_id)
+    const { user, result } = await mutateUser(Number(pay.user_id), (u) => (p && pay.entitlement?.delivered !== false ? revoke(u, p, pay) : {}), client, { allowBanned: true, touch: false })
     await client.query(`UPDATE payments SET status='refunded', refunded_at=now(), revoked=$2 WHERE id=$1`, [pay.id, result])
     return { payment: pay, revoked: result, user }
   })
 }
 
 /** Used when Telegram reports a refund made outside the admin panel */
-export const markRefunded = (chargeId) => refundPayment({ chargeId })
+export async function markRefunded(chargeId) {
+  await tx(async client => {
+    await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [chargeId])
+    await client.query('INSERT INTO payment_refund_notices(charge_id) VALUES($1) ON CONFLICT DO NOTHING', [chargeId])
+  })
+  return refundPayment({ chargeId })
+}

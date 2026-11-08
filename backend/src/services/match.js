@@ -17,7 +17,7 @@ export function campaignStars(level, won, shots) {
  * Applies the outcome of a finished match to one human player.
  * r: { mode, difficulty, level, won, reason, shots, hits, sunk, shipsLost, bestHitChain, ratingDelta }
  */
-export async function applyMatchResult(userId, r) {
+export async function applyMatchResult(userId, r, client = null) {
   const { user, result } = await mutateUser(userId, (u) => {
     const s = u.data.stats
     const summary = newSummary()
@@ -109,7 +109,7 @@ export async function applyMatchResult(userId, r) {
     extra.referrer = !u.data.refRewarded && u.referred_by ? u.referred_by : null
     if (extra.referrer) u.data.refRewarded = true
     return { summary, extra }
-  })
+  }, client, { allowBanned: true })
 
   // Referral reward goes to the inviter once the invitee has played a match
   if (result.extra.referrer) {
@@ -118,19 +118,34 @@ export async function applyMatchResult(userId, r) {
       inviter.data.stats.referrals++
       const s = grant(inviter, { gold: 500, gems })
       checkAchievements(inviter, s)
-    }, null, { touch: false })
-      .then(() => notifyById(result.extra.referrer, 'referral_joined', { from: displayName(user), gems }))
-      .catch((e) => console.error('[referral]', e.message))
+    }, client, { touch: false, allowBanned: true })
+    const vars = { from: displayName(user), gems }
+    if (client) await client.query(`INSERT INTO match_notifications(id,user_id,vars) VALUES ($1,$2,$3)
+      ON CONFLICT DO NOTHING`, [`${r.matchId}:referral:${userId}`, result.extra.referrer, vars])
+    else await notifyById(result.extra.referrer, 'referral_joined', vars)
   }
   delete result.extra.referrer
   return { user, ...result }
 }
 
-export async function saveGame(g) {
-  await query(
+let notificationDelivery = null
+export async function deliverMatchNotifications() {
+  if (notificationDelivery) return notificationDelivery
+  notificationDelivery = (async () => {
+    const { rows } = await query('SELECT * FROM match_notifications WHERE NOT delivered LIMIT 50')
+    for (const row of rows) {
+      await notifyById(Number(row.user_id), 'referral_joined', row.vars)
+      await query('UPDATE match_notifications SET delivered=true WHERE id=$1', [row.id])
+    }
+  })()
+  try { return await notificationDelivery } finally { notificationDelivery = null }
+}
+
+export async function saveGame(g, client = null) {
+  await (client || { query }).query(
     `INSERT INTO games (id, mode, difficulty, p1, p2, winner, winner_slot, reason, p1_delta, p2_delta, shots, duration_ms, moves)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
     [g.id, g.mode, g.difficulty || null, g.p1 || null, g.p2 || null, g.winner || null, g.winnerSlot, g.reason,
       g.p1Delta || 0, g.p2Delta || 0, g.shots, g.durationMs, JSON.stringify(g.moves)],
-  ).catch((e) => console.error('[saveGame]', e.message))
+  )
 }

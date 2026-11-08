@@ -141,3 +141,47 @@ CREATE TABLE IF NOT EXISTS share_cards (
 );
 CREATE INDEX IF NOT EXISTS share_cards_created_idx ON share_cards (created_at);
 CREATE INDEX IF NOT EXISTS share_cards_user_idx ON share_cards (user_id, created_at DESC);
+
+-- Server-only snapshots contain hidden fleets. Never expose state through REST.
+CREATE TABLE IF NOT EXISTS game_rooms (
+  id UUID PRIMARY KEY,
+  state JSONB NOT NULL,
+  settlement JSONB,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS game_room_players (
+  user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  room_id UUID NOT NULL REFERENCES game_rooms(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS game_room_players_room_idx ON game_room_players(room_id);
+CREATE TABLE IF NOT EXISTS game_result_receipts (
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  room_id UUID NOT NULL REFERENCES game_rooms(id) ON DELETE CASCADE,
+  PRIMARY KEY(user_id, room_id)
+);
+
+-- Immutable invoice data survives catalogue and monthly-season changes.
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS entitlement JSONB;
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS buyer_tg_id BIGINT;
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS refund_requested_at TIMESTAMPTZ;
+UPDATE payments p SET buyer_tg_id=u.tg_id FROM users u
+  WHERE p.user_id=u.id AND p.buyer_tg_id IS NULL AND u.tg_id IS NOT NULL;
+CREATE TABLE IF NOT EXISTS payment_refund_notices (
+  charge_id TEXT PRIMARY KEY,
+  received_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS star_invoices (
+  id UUID PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id),
+  product_id TEXT NOT NULL,
+  stars INT NOT NULL,
+  season TEXT,
+  product JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS match_notifications (
+  id TEXT PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id),
+  vars JSONB NOT NULL,
+  delivered BOOLEAN NOT NULL DEFAULT FALSE
+);

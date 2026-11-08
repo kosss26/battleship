@@ -9,7 +9,7 @@ process.env.DATABASE_URL = process.env.TEST_DATABASE_URL || 'postgres://bs:bs@lo
 process.env.TELEGRAM_BOT_TOKEN = ''
 
 const { start } = await import('../src/server.js')
-const { query, closeDb } = await import('../src/db.js')
+const { query, closeDb, migrate } = await import('../src/db.js')
 const { sent, pickReminder, runReminders } = await import('../src/services/notify.js')
 const { io: ioClient } = await import('socket.io-client')
 
@@ -38,6 +38,8 @@ function connect(token) {
 const call = (s, ev, data) => new Promise((r) => s.emit(ev, data, r))
 
 before(async () => {
+  await migrate()
+  await query('TRUNCATE game_rooms, match_notifications CASCADE')
   srv = await start()
   await query('TRUNCATE friendships, admin_log, payments, games, users RESTART IDENTITY CASCADE')
 })

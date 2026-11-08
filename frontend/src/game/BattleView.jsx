@@ -159,7 +159,7 @@ export default function BattleView({ game }) {
             <FleetStatus remaining={game.opp.remaining} compact color="bg-rose-300" />
           </div>
         </div>
-        {game.phase !== 'over' && <TimerRing left={left} active={game.myTurn} total={(game.turnMs || 30000) / 1000} />}
+        {game.phase !== 'over' && !game.recovering && <TimerRing left={left} active={game.myTurn} total={(game.turnMs || 30000) / 1000} />}
         {game.mode !== 'ai' && game.mode !== 'campaign' && (
           <button disabled={game.phase === 'over'} className="rounded-2xl bg-white/[0.06] p-2.5 disabled:opacity-40" onClick={() => setEmoteOpen(true)} aria-label={t('emotes')}>
             <Smile size={20} />
@@ -196,7 +196,7 @@ export default function BattleView({ game }) {
               }`}
             >
               {game.myTurn ? <Crosshair size={16} /> : <span className="h-2 w-2 animate-pulse rounded-full bg-amber-300" />}
-              {game.phase === 'over' ? t('fx_finishing') : !oppConnected ? t('opp_disconnected', { s: graceLeft }) : game.myTurn ? (booster ? t('booster_pick', { name: l(BOOSTERS[booster.type].name) }) : t('your_turn')) : t('their_turn')}
+              {game.recovering ? t('game_recovering') : game.phase === 'over' ? t('fx_finishing') : !oppConnected ? t('opp_disconnected', { s: graceLeft }) : game.myTurn ? (booster ? t('booster_pick', { name: l(BOOSTERS[booster.type].name) }) : t('your_turn')) : t('their_turn')}
             </motion.div>
           )}
         </AnimatePresence>

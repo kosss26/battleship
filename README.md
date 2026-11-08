@@ -5,6 +5,8 @@
 
 Исходное ТЗ: `Battleship_Mini_App_TZ Техническое задание.md`.
 
+Подготовка к коммерческому выпуску: [восстановление боёв, надёжность начислений и Stars, проверки и установка](docs/COMMERCIAL_RELEASE.md). Расчёт экономики: [модель на 30 дней](docs/ECONOMY_MODEL.md).
+
 <p>
 <img src="docs/screens/home.png" width="190"> <img src="docs/screens/placement.png" width="190">
 <img src="docs/screens/battle.png" width="190"> <img src="docs/screens/victory.png" width="190">

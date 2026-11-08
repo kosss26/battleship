@@ -3,7 +3,8 @@ import { config } from '../config.js'
 import { botApi } from '../telegram.js'
 import { BOOSTERS, findCosmetic, seasonId, DEFAULT_OWNED, DEFAULT_EQUIPPED } from '../../../shared/catalog.js'
 import { getUser, mutateUser, selfView, displayName, GameError, isAdmin } from './users.js'
-import { refundPayment } from './shop.js'
+import { queueRefund } from './shop.js'
+import { processRefund } from './refunds.js'
 import { stats as liveStats, notifyProfile, kickUser } from '../game/manager.js'
 
 export async function requireAdmin(userId) {
@@ -45,6 +46,11 @@ export async function dashboard() {
       FROM generate_series(current_date - 13, current_date, interval '1 day') AS d ORDER BY d`),
   ])
   const users = u[0]
+  const { rows: reliability } = await query(`SELECT
+    (SELECT count(*)::int FROM game_rooms WHERE settlement IS NULL AND state->>'phase'='over') AS pending_results,
+    (SELECT count(*)::int FROM game_rooms WHERE settlement IS NULL AND state->>'phase'='over'
+      AND updated_at < now()-interval '1 minute') AS stuck_results,
+    (SELECT count(*)::int FROM payments WHERE status='refund_pending') AS pending_refunds`)
   const pay = p[0]
   const { rows: adRows } = await query(`SELECT
       count(*) FILTER (WHERE created_at > now() - interval '1 day')::int AS day,
@@ -63,6 +69,7 @@ export async function dashboard() {
   )
   return {
     users,
+    reliability: reliability[0],
     gamesToday: Object.fromEntries(g.map((r) => [r.mode, r.n])),
     payments: { ...pay, conversion: users.total ? +((pay.payers / users.total) * 100).toFixed(2) : 0, arppu: pay.payers ? Math.round(pay.stars_total / pay.payers) : 0 },
     daily,
@@ -144,7 +151,7 @@ export async function setBan(admin, id, banned, reason = '') {
   if (!target) throw new GameError('not_found', 404)
   if (isAdmin(target)) throw new GameError('cannot_ban_admin')
   await query('UPDATE users SET banned = $2, ban_reason = $3 WHERE id = $1', [id, !!banned, banned ? String(reason).slice(0, 300) : null])
-  if (banned) kickUser(id)
+  if (banned) await kickUser(id)
   await logAction(admin.id, banned ? 'ban' : 'unban', id, { reason })
 }
 
@@ -183,6 +190,8 @@ export async function adjustUser(admin, id, changes = {}, reason = '') {
     }
     if (typeof changes.premiumPass === 'boolean' && changes.premiumPass !== u.data.pass.premium) {
       u.data.pass.premium = changes.premiumPass
+      u.data.pass.premiumSource = 'admin'
+      u.data.pass.premiumChargeId = null
       applied.premiumPass = changes.premiumPass
     }
     if (changes.rating != null && changes.rating !== '') {
@@ -218,7 +227,7 @@ const paymentRow = (r) => ({
 export async function listPayments(status) {
   const params = []
   let where = ''
-  if (['paid', 'refunded'].includes(status)) {
+  if (['paid', 'refunded', 'refund_pending'].includes(status)) {
     params.push(status)
     where = 'WHERE p.status = $1'
   }
@@ -234,18 +243,15 @@ export async function refund(admin, paymentId, reason = '') {
   const { rows } = await query('SELECT p.*, u.tg_id FROM payments p JOIN users u ON u.id = p.user_id WHERE p.id = $1', [paymentId])
   const pay = rows[0]
   if (!pay) throw new GameError('not_found', 404)
-  if (pay.status !== 'paid') throw new GameError('already_refunded')
-  // Return the Stars first; only revoke goods if Telegram accepted the refund
-  if (config.botToken) {
-    try {
-      await botApi('refundStarPayment', { user_id: Number(pay.tg_id), telegram_payment_charge_id: pay.charge_id })
-    } catch (e) {
-      const err = new GameError('telegram_refund_failed', 502)
-      err.detail = e.message
-      throw err
-    }
+  if (pay.status === 'refunded') throw new GameError('already_refunded')
+  if (await queueRefund(paymentId)) await logAction(admin.id, 'refund_requested', Number(pay.user_id), { paymentId, reason })
+  let res
+  try { res = await processRefund(paymentId) }
+  catch (e) {
+    const err = new GameError('telegram_refund_failed', 502)
+    err.detail = e.message
+    throw err
   }
-  const res = await refundPayment({ id: paymentId })
   if (!res) throw new GameError('already_refunded')
   await logAction(admin.id, 'refund', Number(pay.user_id), { paymentId: Number(paymentId), product: pay.product_id, stars: pay.stars, revoked: res.revoked, reason })
   notifyProfile(Number(pay.user_id), selfView(res.user))

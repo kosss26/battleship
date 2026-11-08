@@ -10,6 +10,11 @@ import { SHELL_FLIGHT_MS, finalShotDeadline } from '../game/animation.js'
 let toastId = 0
 export { SHELL_FLIGHT_MS } from '../game/animation.js'
 let feedId = 0
+const dismissedKey = 'bs_dismissed_results'
+function dismissedResults() {
+  try { const ids = JSON.parse(localStorage.getItem(dismissedKey) || '[]'); return Array.isArray(ids) ? ids.slice(-20) : [] }
+  catch { return [] }
+}
 
 const emptySummary = (s) =>
   !s || (!s.gold && !s.gems && !s.xp && !Object.keys(s.boosters || {}).length && !(s.cosmetics || []).length && !(s.achievements || []).length && !(s.levelUps || []).length)
@@ -186,11 +191,16 @@ export const useStore = create((set, get) => ({
       set({ radar: { ...r, at: Date.now() } })
     })
     s.on('game:over', (o) => {
+      if (dismissedResults().includes(o.state.id)) {
+        request('game:leave', { roomId: o.state.id })
+        return
+      }
       set({ over: o, game: o.state })
       const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
       const until = finalShotDeadline(o.state, o, get().feed, reduced)
       setTimeout(() => {
         if (get().game?.id !== o.state.id || get().over !== o) return
+        if (o.reason === 'server_restart') return
         ;(o.won ? sfx.win : sfx.lose)()
         ;(o.won ? haptic.success : haptic.error)()
       }, Math.max(500, until - Date.now()))
@@ -236,7 +246,11 @@ export const useStore = create((set, get) => ({
   },
 
   leaveGame() {
-    request('game:leave')
+    try {
+      const id = get().game?.id
+      if (id) localStorage.setItem(dismissedKey, JSON.stringify([...dismissedResults().filter(old => old !== id), id].slice(-20)))
+    } catch {}
+    request('game:leave', { roomId: get().game?.id })
     set({ game: null, over: null, feed: [], radar: null, emote: null })
   },
 

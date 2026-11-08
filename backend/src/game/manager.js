@@ -6,10 +6,11 @@ import { CAMPAIGN, AI_DIFFICULTIES } from './constants.js'
 import { getUser, publicProfile, mutateUser, selfView, GameError, displayName } from '../services/users.js'
 import { areFriends } from '../services/friends.js'
 import { notifyById } from '../services/notify.js'
-import { applyMatchResult, saveGame } from '../services/match.js'
-import { query } from '../db.js'
+import { persistRoom, savedRooms, latestResult, settleRoom, dismissResult, pruneSavedRooms, readSavedRoom, savedRoomForUser } from './persistence.js'
+import { deliverMatchNotifications } from '../services/match.js'
+export { RANKED_GUARD } from './persistence.js'
+import { tx } from '../db.js'
 import { trackActivity } from '../services/analytics.js'
-import { eloDelta } from '../services/elo.js'
 
 const rooms = new Map() // roomId -> GameRoom
 const userRoom = new Map() // userId -> roomId
@@ -20,6 +21,12 @@ const online = new Map() // userId -> number of open sockets
 const inviteSent = new Map() // `${from}:${to}` -> timestamp (anti-spam)
 
 let io = null
+let draining = false
+let tickRunning = false
+const intervals = []
+const operations = new Set()
+const finalizing = new Map()
+const reservedUsers = new Set()
 
 const emit = (userId, event, payload) => io?.to(`u:${userId}`).emit(event, payload)
 
@@ -41,11 +48,20 @@ function activeRoom(userId) {
 
 const hooks = {
   emit,
-  onFinish: (room) => finalize(room).catch((e) => console.error('[finalize]', e)),
+  transaction: tx, persist: persistRoom,
+  load: readSavedRoom, connected: isOnline,
+  onFinish: (room) => finalize(room).catch(e => console.error('[finalize]', room.id, e.message)),
 }
 
-function createRoom(opts) {
+async function createRoom(opts) {
+  const ids = opts.seats.filter(s => s.kind === 'human').map(s => s.userId)
+  if (ids.some(id => reservedUsers.has(id))) throw new GameError('already_in_game')
+  ids.forEach(id => reservedUsers.add(id))
   const room = new GameRoom({ ...opts, hooks })
+  try { await room.run(() => {}) } catch (e) {
+    if (!(await readSavedRoom(room.id).catch(() => null))) { room.dispose(); throw e }
+  }
+  finally { ids.forEach(id => reservedUsers.delete(id)) }
   rooms.set(room.id, room)
   for (const s of room.humans()) userRoom.set(s.userId, room.id)
   room.broadcast()
@@ -60,114 +76,80 @@ function closeRoom(room) {
 
 /* ───────── finishing ───────── */
 
-async function finalize(room) {
-  const { winnerSeat, reason } = room.result
-  const durationMs = Date.now() - (room.startedAt || room.createdAt)
-  const deltas = [0, 0]
-  // Matches abandoned during placement count only for ranked/duel forfeits
-  const played = room.startedAt !== null
-
-  let ratingNote = null
-  if (room.mode === 'ranked' && played) {
-    const [a, b] = room.seats
-    deltas[0] = eloDelta(a.profile.rating, b.profile.rating, winnerSeat === 0 ? 1 : 0, a.rankedGames)
-    deltas[1] = eloDelta(b.profile.rating, a.profile.rating, winnerSeat === 1 ? 1 : 0, b.rankedGames)
-    ratingNote = await rankedGuard(room, winnerSeat, reason)
-    if (ratingNote === 'repeat_opponent') {
-      deltas[0] = 0
-      deltas[1] = 0
-    } else if (ratingNote === 'early_forfeit') {
-      deltas[winnerSeat] = 0 // the quitter still loses rating, the winner gains nothing
-    }
-  }
-
-  const rewards = await Promise.all(room.seats.map(async (seat, i) => {
-    if (seat.kind !== 'human' || !played) return null
-    try {
-      const { user, summary, extra } = await applyMatchResult(seat.userId, {
-        mode: room.mode,
-        difficulty: room.mode === 'campaign' ? CAMPAIGN.find((l) => l.n === room.level)?.ai : room.difficulty,
-        level: room.level,
-        won: winnerSeat === i,
-        reason,
-        ratingDelta: deltas[i],
-        ratingNote,
-        ...room.seatStats(i),
-      })
-      emit(seat.userId, 'profile', selfView(user))
-      return { summary, extra }
-    } catch (e) {
-      console.error('[rewards]', e.message)
-      return null
-    }
-  }))
-
-  room.seats.forEach((seat, i) => {
-    if (seat.kind !== 'human') return
-    emit(seat.userId, 'game:over', {
-      state: room.snapshot(i),
-      won: winnerSeat === i,
-      reason,
-      durationMs,
-      rewards: rewards[i]?.summary || null,
-      extra: rewards[i]?.extra || null,
-      myStats: room.seatStats(i),
-      oppStats: room.seatStats(1 - i),
-    })
-  })
-
-  if (played) {
-    const humanId = (i) => (room.seats[i].kind === 'human' ? room.seats[i].userId : null)
-    await saveGame({
-      id: room.id,
-      mode: room.mode,
-      difficulty: room.difficulty || (room.level ? `L${room.level}` : null),
-      p1: humanId(0),
-      p2: humanId(1),
-      winner: humanId(winnerSeat),
-      winnerSlot: winnerSeat,
-      reason,
-      p1Delta: deltas[0],
-      p2Delta: deltas[1],
-      shots: room.moves.length,
-      durationMs,
-      moves: room.moves,
-    })
-  }
-
-  // Keep the finished room briefly so duel players can ask for a rematch
-  setTimeout(() => closeRoom(room), room.mode === 'duel' ? 120_000 : 5_000)
-  for (const s of room.humans()) if (room.mode !== 'duel') userRoom.delete(s.userId)
+function outcome(room, userId, result) {
+  const i = room.seatOf(userId)
+  return { state: room.snapshot(i), won: room.result.winnerSeat === i, reason: room.result.reason,
+    durationMs: result.durationMs, rewards: result.rewards[i]?.summary || null,
+    extra: result.rewards[i]?.extra || null, myStats: room.seatStats(i), oppStats: room.seatStats(1-i) }
 }
 
-/* ───────── rating anti-abuse ───────── */
+async function finalize(room) {
+  if (finalizing.has(room.id)) return finalizing.get(room.id)
+  const task = (async () => {
+    const result = await settleRoom(room)
+    room.settled = true
+    room.completion = result
+    for (const seat of room.humans()) {
+      const fresh = await getUser(seat.userId).catch(() => null)
+      if (fresh) emit(seat.userId, 'profile', selfView(fresh))
+      emit(seat.userId, 'game:over', outcome(room, seat.userId, result))
+    }
+    deliverMatchNotifications().catch(e => console.error('[match-notify]', e.message))
+    const cleanup = setTimeout(() => closeRoom(room), room.mode === 'duel' ? 120_000 : 5_000)
+    cleanup.unref()
+    if (room.mode !== 'duel') for (const s of room.humans()) {
+      if (userRoom.get(s.userId) === room.id) userRoom.delete(s.userId)
+    }
+  })()
+  finalizing.set(room.id, task)
+  try { return await task } finally { finalizing.delete(room.id) }
+}
 
-export const RANKED_GUARD = { maxGamesPerPairPerDay: 3, minShotsForForfeitWin: 12 }
-
-/**
- * Detects rating farming between two accounts:
- *  - repeat_opponent: the same pair already played N ranked games in the last 24h
- *  - early_forfeit: the match ended by resign/disconnect/timeout almost immediately
- */
-async function rankedGuard(room, winnerSeat, reason) {
-  const [a, b] = room.seats.map((s) => s.userId)
-  try {
-    const { rows } = await query(
-      `SELECT count(*)::int AS n FROM games WHERE mode = 'ranked' AND ended_at > now() - interval '24 hours'
-         AND ((p1 = $1 AND p2 = $2) OR (p1 = $2 AND p2 = $1))`,
-      [a, b],
-    )
-    if (rows[0].n >= RANKED_GUARD.maxGamesPerPairPerDay) return 'repeat_opponent'
-  } catch (e) {
-    console.error('[rankedGuard]', e.message)
+export async function restoreGames() {
+  draining = false
+  await pruneSavedRooms()
+  for (const row of await savedRooms()) {
+    const room = new GameRoom({ ...row.state, hooks, restored: row.state })
+    rooms.set(room.id, room)
+    for (const s of room.humans()) userRoom.set(s.userId, room.id)
+    if (room.phase === 'over') await finalize(room)
+    else room.recover(new Date(row.updated_at).getTime())
   }
-  if (reason !== 'victory' && room.moves.length < RANKED_GUARD.minShotsForForfeitWin) return 'early_forfeit'
-  return null
+}
+
+async function recoverUserRoom(userId) {
+  const saved = await savedRoomForUser(userId)
+  if (!saved) return null
+  let room = rooms.get(saved.id)
+  if (!room) {
+    room = new GameRoom({ ...saved.state, restored: saved.state, hooks })
+    rooms.set(room.id, room)
+    for (const seat of room.humans()) userRoom.set(seat.userId, room.id)
+    room.recover(new Date(saved.updated_at).getTime())
+  }
+  if (room.phase !== 'over') await room.run(() => {
+    for (const seat of room.humans()) if (isOnline(seat.userId)) room.reconnected(seat.userId)
+  })
+  return room
+}
+
+export async function stopGames() {
+  draining = true
+  for (const t of intervals.splice(0)) clearInterval(t)
+  await Promise.allSettled([...operations])
+  for (const r of rooms.values()) r.dispose()
+  await Promise.allSettled([...rooms.values()].map(r => r.work))
+  for (const r of rooms.values()) r.dispose()
+  await Promise.allSettled([...finalizing.values()])
+  rooms.clear(); userRoom.clear(); queue.clear(); duels.clear(); online.clear(); reservedUsers.clear()
 }
 
 /* ───────── matchmaking ───────── */
 
-function matchmakingTick() {
+async function matchmakingTick() {
+  if (draining || tickRunning) return
+  tickRunning = true
+  try {
   const now = Date.now()
   const entries = [...queue.entries()].sort((a, b) => a[1].since - b[1].since)
   const taken = new Set()
@@ -186,18 +168,23 @@ function matchmakingTick() {
       taken.add(best.idB)
       queue.delete(idA)
       queue.delete(best.idB)
-      const room = createRoom({
+      let room
+      try { room = await createRoom({
         mode: 'ranked',
         seats: [
           { kind: 'human', userId: idA, profile: a.profile, rankedGames: a.games },
           { kind: 'human', userId: best.idB, profile: best.b.profile, rankedGames: best.b.games },
         ],
-      })
+      }) } catch (e) {
+        for (const [id, entry] of [[idA, a], [best.idB, best.b]]) if (!activeRoom(id)) queue.set(id, entry)
+        throw e
+      }
       emit(idA, 'mm:found', { roomId: room.id, opponent: best.b.profile })
       emit(best.idB, 'mm:found', { roomId: room.id, opponent: a.profile })
     }
   }
   for (const [id, a] of queue) emit(id, 'mm:status', { waitingMs: now - a.since, inQueue: queue.size })
+  } finally { tickRunning = false }
 }
 
 /* ───────── socket ───────── */
@@ -206,13 +193,20 @@ const ack = (cb, payload) => typeof cb === 'function' && cb(payload)
 
 export function initSockets(server) {
   io = server
-  setInterval(matchmakingTick, 1000).unref()
-  setInterval(() => {
+  intervals.push(setInterval(() => {
+    const task = matchmakingTick().catch(e => console.error('[matchmaking]', e.message))
+    operations.add(task); task.finally(() => operations.delete(task))
+  }, 1000).unref())
+  intervals.push(setInterval(() => {
+    for (const r of rooms.values()) if (r.phase === 'over' && !r.settled) hooks.onFinish(r)
+  }, 5000).unref())
+  intervals.push(setInterval(() => pruneSavedRooms().catch(e => console.error('[room-prune]', e.message)), 3600_000).unref())
+  intervals.push(setInterval(() => {
     const now = Date.now()
     for (const [code, d] of duels) if (now - d.createdAt > 30 * 60_000) duels.delete(code)
     joinAttempts.clear()
     for (const [k, t] of inviteSent) if (now - t > 60_000) inviteSent.delete(k)
-  }, 60_000).unref()
+  }, 60_000).unref())
 
   io.use(async (socket, next) => {
     try {
@@ -234,7 +228,8 @@ export function initSockets(server) {
     online.set(userId, (online.get(userId) || 0) + 1)
     trackActivity(userId)
 
-    activeRoom(userId)?.reconnected(userId)
+    const connectedRoom = activeRoom(userId)
+    if (connectedRoom) connectedRoom.run(() => connectedRoom.reconnected(userId)).catch(e => console.error('[reconnect]', e.message))
 
     const loadProfile = async () => {
       const u = await getUser(userId)
@@ -245,7 +240,11 @@ export function initSockets(server) {
 
     const guard = (handler) => async (data = {}, cb) => {
       try {
-        const res = await handler(data || {})
+        if (draining) throw new GameError('server_restarting', 503)
+        const task = Promise.resolve().then(() => handler(data || {}))
+        operations.add(task)
+        let res
+        try { res = await task } finally { operations.delete(task) }
         ack(cb, res ?? { ok: true })
       } catch (e) {
         if (!(e instanceof GameError)) console.error('[socket]', e)
@@ -253,20 +252,28 @@ export function initSockets(server) {
       }
     }
 
-    const ensureFree = () => {
-      if (activeRoom(userId)) throw new GameError('already_in_game')
+    const ensureFree = async () => {
+      if (!userRoom.has(userId) && !reservedUsers.has(userId)) await recoverUserRoom(userId)
+      const previous = rooms.get(userRoom.get(userId))
+      if (reservedUsers.has(userId) || (previous && (previous.phase !== 'over' || !previous.settled))) throw new GameError('already_in_game')
       queue.delete(userId)
     }
 
     socket.on('game:resume', guard(async () => {
-      const r = activeRoom(userId)
-      if (!r) return { room: null }
-      r.reconnected(userId)
-      return { room: r.id }
+      const r = activeRoom(userId) || await recoverUserRoom(userId)
+      if (r && r.phase !== 'over') { await r.run(() => r.reconnected(userId)); return { room: r.id } }
+      const pending = rooms.get(userRoom.get(userId))
+      if (pending && !pending.settled) { await finalize(pending); return { room: pending.id } }
+      const row = await latestResult(userId)
+      if (row) {
+        const finished = new GameRoom({ ...row.state, hooks, restored: row.state })
+        emit(userId, 'game:over', outcome(finished, userId, row.settlement))
+      }
+      return { room: null }
     }))
 
     socket.on('ai:start', guard(async ({ difficulty, level }) => {
-      ensureFree()
+      await ensureFree()
       const u = await loadProfile()
       let mode = 'ai'
       let diff = difficulty
@@ -279,7 +286,7 @@ export function initSockets(server) {
       } else if (!AI_DIFFICULTIES.includes(diff)) throw new GameError('bad_difficulty')
       const bot = botProfile(diff, u.language)
       if (mode === 'campaign') bot.name = `${bot.name} · ${level}`
-      const r = createRoom({
+      const r = await createRoom({
         mode,
         difficulty: mode === 'ai' ? diff : null,
         level: mode === 'campaign' ? Number(level) : null,
@@ -290,7 +297,7 @@ export function initSockets(server) {
     }))
 
     socket.on('mm:join', guard(async () => {
-      ensureFree()
+      await ensureFree()
       const u = await loadProfile()
       queue.set(userId, { rating: u.rating, games: u.data.stats.pvpGames, since: Date.now(), profile: publicProfile(u) })
       return { ok: true }
@@ -301,7 +308,7 @@ export function initSockets(server) {
     }))
 
     const openDuel = async () => {
-      ensureFree()
+      await ensureFree()
       const u = await loadProfile()
       for (const [c, d] of duels) {
         if (d.hostId === userId) {
@@ -367,12 +374,12 @@ export function initSockets(server) {
         throw new GameError('duel_not_found')
       }
       if (duel.hostId === userId) return { hosting: true }
-      ensureFree()
+      await ensureFree()
       if (activeRoom(duel.hostId)) throw new GameError('host_busy')
       const u = await loadProfile()
       clearTimeout(duel.closing)
       duels.delete(key)
-      const r = createRoom({
+      const r = await createRoom({
         mode: 'duel',
         duelCode: key,
         seats: [
@@ -386,6 +393,7 @@ export function initSockets(server) {
     socket.on('game:rematch', guard(async () => {
       const r = rooms.get(userRoom.get(userId))
       if (!r || r.phase !== 'over' || r.mode !== 'duel') throw new GameError('no_rematch')
+      if (!r.settled) await finalize(r)
       r.rematch.add(userId)
       const other = r.humans().find((s) => s.userId !== userId)
       if (!other) throw new GameError('no_rematch')
@@ -396,7 +404,7 @@ export function initSockets(server) {
       if (activeRoom(other.userId)) throw new GameError('host_busy')
       const [a, b] = await Promise.all([getUser(r.seats[0].userId), getUser(r.seats[1].userId)])
       closeRoom(r)
-      const nr = createRoom({
+      const nr = await createRoom({
         mode: 'duel',
         duelCode: r.duelCode,
         seats: [
@@ -410,27 +418,27 @@ export function initSockets(server) {
     socket.on('game:place', guard(async ({ ships }) => {
       const r = activeRoom(userId)
       if (!r) throw new GameError('no_game')
-      const res = r.place(userId, ships)
+      const res = await r.run(() => r.place(userId, ships))
       if (res.error) throw new GameError(res.error)
     }))
 
     socket.on('game:fire', guard(async ({ r: row, c }) => {
       const r = activeRoom(userId)
       if (!r) throw new GameError('no_game')
-      const res = r.fire(userId, row, c)
+      const res = await r.run(() => r.fire(userId, row, c))
       if (res.error) throw new GameError(res.error)
     }))
 
     socket.on('game:booster', guard(async ({ type, r: row, c }) => {
       const r = activeRoom(userId)
       if (!r) throw new GameError('no_game')
-      const res = await r.useBooster(userId, type, row, c, async (t) => {
+      const res = await r.run(client => r.useBooster(userId, type, row, c, async (t) => {
         const { user } = await mutateUser(userId, (u) => {
           if (!(u.data.boosters[t] > 0)) throw new GameError('no_booster')
           u.data.boosters[t]--
-        })
-        emit(userId, 'profile', selfView(user))
-      })
+        }, client)
+        r.emitTo(r.seats[r.seatOf(userId)], 'profile', selfView(user))
+      }))
       if (res.error) throw new GameError(res.error)
     }))
 
@@ -439,31 +447,39 @@ export function initSockets(server) {
     }))
 
     socket.on('game:resign', guard(async () => {
-      activeRoom(userId)?.resign(userId)
+      const r = activeRoom(userId)
+      if (r) await r.run(() => r.resign(userId))
     }))
 
-    socket.on('game:leave', guard(async () => {
+    socket.on('game:leave', guard(async ({ roomId }) => {
       const r = rooms.get(userRoom.get(userId))
+      const id = roomId || (r?.phase === 'over' ? r.id : null)
+      if (id && /^[0-9a-f-]{36}$/i.test(id)) await dismissResult(userId, id)
       if (r && r.phase === 'over') userRoom.delete(userId)
     }))
 
     socket.on('disconnect', async () => {
+      if (draining) return
       const n = (online.get(userId) || 1) - 1
       if (n > 0) online.set(userId, n)
       else online.delete(userId)
       const sockets = await io.in(`u:${userId}`).fetchSockets()
+      if (draining) return
       if (sockets.length) return
       queue.delete(userId)
-      activeRoom(userId)?.disconnected(userId)
+      const r = activeRoom(userId)
+      if (r) r.run(() => r.disconnected(userId)).catch(e => console.error('[disconnect]', e.message))
     })
   })
 }
 
 /** Ends the user's session: resigns an active game, drops them from queues and disconnects */
-export function kickUser(userId) {
+export async function kickUser(userId) {
   queue.delete(userId)
   for (const [c, d] of duels) if (d.hostId === userId) duels.delete(c)
-  activeRoom(userId)?.resign(userId)
+  const r = rooms.get(userRoom.get(userId))
+  if (r && r.phase !== 'over') await r.run(() => r.resign(userId))
+  if (r?.phase === 'over' && !r.settled) await finalize(r)
   io?.in(`u:${userId}`).disconnectSockets(true)
 }
 

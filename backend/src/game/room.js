@@ -40,7 +40,7 @@ export function botProfile(difficulty, lang = 'ru') {
  * The room never trusts the client: it owns both boards and validates every action.
  */
 export class GameRoom {
-  constructor({ mode, seats, difficulty = null, level = null, duelCode = null, mods = {}, hooks }) {
+  constructor({ mode, seats, difficulty = null, level = null, duelCode = null, mods = {}, hooks, restored = null }) {
     this.id = crypto.randomUUID()
     this.mode = mode // ai | campaign | ranked | duel
     this.difficulty = difficulty
@@ -57,6 +57,10 @@ export class GameRoom {
     this.result = null
     this.timers = {}
     this.rematch = new Set()
+    this.work = Promise.resolve()
+    this.idleDeadline = null
+    this.recovering = false
+    this.pendingEvents = null
     this.seats = seats.map((s) => ({
       ...s, // { kind: 'human'|'bot', userId?, profile, boosters? }
       board: null,
@@ -75,9 +79,113 @@ export class GameRoom {
       missAt: new Map(), // fog: cell key -> shooter's shot number when it was last seen
       haloHidden: new Set(), // noHalo: auto-marked cells the shooter is not shown
     }))
+    if (restored) { this.restore(restored); return }
     if (this.timed) this.setDeadline(TIMING.placementPvp, () => this.placementTimeout())
     else this.touch()
     for (const seat of this.seats) if (seat.kind === 'bot') this.placeShips(seat, randomFleet())
+  }
+
+  serialize() {
+    const { hooks, timers, work, pendingEvents, storageDirty, settled, completion, ...data } = this
+    return JSON.parse(JSON.stringify({ ...data, version: 1, rematch: [...this.rematch],
+      seats: this.seats.map(s => ({ ...s, missAt: [...s.missAt], haloHidden: [...s.haloHidden] })) }))
+  }
+
+  restore(data) {
+    this.dispose()
+    if (data.version !== 1) throw new Error('Unsupported room snapshot')
+    Object.assign(this, data, { rematch: new Set(data.rematch), seats: data.seats.map(s => ({
+      ...s, missAt: new Map(s.missAt), haloHidden: new Set(s.haloHidden),
+    })) })
+  }
+
+  /** Serialize all actions, including timers. Publish only after the DB commit. */
+  run(action) {
+    const task = this.work.then(async () => {
+      const before = this.serialize()
+      this.pendingEvents = []
+      let value
+      try {
+        if (this.storageDirty) await this.reloadCommittedState()
+        const execute = async client => {
+          value = await action(client)
+          if (this.hooks.persist) await this.hooks.persist(this.serialize(), client)
+        }
+        if (this.hooks.transaction) await this.hooks.transaction(execute)
+        else await execute()
+      } catch (error) {
+        this.restore(before)
+        this.pendingEvents = null
+        if (this.hooks.load) {
+          this.storageDirty = true
+          try { await this.reloadCommittedState() }
+          catch { this.dispose(); this.setTimer('storage', 1000, () => {}) }
+        } else this.armTimers()
+        throw error
+      }
+      const events = this.pendingEvents
+      this.pendingEvents = null
+      for (const [userId, event, payload] of events) this.hooks.emit(userId, event, payload)
+      if (this.phase === 'over' && before.phase !== 'over') this.hooks.onFinish(this)
+      return value
+    })
+    this.work = task.catch(() => {})
+    return task
+  }
+
+  async reloadCommittedState() {
+    const saved = await this.hooks.load(this.id)
+    if (saved) {
+      this.restore(saved.state)
+      this.settled = !!saved.settlement
+      this.completion = saved.settlement
+      if (this.phase !== 'over' && this.hooks.connected) {
+        this.recover(new Date(saved.updated_at).getTime())
+        for (const s of this.humans()) if (this.hooks.connected(s.userId)) this.reconnected(s.userId)
+      } else this.armTimers()
+      if (this.phase === 'over' && !this.settled) this.hooks.onFinish(this)
+    }
+    this.storageDirty = false
+  }
+
+  setTimer(name, ms, fn) {
+    this.clearTimer(name)
+    const timer = setTimeout(() => {
+      this.run(() => { if (this.timers[name] === timer) return fn() })
+        .catch(e => console.error('[room-timer]', this.id, e.message))
+    }, Math.max(1, ms))
+    this.timers[name] = timer
+  }
+
+  armTimers() {
+    this.dispose()
+    if (this.phase === 'over') return
+    if (this.recovering) {
+      this.setTimer('recovery', Math.max(1000, this.recoveryUntil - Date.now()), () => this.finish(null, 'server_restart'))
+      return
+    }
+    const retryDelay = until => Math.max(1000, until - Date.now())
+    if (this.phase === 'placement' && this.timed) this.setTimer('main', retryDelay(this.deadline), () => this.placementTimeout())
+    else if (this.phase === 'battle' && this.seats[this.turn].kind === 'bot') this.setTimer('bot', 650, () => this.botMove())
+    else if (this.phase === 'battle' && this.turnMs) this.setTimer('main', retryDelay(this.deadline), () => this.turnTimeout())
+    if (!this.timed) this.setTimer('idle', retryDelay(this.idleDeadline), () => this.finish(this.seats.findIndex(s => s.kind === 'bot'), 'abandoned'))
+    this.seats.forEach((s, i) => {
+      if (this.timed && !s.connected) this.setTimer(`dc${i}`, retryDelay(s.disconnectUntil), () => {
+        if (!s.connected) this.finish(1 - i, 'disconnect')
+      })
+    })
+  }
+
+  recover(savedAt) {
+    if (this.phase === 'over') return
+    if (!this.recovering) {
+      this.recoveryRemaining = this.deadline == null ? null : Math.max(1000, this.deadline - savedAt)
+      this.recoveryIdle = Math.max(1000, (this.idleDeadline || savedAt + TIMING.idleAi) - savedAt)
+    }
+    this.recovering = true
+    this.recoveryUntil = Date.now() + 5 * 60_000
+    for (const s of this.humans()) s.connected = false
+    this.armTimers()
   }
 
   get timed() {
@@ -131,16 +239,17 @@ export class GameRoom {
   setDeadline(ms, fn) {
     this.clearTimer()
     this.deadline = Date.now() + ms
-    this.timers.main = setTimeout(fn, ms)
+    this.setTimer('main', ms, fn)
   }
 
   /** AI games have no turn timer, but idle rooms are cleaned up */
   touch() {
     if (this.timed) return
     this.clearTimer('idle')
-    this.timers.idle = setTimeout(() => {
+    this.idleDeadline = Date.now() + TIMING.idleAi
+    this.setTimer('idle', TIMING.idleAi, () => {
       if (this.phase !== 'over') this.finish(this.seats.findIndex((s) => s.kind === 'bot'), 'abandoned')
-    }, TIMING.idleAi)
+    })
   }
 
   dispose() {
@@ -195,7 +304,7 @@ export class GameRoom {
       this.clearTimer()
       this.deadline = null
       const delay = process.env.BOT_FAST ? 5 : 650 + Math.random() * 900
-      this.timers.bot = setTimeout(() => this.botMove(), delay)
+      this.setTimer('bot', delay, () => this.botMove())
     } else if (this.turnMs) {
       this.setDeadline(this.turnMs, () => this.turnTimeout())
     } else {
@@ -226,6 +335,7 @@ export class GameRoom {
   }
 
   fire(userId, r, c) {
+    if (this.recovering) return { error: 'game_recovering' }
     const i = this.seatOf(userId)
     if (i < 0 || this.phase !== 'battle') return { error: 'bad_phase' }
     if (this.turn !== i) return { error: 'not_your_turn' }
@@ -270,6 +380,7 @@ export class GameRoom {
    * player's inventory (server-side) and throws if they don't own one.
    */
   async useBooster(userId, type, r, c, consume) {
+    if (this.recovering) return { error: 'game_recovering' }
     const i = this.seatOf(userId)
     if (i < 0 || this.phase !== 'battle' || this.turn !== i) return { error: 'not_your_turn' }
     if (!this.boostersAllowed) return { error: 'boosters_disabled' }
@@ -369,7 +480,7 @@ export class GameRoom {
   resign(userId) {
     const i = this.seatOf(userId)
     if (i < 0 || this.phase === 'over') return
-    this.finish(1 - i, 'resign')
+    this.finish(this.recovering ? null : 1 - i, this.recovering ? 'server_restart' : 'resign')
   }
 
   /* ───────── connection ───────── */
@@ -379,19 +490,28 @@ export class GameRoom {
     if (i < 0 || this.phase === 'over') return
     const seat = this.seats[i]
     seat.connected = false
+    if (this.recovering) return
     if (!this.timed) return
     const opp = this.seats[1 - i]
     this.emitTo(opp, 'game:opponent', { connected: false, graceMs: TIMING.reconnectGrace })
     this.clearTimer(`dc${i}`)
-    this.timers[`dc${i}`] = setTimeout(() => {
+    seat.disconnectUntil = Date.now() + TIMING.reconnectGrace
+    this.setTimer(`dc${i}`, TIMING.reconnectGrace, () => {
       if (!seat.connected && this.phase !== 'over') this.finish(1 - i, 'disconnect')
-    }, TIMING.reconnectGrace)
+    })
   }
 
   reconnected(userId) {
     const i = this.seatOf(userId)
     if (i < 0) return
     this.seats[i].connected = true
+    if (this.recovering && this.humans().every(s => s.connected)) {
+      this.recovering = false
+      this.deadline = this.recoveryRemaining == null ? null : Date.now() + this.recoveryRemaining
+      this.idleDeadline = Date.now() + this.recoveryIdle
+      this.armTimers()
+      this.broadcast()
+    }
     this.clearTimer(`dc${i}`)
     this.emitTo(this.seats[1 - i], 'game:opponent', { connected: true })
     this.emitTo(this.seats[i], 'game:state', this.snapshot(i))
@@ -405,13 +525,16 @@ export class GameRoom {
     this.deadline = null
     this.dispose()
     this.result = { winnerSeat, reason, endedAt: Date.now() }
-    this.hooks.onFinish(this)
+    if (!this.pendingEvents) this.hooks.onFinish(this)
   }
 
   /* ───────── views ───────── */
 
   emitTo(seat, event, payload) {
-    if (seat.kind === 'human') this.hooks.emit(seat.userId, event, payload)
+    if (seat.kind === 'human') {
+      if (this.pendingEvents) this.pendingEvents.push([seat.userId, event, structuredClone(payload)])
+      else this.hooks.emit(seat.userId, event, payload)
+    }
   }
 
   broadcast() {
@@ -429,7 +552,8 @@ export class GameRoom {
       level: this.level,
       duelCode: this.duelCode,
       phase: this.phase,
-      myTurn: this.phase === 'battle' && this.turn === i,
+      recovering: this.recovering,
+      myTurn: !this.recovering && this.phase === 'battle' && this.turn === i,
       deadline: this.deadline,
       serverNow: Date.now(),
       boostersAllowed: this.boostersAllowed,

@@ -49,6 +49,12 @@ function Overview() {
   const modes = { ai: 'ИИ', campaign: 'Кампания', ranked: 'Рейтинг', duel: 'Дуэли' }
   return (
     <div>
+      {data.reliability && <Card title="Надёжность">
+        <div className="grid grid-cols-2 gap-2">
+          <Tile label="Результаты в обработке" value={data.reliability.pending_results} sub={`Дольше минуты: ${data.reliability.stuck_results}`} />
+          <Tile label="Возвраты в обработке" value={data.reliability.pending_refunds} sub="Повторяются автоматически" />
+        </div>
+      </Card>}
       <Card title="Сейчас" right={<button onClick={reload} className="text-slate-400"><RefreshCw size={16} /></button>}>
         <div className="grid grid-cols-3 gap-2">
           <Tile label="Онлайн" value={live.online} accent="text-emerald-300" />
@@ -178,6 +184,8 @@ export function PaymentRow({ p, onRefund, showUser = true }) {
             <span className="chip bg-emerald-400/15 text-emerald-300">Оплачено</span>
             {onRefund && <button className="btn-sm ml-auto bg-rose-500/15 text-rose-200" onClick={() => onRefund(p)}>↩️ Вернуть</button>}
           </>
+        ) : p.status === 'refund_pending' ? (
+          <span className="chip bg-amber-400/15 text-amber-200">Возврат в обработке</span>
         ) : (
           <span className="chip bg-rose-500/15 text-rose-300">Возврат {fmtDate(p.refundedAt)}</span>
         )}
@@ -220,7 +228,7 @@ function Payments() {
         className="mb-3"
         value={status}
         onChange={setStatus}
-        options={[{ value: 'all', label: 'Все' }, { value: 'paid', label: 'Оплачено' }, { value: 'refunded', label: 'Возвраты' }]}
+        options={[{ value: 'all', label: 'Все' }, { value: 'paid', label: 'Оплачено' }, { value: 'refund_pending', label: 'Возврат в обработке' }, { value: 'refunded', label: 'Возвраты' }]}
       />
       {!data ? <Loading error={error} /> : !data.payments.length ? <Empty icon="⭐" text="Платежей пока нет" /> : (
         <div className="space-y-2">{data.payments.map((p) => <PaymentRow key={p.id} p={p} onRefund={refund} />)}</div>

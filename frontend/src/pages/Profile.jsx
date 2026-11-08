@@ -35,9 +35,9 @@ function History() {
       {error ? <div className="naval-panel identity-empty"><p>{t('error_generic')}</p><button className="naval-button" onClick={() => setRetry((v) => v + 1)}>{t('retry')}</button></div> : !games ? <div className="identity-empty"><Spinner size={22} /></div> : !games.length ? <Empty icon="⚓" text={t('no_history')} /> : (
         <div className="identity-history-list">
           {games.slice(0, expanded ? 10 : 2).map((g) => (
-            <div key={g.id} className={`naval-panel identity-history-row ${g.won ? 'is-win' : 'is-loss'}`}>
+            <div key={g.id} className={`naval-panel identity-history-row ${g.reason === 'server_restart' ? '' : g.won ? 'is-win' : 'is-loss'}`}>
               <Swords size={22} aria-hidden="true" />
-              <div className="identity-row-name"><strong>{t(g.won ? 'identity_victory' : 'defeat')}</strong><small>{t(g.mode === 'ranked' ? 'identity_ranked_battle' : `mode_${g.mode}`)}{g.opponent ? ` · ${g.opponent}` : ''}{g.mode === 'ai' && g.difficulty ? ` · ${t(`diff_${g.difficulty}`)}` : ''}</small>{expanded && <time dateTime={g.endedAt}>{new Date(g.endedAt).toLocaleString(lang === 'ru' ? 'ru-RU' : 'en-US')}</time>}</div>
+              <div className="identity-row-name"><strong>{t(g.reason === 'server_restart' ? 'battle_cancelled' : g.won ? 'identity_victory' : 'defeat')}</strong><small>{t(g.mode === 'ranked' ? 'identity_ranked_battle' : `mode_${g.mode}`)}{g.opponent ? ` · ${g.opponent}` : ''}{g.mode === 'ai' && g.difficulty ? ` · ${t(`diff_${g.difficulty}`)}` : ''}</small>{expanded && <time dateTime={g.endedAt}>{new Date(g.endedAt).toLocaleString(lang === 'ru' ? 'ru-RU' : 'en-US')}</time>}</div>
               {g.mode === 'ranked' && <span className="identity-score"><Trophy size={14} /><b>{g.ratingDelta > 0 ? '+' : ''}{g.ratingDelta}</b></span>}
             </div>
           ))}

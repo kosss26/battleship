@@ -11,7 +11,7 @@ process.env.TELEGRAM_BOT_TOKEN = ''
 process.env.ADMIN_IDS = String(devId('Root Admin'))
 
 const { start } = await import('../src/server.js')
-const { query, closeDb } = await import('../src/db.js')
+const { query, closeDb, migrate } = await import('../src/db.js')
 const { completeStarPayment } = await import('../src/services/shop.js')
 const { io: ioClient } = await import('socket.io-client')
 
@@ -29,6 +29,8 @@ const api = async (path, { token, method = 'GET', body } = {}) => {
 const login = async (name) => (await api('/auth/dev', { method: 'POST', body: { name } })).body
 
 before(async () => {
+  await migrate()
+  await query('TRUNCATE game_rooms, match_notifications CASCADE')
   srv = await start()
   await query('TRUNCATE admin_log, payments, games, users RESTART IDENTITY CASCADE')
 })

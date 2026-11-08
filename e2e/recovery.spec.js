@@ -1,0 +1,37 @@
+import { test, expect, uid, resign, expectNoPageErrors } from './helpers.js'
+
+test('matchmaking rejoins after transport loss and still matches a real opponent', async ({ newPlayer }) => {
+  const a = await newPlayer(`Связь А ${uid()}`)
+  await a.goto('/search')
+  await expect(a.getByRole('heading', { name: 'Поиск соперника' })).toBeVisible()
+  await expect.poll(() => a.evaluate(async () => (await import('/src/store/app.js')).useStore.getState().connected)).toBe(true)
+  await expect.poll(() => a.evaluate(async () => typeof (await import('/src/store/app.js')).useStore.getState().mm?.waitingMs)).toBe('number')
+  await a.evaluate(async () => {
+    const socket = (await import('/src/lib/socket.js')).getSocket()
+    socket.io.engine.close()
+  })
+  await expect.poll(() => a.evaluate(async () => (await import('/src/store/app.js')).useStore.getState().connected)).toBe(false)
+  await expect.poll(() => a.evaluate(async () => (await import('/src/store/app.js')).useStore.getState().connected)).toBe(true)
+  const b = await newPlayer(`Связь Б ${uid()}`)
+  await b.goto('/search')
+  await expect(a.getByText('Расстановка флота')).toBeVisible()
+  await expect(b.getByText('Расстановка флота')).toBeVisible()
+  expectNoPageErrors(a, b)
+})
+
+test('an unacknowledged result returns after reload and stops returning after Menu', async ({ newPlayer }) => {
+  const page = await newPlayer(`Результат ${uid()}`)
+  await page.getByRole('button', { name: /Против ИИ/ }).click()
+  await page.getByRole('button', { name: /Новичок/ }).click()
+  await page.getByRole('button', { name: 'Готов к бою' }).click()
+  await resign(page)
+  await expect(page.getByRole('heading', { name: 'Поражение' })).toBeVisible()
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Поражение' })).toBeVisible()
+  await page.getByRole('button', { name: 'В меню', exact: true }).click()
+  await expect(page.getByText('Рейтинговый бой')).toBeVisible()
+  await page.reload()
+  await expect(page.getByText('Рейтинговый бой')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Поражение' })).toHaveCount(0)
+  expectNoPageErrors(page)
+})

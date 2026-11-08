@@ -103,13 +103,13 @@ router.get('/ads/adsgram-reward', wrap(async (req, res) => {
   res.status(ok ? 200 : 403).json({ ok })
 }))
 
-router.post('/telegram/webhook', (req, res) => {
+router.post('/telegram/webhook', wrap(async (req, res) => {
   if (config.webhookSecret && req.get('X-Telegram-Bot-Api-Secret-Token') !== config.webhookSecret) {
     return res.sendStatus(401)
   }
+  await handleUpdate(req.body)
   res.sendStatus(200)
-  handleUpdate(req.body).catch((e) => console.error('[bot] update', e.message))
-})
+}))
 
 /* ───────── auth ───────── */
 
@@ -199,8 +199,8 @@ router.post('/me/share-card', express.raw({ type: 'image/png', limit: '3mb' }), 
 
 router.post('/me/delete', wrap(async (req, res) => {
   if (req.body?.confirm !== 'DELETE') return res.status(400).json({ error: 'confirmation_required' })
+  await kickUser(req.userId)
   await deleteAccount(req.userId)
-  kickUser(req.userId)
   res.json({ ok: true })
 }))
 

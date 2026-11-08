@@ -10,6 +10,7 @@ test('admin panel: hidden from players, analytics, ban/unban', async ({ newPlaye
 
   const admin = await newPlayer('Админ Тест')
   await admin.goto('/profile')
+  await admin.getByRole('button', { name: 'Настройки', exact: true }).click()
   await admin.getByText('Админ-панель').click()
   await expect(admin.getByText('Доход (Telegram Stars)')).toBeVisible()
 

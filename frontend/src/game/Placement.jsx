@@ -152,10 +152,11 @@ export default function Placement({ game, deadlineLeft }) {
           <h2 className="h-display text-xl">{t('placement')}</h2>
           <p className="text-xs text-slate-400">{t('placement_hint')}</p>
         </div>
-        {deadlineLeft != null && (
+        {deadlineLeft != null && !game.recovering && (
           <div className={`chip shrink-0 whitespace-nowrap ${deadlineLeft <= 10 ? 'bg-rose-500/20 text-rose-200' : 'bg-white/[0.07]'}`}>⏱ {deadlineLeft}s</div>
         )}
       </div>
+      {game.recovering && <p role="status" className="mb-3 text-sm text-amber-200">{t('game_recovering')}</p>}
 
       <Board ref={boardRef} ships={drawn} skin={skin} theme={theme} onPointerDown={onBoardDown} />
 

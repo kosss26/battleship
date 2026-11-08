@@ -1,20 +1,20 @@
 import { config } from '../config.js'
 import { botApi, appLink } from '../telegram.js'
 import { query } from '../db.js'
-import { findStarProduct } from '../../../shared/catalog.js'
+import { CAMPAIGN } from '../../../shared/catalog.js'
 import { getUser, selfView } from './users.js'
-import { validateStarPurchase, completeStarPayment, markRefunded } from './shop.js'
+import { validateStarPurchase, completeStarPayment, markRefunded, createInvoiceRecord, invoiceProduct } from './shop.js'
 import { notifyProfile, stats as liveStats } from '../game/manager.js'
 import { refund } from './admin.js'
 
 const TEXT = {
   ru: {
-    welcome: (name) => `⚓ <b>${name}, добро пожаловать на борт!</b>\n\nМорской бой нового поколения прямо в Telegram:\n• бои с ИИ четырёх уровней и кампания на 30 миссий\n• рейтинговые PvP-сражения в реальном времени\n• дуэли с друзьями по ссылке\n• боевой пропуск, задания и коллекция скинов\n\nЖми кнопку и выходи в море 👇`,
+    welcome: (name) => `⚓ <b>${name}, добро пожаловать на борт!</b>\n\nМорской бой нового поколения прямо в Telegram:\n• бои с ИИ четырёх уровней и кампания на ${CAMPAIGN.length} миссий\n• рейтинговые PvP-сражения в реальном времени\n• дуэли с друзьями по ссылке\n• боевой пропуск, задания и коллекция скинов\n\nЖми кнопку и выходи в море 👇`,
     play: '🚢 Играть',
     paid: (title) => `✅ Покупка «${title}» зачислена. Спасибо, капитан!`,
   },
   en: {
-    welcome: (name) => `⚓ <b>Welcome aboard, ${name}!</b>\n\nNext-gen Battleship right inside Telegram:\n• 4 AI levels and a 30-mission campaign\n• real-time ranked PvP\n• duels with friends via link\n• battle pass, quests and a skin collection\n\nTap the button and set sail 👇`,
+    welcome: (name) => `⚓ <b>Welcome aboard, ${name}!</b>\n\nNext-gen Battleship right inside Telegram:\n• 4 AI levels and a ${CAMPAIGN.length}-mission campaign\n• real-time ranked PvP\n• duels with friends via link\n• battle pass, quests and a skin collection\n\nTap the button and set sail 👇`,
     play: '🚢 Play',
     paid: (title) => `✅ "${title}" has been delivered. Thank you, captain!`,
   },
@@ -94,7 +94,7 @@ async function onPreCheckout(q) {
     const payload = JSON.parse(q.invoice_payload)
     const userId = await userIdByTg(q.from.id)
     const user = userId && (await getUser(userId))
-    const p = findStarProduct(payload.p)
+    const { product: p } = await invoiceProduct(payload, userId, { checkout: true })
     if (user && p && user.id === payload.u && q.currency === 'XTR' && q.total_amount === p.stars) {
       validateStarPurchase(user, p.id)
       ok = true
@@ -109,33 +109,39 @@ async function onPreCheckout(q) {
 
 async function onPaid(msg) {
   const sp = msg.successful_payment
+  if (sp.currency !== 'XTR') throw new Error('Unexpected payment currency')
   const payload = JSON.parse(sp.invoice_payload)
-  const userId = await userIdByTg(msg.from.id)
-  if (!userId || userId !== payload.u) {
-    console.error('[payment] user mismatch', sp.telegram_payment_charge_id)
-    return
-  }
+  if (!Number.isSafeInteger(payload.u)) throw new Error('Invalid payment recipient')
+  const recipient = await getUser(payload.u)
+  if (!recipient) throw new Error('Payment recipient is missing; payment support review required')
+  const userId = recipient.id
   const res = await completeStarPayment({
     userId,
     productId: payload.p,
     stars: sp.total_amount,
     chargeId: sp.telegram_payment_charge_id,
     payload,
+    buyerTgId: msg.from.id,
   })
   if (!res) return
   notifyProfile(userId, selfView(res.user))
-  const p = findStarProduct(payload.p)
+  const { product: p } = await invoiceProduct(payload, userId)
   const lang = res.user.language === 'ru' ? 'ru' : 'en'
-  await botApi('sendMessage', { chat_id: msg.chat.id, text: TEXT[lang].paid(p.title[lang]) }).catch(() => {})
+  const message = res.refunded
+    ? (lang === 'ru' ? 'Этот платёж уже возвращён. Повторного списания и зачисления нет.' : 'This payment was already refunded. No duplicate charge or delivery.')
+    : res.refundPending
+      ? (lang === 'ru' ? 'Покупка уже недоступна или была получена ранее. Возврат Stars поставлен в обработку.' : 'This purchase is unavailable or already owned. Your Stars refund is being processed.')
+      : TEXT[lang].paid(p.title[lang])
+  await botApi('sendMessage', { chat_id: msg.chat.id, text: message }).catch(() => {})
 }
 
 export async function createStarInvoice(user, productId) {
-  const p = validateStarPurchase(user, productId)
+  const { id, product: p } = await createInvoiceRecord(user, productId)
   const lang = user.language === 'ru' ? 'ru' : 'en'
   return botApi('createInvoiceLink', {
     title: p.title[lang],
     description: p.desc?.[lang] || `${p.gems} 💎`,
-    payload: JSON.stringify({ u: user.id, p: p.id, t: Date.now() }),
+    payload: JSON.stringify({ u: user.id, p: p.id, i: id }),
     currency: 'XTR',
     prices: [{ label: p.title[lang], amount: p.stars }],
   })
@@ -177,8 +183,8 @@ async function poll(offset) {
   try {
     const updates = await botApi('getUpdates', { offset, timeout: 25, allowed_updates: ['message', 'pre_checkout_query'] })
     for (const u of updates) {
+      await handleUpdate(u)
       offset = u.update_id + 1
-      await handleUpdate(u).catch((e) => console.error('[bot] update', e.message))
     }
   } catch (e) {
     console.error('[bot] poll', e.message)

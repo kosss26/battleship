@@ -61,8 +61,8 @@ const rowToUser = (row) => (row ? { ...row, id: Number(row.id), tg_id: row.tg_id
 
 /* ───────────── loading & saving ───────────── */
 
-export async function getUser(id) {
-  const { rows } = await query('SELECT * FROM users WHERE id = $1', [id])
+export async function getUser(id, client = null) {
+  const { rows } = await (client || { query }).query('SELECT * FROM users WHERE id = $1', [id])
   return rowToUser(rows[0])
 }
 
@@ -385,5 +385,7 @@ export async function deleteAccount(id) {
       [id],
     )
     await c.query('DELETE FROM friendships WHERE a = $1 OR b = $1', [id])
+    await c.query(`DELETE FROM game_rooms WHERE settlement IS NOT NULL AND
+      EXISTS (SELECT 1 FROM jsonb_array_elements(state->'seats') s WHERE s->>'userId'=$1)`, [String(id)])
   })
 }

@@ -105,6 +105,7 @@ export default function App() {
   const status = useStore((s) => s.status)
   const boot = useStore((s) => s.boot)
   const game = useStore((s) => s.game)
+  const over = useStore((s) => s.over)
   const connected = useStore((s) => s.connected)
   const isAdmin = useStore((s) => !!s.profile?.isAdmin)
   const showTutorial = useStore((s) => s.status === 'ready' && (!s.profile?.onboarded || s.showTutorial))
@@ -122,8 +123,8 @@ export default function App() {
 
   // Jump into an active game (e.g. matched or reconnected)
   useEffect(() => {
-    if (game && game.phase !== 'over' && location.pathname !== '/battle') navigate('/battle')
-  }, [game?.id, game?.phase]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (game && (game.phase !== 'over' || over) && location.pathname !== '/battle') navigate('/battle')
+  }, [game?.id, game?.phase, over?.state?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Music: tense theme during an active battle, calm theme elsewhere
   useEffect(() => {

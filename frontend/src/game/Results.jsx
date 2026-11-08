@@ -53,6 +53,7 @@ export default function Results({ over }) {
   const doubleGold = useStore((s) => s.profile?.ads?.doubleGold || 0)
   const game = over.state
   const { won, rewards, extra, myStats, durationMs, reason } = over
+  const cancelled = reason === 'server_restart'
   const accuracy = myStats.shots ? Math.round((myStats.hits / myStats.shots) * 100) : 0
   const theme = THEMES.find((x) => x.id === profile.equipped.theme)
   const skin = SHIP_SKINS.find((x) => x.id === profile.equipped.ship)
@@ -105,11 +106,11 @@ export default function Results({ over }) {
       <div className="relative">
         <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 14 }} className="mb-5 pt-4 text-center">
           <div className="relative mx-auto mb-3 h-24 w-24">
-            <div className={`absolute inset-0 rounded-full blur-2xl ${won ? 'bg-amber-300/50' : 'bg-rose-500/30'}`} />
+            <div className={`absolute inset-0 rounded-full blur-2xl ${cancelled ? 'bg-cyan-300/20' : won ? 'bg-amber-300/50' : 'bg-rose-500/30'}`} />
             <div className="relative flex h-full w-full items-center justify-center text-6xl">{won ? '🏆' : '⚓'}</div>
           </div>
           <h1 className={`h-display text-4xl ${won ? 'bg-gradient-to-b from-amber-100 to-amber-400 bg-clip-text text-transparent' : 'text-slate-200'}`}>
-            {won ? t('victory') : t('defeat')}
+            {cancelled ? t('battle_cancelled') : won ? t('victory') : t('defeat')}
           </h1>
           {reasonText && <div className="mt-1 text-sm text-slate-400">{reasonText}</div>}
           {game.mode === 'campaign' && won && extra?.stars > 0 && (

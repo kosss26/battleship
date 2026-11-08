@@ -9,7 +9,7 @@ process.env.DATABASE_URL = process.env.TEST_DATABASE_URL || 'postgres://bs:bs@lo
 process.env.TELEGRAM_BOT_TOKEN = ''
 
 const { start } = await import('../src/server.js')
-const { query, closeDb } = await import('../src/db.js')
+const { query, closeDb, migrate } = await import('../src/db.js')
 const { io: ioClient } = await import('socket.io-client')
 const { SIZE, CELL } = await import('../../shared/engine.js')
 
@@ -58,6 +58,8 @@ function nextTarget(state) {
 }
 
 before(async () => {
+  await migrate()
+  await query('TRUNCATE game_rooms, match_notifications CASCADE')
   ;({ httpServer: server } = await start().then((x) => ({ httpServer: x.httpServer, io: x.io })).then((x) => { globalThis.__io = x.io; return x }))
   await query('TRUNCATE payments, games, users RESTART IDENTITY CASCADE')
 })

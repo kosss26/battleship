@@ -10,7 +10,7 @@ process.env.TELEGRAM_BOT_TOKEN = ''
 process.env.ADSGRAM_BLOCK_ID = ''
 
 const { start } = await import('../src/server.js')
-const { query, closeDb } = await import('../src/db.js')
+const { query, closeDb, migrate } = await import('../src/db.js')
 const { config } = await import('../src/config.js')
 const { io: ioClient } = await import('socket.io-client')
 
@@ -34,6 +34,8 @@ const age = (id) => query(
 const resetCooldown = (id) => query(`UPDATE users SET data = jsonb_set(data, '{ads,lastAt}', '0') WHERE id = $1`, [id])
 
 before(async () => {
+  await migrate()
+  await query('TRUNCATE game_rooms, match_notifications CASCADE')
   srv = await start()
   await query('TRUNCATE ad_views, season_results, meta, friendships, admin_log, payments, games, users RESTART IDENTITY CASCADE')
 })

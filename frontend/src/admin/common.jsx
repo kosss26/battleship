@@ -8,6 +8,7 @@ export const ACTION_LABELS = {
   unban: '✅ Разбан',
   adjust: '✏️ Корректировка',
   refund: '↩️ Возврат',
+  refund_requested: '↩️ Возврат запрошен',
   broadcast: '📣 Рассылка',
 }
 
@@ -98,7 +99,7 @@ export function adminError(code) {
     nothing_changed: 'Нет изменений',
     cannot_ban_admin: 'Нельзя забанить администратора',
     already_refunded: 'Уже возвращено',
-    telegram_refund_failed: 'Telegram отклонил возврат',
+    telegram_refund_failed: 'Возврат ожидает подтверждения Telegram. Сервер повторит попытку автоматически.',
     bot_not_configured: 'Бот не настроен (TELEGRAM_BOT_TOKEN)',
     broadcast_running: 'Рассылка уже идёт',
     bad_text: 'Текст 2–3500 символов',

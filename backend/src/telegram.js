@@ -41,6 +41,7 @@ export async function botApi(method, payload = {}) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(method === 'getUpdates' ? ((payload.timeout || 25) + 5) * 1000 : 8000),
   })
   const json = await res.json().catch(() => ({}))
   if (!json.ok) {

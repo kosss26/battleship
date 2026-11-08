@@ -10,6 +10,9 @@ const isProd = env.NODE_ENV === 'production'
 if (isProd && (!env.JWT_SECRET || env.JWT_SECRET.length < 16)) {
   throw new Error('JWT_SECRET must be set (16+ chars) in production')
 }
+if (isProd && env.TELEGRAM_BOT_TOKEN && env.BOT_POLLING !== 'true' && !env.WEBHOOK_SECRET) {
+  throw new Error('WEBHOOK_SECRET must be configured for production payment webhooks')
+}
 
 export const config = {
   isProd,

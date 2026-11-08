@@ -25,9 +25,9 @@ async function seasonStandings(client, season) {
   const { startsAt, endsAt } = seasonInfo(season)
   const { rows } = await client.query(
     `WITH g AS (
-        SELECT p1 AS uid, (winner = p1) AS won FROM games WHERE mode = 'ranked' AND ended_at >= $1 AND ended_at < $2 AND p1 IS NOT NULL
+        SELECT p1 AS uid, (winner = p1) AS won FROM games WHERE mode = 'ranked' AND reason IS DISTINCT FROM 'server_restart' AND ended_at >= $1 AND ended_at < $2 AND p1 IS NOT NULL
         UNION ALL
-        SELECT p2 AS uid, (winner = p2) AS won FROM games WHERE mode = 'ranked' AND ended_at >= $1 AND ended_at < $2 AND p2 IS NOT NULL
+        SELECT p2 AS uid, (winner = p2) AS won FROM games WHERE mode = 'ranked' AND reason IS DISTINCT FROM 'server_restart' AND ended_at >= $1 AND ended_at < $2 AND p2 IS NOT NULL
       )
       SELECT u.id, u.rating, count(*)::int AS games, count(*) FILTER (WHERE g.won)::int AS wins
         FROM g JOIN users u ON u.id = g.uid
@@ -140,7 +140,7 @@ export async function currentSeasonProgress(userId) {
   const { startsAt, endsAt } = seasonInfo()
   const { rows } = await query(
     `SELECT count(*)::int AS games, count(*) FILTER (WHERE winner = $1)::int AS wins
-       FROM games WHERE mode = 'ranked' AND ended_at >= $2 AND ended_at < $3 AND (p1 = $1 OR p2 = $1)`,
+       FROM games WHERE mode = 'ranked' AND reason IS DISTINCT FROM 'server_restart' AND ended_at >= $2 AND ended_at < $3 AND (p1 = $1 OR p2 = $1)`,
     [userId, startsAt, endsAt],
   )
   return rows[0]

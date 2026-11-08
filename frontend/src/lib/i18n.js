@@ -2,6 +2,10 @@ import { useStore } from '../store/app.js'
 
 const dict = {
   ru: {
+    game_recovering: 'Бой сохранён. Ждём возвращения соперника…',
+    server_restarting: 'Сервер обновляется. Подключение восстановится автоматически.',
+    battle_cancelled: 'Бой отменён',
+    reason_server_restart: 'После обновления соперник не вернулся. Рейтинг не изменён.',
     expedition_back: 'Назад',
     expedition_your_awards: 'Твои награды',
     expedition_awards_count: 'Получено {n} из {total}',
@@ -448,6 +452,10 @@ const dict = {
     home_screen_added: 'Игра добавлена на главный экран!',
   },
   en: {
+    game_recovering: 'Battle saved. Waiting for your opponent to reconnect…',
+    server_restarting: 'Server restarting. You will reconnect automatically.',
+    battle_cancelled: 'Battle cancelled',
+    reason_server_restart: 'Your opponent did not return after the restart. Your rating is unchanged.',
     expedition_back: 'Back',
     expedition_your_awards: 'Your awards',
     expedition_awards_count: 'Earned {n} of {total}',

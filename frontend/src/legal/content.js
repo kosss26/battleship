@@ -108,7 +108,7 @@ export const LEGAL = {
         ['2. Какие данные мы получаем', [
           'Из Telegram при входе: ваш Telegram ID, имя и фамилию, имя пользователя (@username), ссылку на фото профиля, язык интерфейса, признак Telegram Premium. Telegram передаёт их Игре при открытии мини-приложения.',
           'Игровые данные: рейтинг, уровень, статистику и историю боёв, ходы в матчах, внутриигровые покупки и баланс, задания, достижения, список друзей, настройки.',
-          'Платежи: идентификатор платежа Telegram, товар, сумму в Stars и дату. Данные банковских карт мы не получаем — оплату обрабатывает Telegram.',
+          'Платежи: идентификатор платежа Telegram, Telegram ID плательщика для возвратов, товар, сезон пропуска, сумму в Stars и дату. Данные банковских карт мы не получаем — оплату обрабатывает Telegram.',
           'Технические данные: IP-адрес и сведения о соединении в журналах сервера, время последнего входа.',
         ]],
         ['3. Зачем мы их используем', [
@@ -128,7 +128,7 @@ export const LEGAL = {
         ]],
         ['7. Ваши права', [
           'Вы можете запросить доступ к своим данным, их исправление или удаление, а также отозвать согласие на уведомления.',
-          'Удалить аккаунт можно самостоятельно: Профиль → «Удалить аккаунт». Мы удалим имя, фото, username и связь с вашим Telegram, сотрём список друзей. Обезличенные записи о боях и платежах сохраняются для учёта и истории других игроков. Удаление необратимо: прогресс и покупки будут потеряны.',
+          'Удалить аккаунт можно самостоятельно: Профиль → «Удалить аккаунт». Мы удалим имя, фото, username и связь игрового профиля с вашим Telegram, сотрём список друзей. Обезличенные записи о боях сохраняются для истории других игроков. Платёжные записи, включая Telegram ID плательщика, сохраняются для учёта, возвратов и разрешения споров. Удаление необратимо: прогресс и покупки будут потеряны.',
           'По остальным запросам пишите: {contact}. Мы ответим в течение 30 дней. Вы также вправе обратиться в надзорный орган по защите данных вашей страны.',
         ]],
         ['8. Дети', [
@@ -151,7 +151,7 @@ export const LEGAL = {
         ['2. Data we collect', [
           'From Telegram when you sign in: your Telegram ID, first and last name, username, profile photo URL, interface language and Telegram Premium status. Telegram provides these to the Game when you open the Mini App.',
           'Game data: rating, level, statistics and battle history, moves made in matches, in-game purchases and balances, quests, achievements, friends list and settings.',
-          'Payments: the Telegram payment ID, product, amount in Stars and date. We never receive card details — payments are processed by Telegram.',
+          'Payments: the Telegram payment ID, payer Telegram ID for refunds, product, pass season, amount in Stars and date. We never receive card details — payments are processed by Telegram.',
           'Technical data: IP address and connection details in server logs, time of last visit.',
         ]],
         ['3. How we use it', [
@@ -171,7 +171,7 @@ export const LEGAL = {
         ]],
         ['7. Your rights', [
           'You may request access to, correction or deletion of your data and withdraw consent to notifications.',
-          'You can delete your account yourself: Profile → "Delete account". We erase your name, photo, username and the link to your Telegram account, and remove your friends list. Anonymised battle and payment records are kept for accounting and the history of other players. Deletion is irreversible: progress and purchases are lost.',
+          'You can delete your account yourself: Profile → "Delete account". We erase your name, photo, username and the link between your game profile and Telegram, and remove your friends list. Anonymised battle records remain for other players’ history. Payment records, including the payer Telegram ID, are retained for accounting, refunds and disputes. Deletion is irreversible: progress and purchases are lost.',
           'For other requests contact {contact}. We reply within 30 days. You may also complain to your local data protection authority.',
         ]],
         ['8. Children', [
