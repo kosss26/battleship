@@ -310,9 +310,9 @@ export default function BattleView({ game }) {
         </div>
       </Sheet>
 
-      <Modal open={resignOpen} onClose={() => setResignOpen(false)}>
+      <Modal open={resignOpen} onClose={() => setResignOpen(false)} label={t('resign')}>
         <div className="glass-strong p-6 text-center">
-          <div className="mb-2 text-5xl">🏳️</div>
+          <div className="naval-modal-icon is-danger"><Flag size={30} strokeWidth={1.5}/></div>
           <div className="mb-5 font-bold">{t('resign_confirm')}</div>
           <div className="grid grid-cols-2 gap-2">
             <button className="btn-ghost" onClick={() => setResignOpen(false)}>{t('cancel')}</button>

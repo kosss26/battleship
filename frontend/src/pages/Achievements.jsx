@@ -32,7 +32,7 @@ export default function Achievements() {
       {visible.length ? visible.map((a) => {
         const earned = !!p.achievements[a.id]
         const progress = Math.max(0, Math.min(value(p, a.stat), a.goal))
-        return <article key={a.id} className={`naval-panel award-row ${earned ? 'is-earned' : 'is-progress'}`}>
+        return <article key={a.id} data-achievement-id={a.id} className={`naval-panel award-row ${earned ? 'is-earned' : 'is-progress'}`}>
           <div className="award-medal"><MedalArt type={achievementMedal(a)} locked={!earned && progress === 0} />{!earned && <Lock size={12} className="award-lock" aria-label={t('identity_locked')} />}</div>
           <div className="award-body"><h2>{l(a.title)}</h2><p>{l(a.desc)}</p>{earned ? <span className="award-earned"><Check size={16} />{t('identity_unlocked')}</span> : <><span className="award-count">{fmt(progress)} / {fmt(a.goal)}</span><div className="awards-progress" role="progressbar" aria-label={l(a.title)} aria-valuemin={0} aria-valuemax={a.goal} aria-valuenow={progress}><span style={{ width: `${progress / a.goal * 100}%` }} /></div></>}</div>
           <div className="award-reward" aria-label={t('expedition_reward')}><RewardChips reward={a.reward} /></div>

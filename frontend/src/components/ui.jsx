@@ -1,12 +1,15 @@
-import { AnimatePresence, motion, useDragControls } from 'framer-motion'
-import { useEffect, useId } from 'react'
-import { ChevronLeft, X } from 'lucide-react'
+import { AnimatePresence, motion, useDragControls, useReducedMotion } from 'framer-motion'
+import { useId, useRef } from 'react'
+import { createPortal } from 'react-dom'
+import PlayerAvatar from './PlayerAvatar.jsx'
+import useOverlay from './useOverlay.js'
+import '../styles/naval-overlays.css'
+import { ChevronLeft, X, Frame, Ship as ShipIcon, Waves, Crosshair } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { FRAMES, BOOSTERS, findCosmetic, RANKS } from '@shared/catalog.js'
+import { BOOSTERS, findCosmetic, RANKS } from '@shared/catalog.js'
 import { useL, useT } from '../lib/i18n.js'
 import { haptic } from '../lib/telegram.js'
 import { sfx } from '../lib/sound.js'
-import RegentFrame from './RegentFrame.jsx'
 
 export const fmt = (n) => (n ?? 0).toLocaleString('ru-RU').replace(/,/g, ' ')
 
@@ -77,27 +80,8 @@ export function Price({ price, className = '' }) {
   )
 }
 
-export function Avatar({ photo, name = '?', frame = 'frame_none', size = 44, className = '' }) {
-  const ring = FRAMES.find((f) => f.id === frame)?.ring || 'transparent'
-  const initials = name.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase()
-  const hue = [...name].reduce((h, c) => h + c.charCodeAt(0), 0) % 360
-  return (
-    <div data-avatar-frame={frame} className={`relative shrink-0 rounded-full p-[2.5px] ${frame==='frame_regent'?'avatar-regent ':''}${className}`} style={{ width: size, height: size, background: ring }}>
-      <div className="avatar-face h-full w-full overflow-hidden rounded-full bg-ink-800 ring-2 ring-ink-900">
-        {photo ? (
-          <img src={photo} alt="" className="h-full w-full object-cover" draggable={false} />
-        ) : (
-          <div
-            className="flex h-full w-full items-center justify-center font-display font-bold text-white"
-            style={{ background: `linear-gradient(135deg, hsl(${hue} 70% 45%), hsl(${(hue + 50) % 360} 70% 30%))`, fontSize: size * 0.34 }}
-          >
-            {initials}
-          </div>
-        )}
-      </div>
-      {frame==='frame_regent'&&<RegentFrame/>}
-    </div>
-  )
+export function Avatar(props) {
+  return <PlayerAvatar {...props}/>
 }
 
 export function Progress({ value, max, className = '', color = 'from-cyan-400 to-blue-500', height = 'h-2' }) {
@@ -127,24 +111,24 @@ export function RankBadge({ rating, size = 'sm' }) {
 
 export function Sheet({ open, onClose, title, children, tall = false }) {
   const dragControls = useDragControls()
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e) => e.key === 'Escape' && onClose?.()
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
-  return (
+  const reducedMotion=useReducedMotion()
+  const panel=useRef(null)
+  const titleId=useId()
+  const t=useT()
+  useOverlay(open,panel,onClose)
+  return createPortal(
     <AnimatePresence>
       {open && (
-        <motion.div className="fixed inset-0 z-50 flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+        <motion.div className="naval-overlay naval-sheet-overlay fixed inset-0 z-50 flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <div className="naval-overlay-backdrop absolute inset-0" onClick={onClose} />
           <motion.div
-            className={`relative w-full max-w-lg rounded-t-[32px] border-t border-white/10 bg-ink-850 px-5 pt-3 ${tall ? 'max-h-[88vh]' : 'max-h-[80vh]'} overflow-y-auto`}
+            ref={panel} role="dialog" aria-modal="true" aria-labelledby={title?titleId:undefined} tabIndex={-1}
+            className={`naval-sheet relative w-full max-w-lg px-5 pt-3 ${tall ? 'max-h-[88vh]' : 'max-h-[80vh]'} overflow-y-auto`}
             style={{ paddingBottom: 'calc(20px + var(--safe-bottom))', touchAction: 'pan-x pan-y', WebkitOverflowScrolling: 'touch', overscrollBehaviorY: 'contain' }}
-            initial={{ y: '100%' }}
+            initial={reducedMotion?false:{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={{ type: 'spring', stiffness: 380, damping: 36 }}
+            transition={reducedMotion?{duration:0}:{ type: 'spring', stiffness: 380, damping: 36 }}
             drag="y"
             dragListener={false}
             dragControls={dragControls}
@@ -154,9 +138,9 @@ export function Sheet({ open, onClose, title, children, tall = false }) {
           >
             <div className="flex h-6 w-full shrink-0 cursor-grab items-start justify-center" style={{ touchAction: 'none' }} onPointerDown={(e) => dragControls.start(e)} aria-hidden="true"><span className="mt-0.5 h-1.5 w-10 rounded-full bg-white/20" /></div>
             {title && (
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="h-display text-lg">{title}</h3>
-                <button className="rounded-full bg-white/[0.06] p-2" onClick={onClose} aria-label="close">
+              <div className="naval-sheet-heading mb-4 flex items-center justify-between">
+                <h3 id={titleId}>{title}</h3>
+                <button className="rounded-full bg-white/[0.06] p-2" onClick={onClose} aria-label={t('close')}>
                   <X size={18} />
                 </button>
               </div>
@@ -165,28 +149,28 @@ export function Sheet({ open, onClose, title, children, tall = false }) {
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,document.body
   )
 }
 
-export function Modal({ open, onClose, children, className = '' }) {
-  return (
+export function Modal({ open, onClose, children, className = '', label }) {
+  const panel=useRef(null)
+  const t=useT()
+  const reducedMotion=useReducedMotion()
+  useOverlay(open,panel,onClose)
+  return createPortal(
     <AnimatePresence>
       {open && (
-        <motion.div className="fixed inset-0 z-50 flex items-center justify-center px-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-          <motion.div
-            className={`relative w-full max-w-sm ${className}`}
-            initial={{ scale: 0.85, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-          >
+        <motion.div className="naval-overlay naval-modal-overlay fixed inset-0 z-50 flex items-center justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <div className="naval-overlay-backdrop absolute inset-0" onClick={onClose} />
+          <motion.div ref={panel} role="dialog" aria-modal="true" aria-label={label||t('naval_dialog')} tabIndex={-1}
+            className={`naval-modal-panel relative w-full max-w-sm ${className}`}
+            initial={reducedMotion?false:{ y:12, scale:.97, opacity:0 }} animate={{ y:0, scale:1, opacity:1 }} exit={{ y:8, opacity:0 }} transition={{duration:reducedMotion?0:.2}}>
             {children}
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,document.body
   )
 }
 
@@ -275,9 +259,10 @@ export function RewardChips({ reward, size = 'md' }) {
       {Object.entries(reward.boosters || {}).filter(([, n]) => n).map(([id, n]) => (
         <span key={id} className={`${chip} text-sky-200`}>{BOOSTERS[id]?.icon} ×{n}</span>
       ))}
-      {(reward.cosmetics || []).map((id) => (
-        <span key={id} className={`${chip} text-violet-200`}>🎨 {l(findCosmetic(id)?.item.name)}</span>
-      ))}
+      {(reward.cosmetics || []).map((id) => {
+        const cosmetic=findCosmetic(id),Icon=({frame:Frame,ship:ShipIcon,theme:Waves,effect:Crosshair})[cosmetic?.slot]||Frame
+        return <span key={id} className={`${chip} text-violet-200`}><Icon size={big?17:14} strokeWidth={1.6}/>{l(cosmetic?.item.name)}</span>
+      })}
     </div>
   )
 }

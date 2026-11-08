@@ -3,6 +3,10 @@ import { useStore } from '../store/app.js'
 const dict = {
   ru: {
     regent_name: 'РЕГЕНТ',
+    naval_dialog:'Морской бой',
+    close:'Закрыть',
+    season_result_rating:'Итоговый рейтинг',
+    season_result_place:'Место в сезоне',
     regent_keep:'В вашем флоте навсегда',
     regent_collection_title:'Соберите «Регент»',
     regent_ownership_hint:'Купленные предметы остаются у вас и доступны во всех режимах. Их можно сочетать с другими коллекциями.',
@@ -505,6 +509,10 @@ const dict = {
   },
   en: {
     regent_name: 'REGENT',
+    naval_dialog:'Battleship',
+    close:'Close',
+    season_result_rating:'Final rating',
+    season_result_place:'Season place',
     regent_keep:'Yours to command',
     regent_collection_title:'Complete your Regent set',
     regent_ownership_hint:'Purchased items are yours in every game mode. Mix them with other collections.',

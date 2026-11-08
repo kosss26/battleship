@@ -36,13 +36,12 @@ export default function InvitePopup() {
   }
 
   return (
-    <Modal open={!!invite} onClose={decline}>
+    <Modal open={!!invite} onClose={decline} label={invite?t('invite_title',{name:invite.from.name}):undefined}>
       {invite && (
         <div className="glass-strong relative overflow-hidden p-6 text-center">
-          <div className="pointer-events-none absolute -top-20 left-1/2 h-40 w-56 -translate-x-1/2 rounded-full bg-fuchsia-500/30 blur-3xl" />
           <motion.div initial={{ scale: 0.6 }} animate={{ scale: [0.6, 1.08, 1] }} className="relative mx-auto mb-3 w-fit">
             <Avatar photo={invite.from.photo} name={invite.from.name} frame={invite.from.frame} size={76} />
-            <div className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-fuchsia-400 text-ink-950 ring-4 ring-ink-800">
+            <div className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-cyan-200 text-ink-950 ring-4 ring-ink-800">
               <Swords size={16} />
             </div>
           </motion.div>
@@ -50,7 +49,7 @@ export default function InvitePopup() {
           <div className="relative mb-5 text-sm text-slate-400">{t('level')} {invite.from.level} · ⚡{invite.from.rating}</div>
           <div className="relative grid grid-cols-2 gap-2">
             <button className="btn-ghost" onClick={decline} disabled={busy}>{t('decline')}</button>
-            <button className="btn h-12 bg-gradient-to-r from-fuchsia-400 to-violet-500 text-ink-950" onClick={accept} disabled={busy}>
+            <button className="btn-primary h-12" onClick={accept} disabled={busy}>
               {busy ? <Spinner size={18} /> : t('accept')}
             </button>
           </div>

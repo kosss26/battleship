@@ -17,6 +17,7 @@ import { battleCosmetics, opponentCosmetics } from '@shared/catalog.js'
 import { shipCells, CELL } from '@shared/engine.js'
 import ResultMedallion from '../components/ResultMedallion.jsx'
 import BattleAppearance from '../components/BattleAppearance.jsx'
+import {MedalArt,achievementMedal} from '../components/NavalIdentity.jsx'
 import '../styles/battle-report.css'
 
 function Confetti() {
@@ -194,7 +195,7 @@ export default function Results({ over }) {
               const a = ACHIEVEMENTS.find((x) => x.id === id)
               return (
                 <div key={id} className="mt-2 flex items-center gap-3 rounded-2xl bg-amber-300/10 p-2.5">
-                  <span className="text-2xl">{a?.icon}</span>
+                  {a&&<MedalArt type={achievementMedal(a)} className="report-achievement-medal"/>}
                   <div>
                     <div className="text-[10px] font-bold uppercase text-amber-300">{t('achievement_unlocked')}</div>
                     <div className="text-sm font-bold">{l(a?.title)}</div>

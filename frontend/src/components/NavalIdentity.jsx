@@ -1,17 +1,13 @@
-import { useId, useState } from 'react'
+import { useId } from 'react'
 import { Anchor, Shield, Crosshair, Star, Lock, Compass } from 'lucide-react'
-import { FRAMES, rankFor } from '@shared/catalog.js'
+import { rankFor } from '@shared/catalog.js'
 import { useL } from '../lib/i18n.js'
 import '../styles/naval-identity.css'
+import PlayerAvatar from './PlayerAvatar.jsx'
+import '../styles/naval-expedition.css'
 
-export function CaptainAvatar({ photo, name, frame, size = 40 }) {
-  const [failed, setFailed] = useState(null)
-  const ring = FRAMES.find((f) => f.id === frame)?.ring
-  return (
-    <span className="captain-avatar" style={{ width: size, height: size, ...(ring && ring !== 'transparent' ? { background: ring } : {}) }} role="img" aria-label={name}>
-      {photo && failed !== photo ? <img src={photo} alt="" onError={() => setFailed(photo)} /> : <span className="naval-art naval-art-captain" />}
-    </span>
-  )
+export function CaptainAvatar(props) {
+  return <PlayerAvatar {...props} captain/>
 }
 
 export function NavalRank({ rating }) {
@@ -42,7 +38,7 @@ export function NavalMedal({ type = 'anchor', tone = 'silver', locked = false, c
 
 export function MedalArt({ type = 'anchor', locked = false, className = '' }) {
   const index = Math.max(0, ['anchor', 'target', 'star', 'kraken', 'ship', 'compass', 'bolt', 'friends'].indexOf(type))
-  return <span aria-hidden="true" className={`naval-medal-art ${locked ? 'is-locked' : ''} ${className}`} style={{ '--medal-x': `${index % 4 * 100 / 3}%`, '--medal-y': index < 4 ? '0%' : '100%' }} />
+  return <span aria-hidden="true" data-medal-type={type} className={`naval-medal-art ${locked ? 'is-locked' : ''} ${className}`} style={{ '--medal-x': `${index % 4 * 100 / 3}%`, '--medal-y': index < 4 ? '0%' : '100%' }} />
 }
 
 export function achievementMedal(achievement) {

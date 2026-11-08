@@ -1,0 +1,8 @@
+.player-avatar { position:relative; display:inline-block; flex-shrink:0; border-radius:50%; padding:0; vertical-align:middle; isolation:isolate; }
+.player-avatar .player-avatar-face { position:absolute; inset:6%; display:block; overflow:hidden; border-radius:50%; background:#112b3b; }
+.player-avatar .player-avatar-face > img,.player-avatar .player-avatar-face > .naval-art,.player-avatar .avatar-initials { display:block; width:100%; height:100%; border-radius:inherit; object-fit:cover; }
+.player-avatar .avatar-initials { display:flex; align-items:center; justify-content:center; font-weight:800; color:#f1f7fa; }
+.player-avatar.avatar-regent { padding:0 !important; background:transparent !important; }
+.player-avatar.avatar-regent .player-avatar-face { inset:9.5%; }
+.player-avatar.avatar-regent .avatar-initials { color:#ead9aa; }
+.player-avatar .regent-avatar-frame { position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; }

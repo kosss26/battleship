@@ -125,7 +125,7 @@ export default function App() {
   // Jump into an active game (e.g. matched or reconnected)
   useEffect(() => {
     if (game && (game.phase !== 'over' || over) && location.pathname !== '/battle') navigate('/battle')
-  }, [game?.id, game?.phase, over?.state?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [game?.id, game?.phase, over?.state?.id, location.pathname, navigate])
 
   // Music: tense theme during an active battle, calm theme elsewhere
   useEffect(() => {

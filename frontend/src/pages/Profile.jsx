@@ -9,12 +9,12 @@ import { useT, useL, useLang } from '../lib/i18n.js'
 import { api } from '../lib/api.js'
 import { openLink, requestWriteAccess, isTelegram } from '../lib/telegram.js'
 import { Avatar, Toggle, Segmented, Empty, Spinner, Modal, Sheet, fmt } from '../components/ui.jsx'
-import { SeasonEmblem } from '../components/Season.jsx'
+import { SeasonEmblem, RankMedal } from '../components/Season.jsx'
 import { useHomeScreenAvailable } from '../components/Share.jsx'
 import { addToHomeScreen } from '../lib/telegram.js'
 import { Smartphone } from 'lucide-react'
 import { NavalWordmark } from '../components/naval.jsx'
-import { CaptainAvatar, NavalRank, NavalMedal } from '../components/NavalIdentity.jsx'
+import { CaptainAvatar, NavalRank, MedalArt, achievementMedal } from '../components/NavalIdentity.jsx'
 
 function History() {
   const t = useT()
@@ -58,17 +58,15 @@ function SeasonHistory() {
   return (
     <div className="mb-4">
       <div className="label mb-2 px-1">{t('season_history')}</div>
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+      <div className="season-history">
         {data.history.map((h) => {
           const s = seasonInfo(h.season)
           const rank = RANKS.find((r) => r.id === h.rank) || RANKS[0]
           return (
-            <div key={h.season} className="glass flex w-36 shrink-0 flex-col items-center p-3 text-center">
+            <div key={h.season} className="season-history-card">
               <SeasonEmblem season={s} size={40} />
-              <div className="mt-2 text-[11px] font-bold" style={{ color: s.color }}>{t('season_n', { n: s.number })}</div>
-              <div className="text-xs text-slate-400">{l(s.name)}</div>
-              <div className="mt-1 text-sm font-extrabold">{rank.icon} {l(rank.name)}</div>
-              <div className="text-[11px] text-slate-500">⚡{h.rating}{h.place ? ` · #${h.place}` : ''}</div>
+              <span className="min-w-0 flex-1"><strong>{t('season_n',{n:s.number})} · {l(s.name)}</strong><small>{l(rank.name)} · {h.rating}{h.place?` · #${h.place}`:''}</small></span>
+              <RankMedal rank={rank} size={38}/>
             </div>
           )
         })}
@@ -85,9 +83,9 @@ function DeleteAccount({ open, onClose }) {
   const [busy, setBusy] = useState(false)
   const ok = word.trim().toUpperCase() === t('delete_account_word')
   return (
-    <Modal open={open} onClose={onClose}>
+    <Modal open={open} onClose={onClose} label={t('delete_account_title')}>
       <div className="glass-strong p-6 text-center">
-        <div className="mb-2 text-5xl">🗑️</div>
+        <div className="naval-modal-icon is-danger"><Trash2 size={30} strokeWidth={1.5}/></div>
         <div className="mb-2 font-display text-lg font-bold">{t('delete_account_title')}</div>
         <p className="mb-4 text-sm text-slate-300">{t('delete_account_text')}</p>
         <input
@@ -135,7 +133,7 @@ export default function Profile() {
   const s = p.stats
   const winrate = s.games ? Math.round((s.wins / s.games) * 100) : 0
   const accuracy = s.shots ? Math.round((s.hits / s.shots) * 100) : 0
-  const achCount = Object.keys(p.achievements).length
+  const achCount = ACHIEVEMENTS.filter(a=>p.achievements[a.id]).length
   const maxLevel = p.level >= MAX_LEVEL
   const xpMax = Math.max(1, p.levelXpNeeded || 0)
   const xpValue = maxLevel ? xpMax : Math.max(0, Math.min(p.levelXp || 0, xpMax))
@@ -167,12 +165,12 @@ export default function Profile() {
       <button className="naval-panel identity-fleet-link" onClick={() => navigate('/shop?tab=collection')}><span className="identity-fleet-copy"><strong>{t('identity_my_fleet')}</strong><small>{t('identity_fleet_sub')}</small></span><ChevronRight size={22} /></button>
       <button className="naval-panel identity-achievements" onClick={() => navigate('/achievements')}>
         <span className="identity-achievements-heading"><strong>{t('achievements')}</strong><span>{achCount} / {ACHIEVEMENTS.length}<ChevronRight size={17} /></span></span>
-        <span className="identity-medal-shelf">{medals.map((a, i) => <span key={a.id} title={l(a.title)} aria-label={`${l(a.title)}: ${t(p.achievements[a.id] ? 'identity_unlocked' : 'identity_locked')}`}><NavalMedal type={['anchor', 'target', 'star', 'compass'][i]} tone={i === 2 ? 'gold' : 'silver'} locked={!p.achievements[a.id]} /></span>)}</span>
+        <span className="identity-medal-shelf">{medals.map((a) => <span key={a.id} data-achievement-id={a.id} title={l(a.title)} aria-label={`${l(a.title)}: ${t(p.achievements[a.id] ? 'identity_unlocked' : 'identity_locked')}`}><MedalArt type={achievementMedal(a)} locked={!p.achievements[a.id]} /></span>)}</span>
       </button>
       <History />
       <button className="naval-panel identity-friends" onClick={() => navigate('/friends')}><Users size={23} /><strong>{t('friends')}</strong>{!!friendsBadge && <span className="identity-friends-badge">{friendsBadge}</span>}<ChevronRight size={20} /></button>
       <Sheet open={settingsOpen} onClose={closeSettings} title={t('settings')} tall>
-        <div className="identity-profile-settings" role="dialog" aria-modal="true" aria-label={t('settings')}><h2 className="sr-only" ref={settingsTitle} tabIndex={-1}>{t('settings')}</h2>
+        <div className="identity-profile-settings"><h2 className="sr-only" ref={settingsTitle} tabIndex={-1}>{t('settings')}</h2>
           {p.username && <p className="mb-3 text-sm text-slate-400">@{p.username}</p>}
           {p.premium && <p className="mb-3 text-sm text-amber-200">Telegram Premium</p>}
           {p.isAdmin && <div className="glass mb-4"><Row icon={ShieldCheck} label={t('admin_panel')} onClick={() => navigate('/admin')} /></div>}

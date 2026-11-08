@@ -1,0 +1,31 @@
+.naval-overlay { isolation:isolate; padding:calc(var(--safe-top) + 16px) calc(var(--safe-right) + 16px) calc(var(--safe-bottom) + 16px) calc(var(--safe-left) + 16px); }
+.naval-overlay-backdrop { background:#020b15c7; backdrop-filter:blur(9px); -webkit-backdrop-filter:blur(9px); }
+.naval-modal-panel,.naval-sheet { color:#e3eff7; border:1px solid #729cb34f; background:radial-gradient(ellipse at 25% 0,#41687a25,transparent 60%),linear-gradient(145deg,#173346,#091e2e 75%); box-shadow:inset 0 1px #c8edff18,0 20px 70px #0008; }
+.naval-modal-panel { max-height:calc(100dvh - var(--safe-top) - var(--safe-bottom) - 32px); overflow-y:auto; overscroll-behavior:contain; border-radius:22px; -webkit-overflow-scrolling:touch; }
+.naval-modal-panel > .glass-strong,.naval-modal-panel > .glass { background:transparent; border:0; border-radius:inherit; box-shadow:none; backdrop-filter:none; }
+.naval-modal-panel .h-display,.naval-modal-panel .font-display,.naval-sheet-heading h3 { font-family:Manrope,system-ui,sans-serif; letter-spacing:-.4px; font-weight:800; }
+.naval-modal-panel .btn-primary,.naval-sheet .btn-primary { border:1px solid #93e7ed66; background:linear-gradient(110deg,#29c9dc,#268ddd); box-shadow:inset 0 1px #dcffff44,0 5px 16px #12a9cb18; border-radius:12px; }
+.naval-modal-panel .btn-gold,.naval-sheet .btn-gold { border:1px solid #e2c27b77; background:linear-gradient(110deg,#e0c17d,#b68a47); color:#142331; box-shadow:inset 0 1px #fff1bd55; border-radius:12px; }
+.naval-modal-panel .btn-ghost,.naval-sheet .btn-ghost { border:1px solid #8eb9cf38; border-radius:12px; background:#91c0d309; color:#c7deec; }
+.naval-modal-panel .btn.bg-rose-500 { background:linear-gradient(120deg,#bd4f5b,#97424f); border:1px solid #f3a2a74d; border-radius:12px; }
+.naval-modal-panel button:focus-visible,.naval-sheet button:focus-visible { outline:2px solid #83e0f2; outline-offset:3px; }
+.naval-sheet-overlay { padding:calc(var(--safe-top) + 14px) var(--safe-right) 0 var(--safe-left); }
+.naval-sheet { border-radius:24px 24px 0 0; max-height:calc(100dvh - var(--safe-top) - 14px); }
+.naval-sheet.max-h-\[88vh\] { max-height:min(88dvh,calc(100dvh - var(--safe-top) - 14px)); }
+.naval-sheet.max-h-\[80vh\] { max-height:min(80dvh,calc(100dvh - var(--safe-top) - 14px)); }
+.naval-sheet-heading h3 { font-size:21px; line-height:1.3; }
+.naval-sheet-heading button { width:38px; height:38px; display:grid; place-items:center; border:1px solid #8eb3c636; border-radius:11px; background:#b9d6e609; color:#bbd6e4; }
+.naval-modal-icon { display:grid; place-items:center; width:66px; height:66px; margin:0 auto 16px; color:#d3e6f0; border:1px solid #739bb05c; border-radius:19px; background:linear-gradient(145deg,#33596a,#0e2b3e); box-shadow:inset 0 1px #e7faff17; }
+.naval-modal-icon.is-gold { color:#e5c67f; border-color:#c5a86955; background:linear-gradient(145deg,#343d37,#142b34); }
+.naval-modal-icon.is-danger { color:#e2a8a4; border-color:#ae6f7466; }
+.naval-modal-kicker { font-size:9px; text-transform:uppercase; letter-spacing:1.8px; color:#88abba; margin-bottom:9px; }
+.naval-reward-popup { padding:27px 23px 23px; text-align:center; }
+.naval-reward-popup h2 { font-size:23px; font-weight:800; letter-spacing:-.6px; margin-bottom:19px; }
+.naval-reward-achievement { display:flex; align-items:center; gap:10px; text-align:left; padding:9px; border:1px solid #8cabb62b; border-radius:12px; margin:9px 0; background:#90c5db08; }
+.naval-reward-achievement .naval-medal-art { width:49px; height:49px; }
+.naval-reward-achievement small { display:block; color:#cdb77d; font-size:9px; text-transform:uppercase; letter-spacing:.5px; margin-bottom:3px; }
+.naval-reward-achievement strong { font-size:12px; }
+.identity-medal-shelf .naval-medal-art { width:66px; height:66px; }
+.report-achievement-medal { width:48px; height:48px; }
+.naval-sheet .glass { border:1px solid #82a9bc30; border-radius:13px; background:#7caac10a; box-shadow:inset 0 1px #c9edff08; }
+@media(prefers-reduced-motion:reduce) { .naval-overlay * { scroll-behavior:auto; } }

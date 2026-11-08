@@ -34,10 +34,6 @@
 .battle-appearance button { min-height:30px; padding:5px 10px; border-radius:6px; color:#8da9b8; font-size:10px; font-weight:650; }
 .battle-appearance button[aria-pressed=true] { color:#d8eef8; background:#83c8e329; box-shadow:inset 0 0 0 1px #96d5e51a; }
 /* A sculpted cosmetic ornament, separate from the universal interface. */
-.avatar-regent { padding:5px !important; background:#132c31 !important; }
-.avatar-regent .avatar-face { box-shadow:none; }
-.avatar-regent .avatar-face > div { background:linear-gradient(135deg,#35555c,#142e37) !important; color:#ead9aa; }
-.regent-avatar-frame { position:absolute; inset:-8%; width:116%; height:116%; pointer-events:none; overflow:visible; }
 .regent-order-preview { display:flex; align-items:center; gap:19px; margin-top:22px; border:1px solid #b3a16c33; background:#cbb27305; border-radius:6px; padding:20px 18px; }
 .regent-order-preview h3 { color:#d7c59a; font-size:14px; font-weight:600; margin:0 0 5px; }
 .regent-order-preview p { color:#94a69c; font-size:10px; line-height:1.6; }

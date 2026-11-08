@@ -116,7 +116,7 @@ export function HomeScreenPrompt({ games }) {
   return (
     <Modal open={open} onClose={close}>
       <div className="glass-strong p-6 text-center">
-        <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-cyan-300 to-blue-500 text-ink-950"><Smartphone size={30} /></div>
+        <div className="naval-modal-icon"><Smartphone size={30} strokeWidth={1.5}/></div>
         <div className="mb-1 font-display text-lg font-bold">{t('home_screen_title')}</div>
         <p className="mb-5 text-sm text-slate-300">{t('home_screen_text')}</p>
         <div className="grid grid-cols-2 gap-2">
