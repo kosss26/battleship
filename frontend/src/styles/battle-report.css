@@ -1,0 +1,45 @@
+/* Universal game UI. Cosmetic sets never replace the result-screen identity. */
+.battle-report { color:#e6eff7; padding:4px 0 10px; }
+.report-hero { position:relative; overflow:hidden; text-align:center; border:1px solid #91b8d23d; border-radius:24px 24px 8px 8px; padding:17px 18px 24px; background:radial-gradient(ellipse at 50% 32%,#36627d35,transparent 60%),linear-gradient(155deg,#142f43e8,#091928f5 75%); box-shadow:inset 0 1px #d6efff0d,0 12px 38px #0002; }
+.report-hero::before { content:''; position:absolute; inset:0; pointer-events:none; background-image:linear-gradient(#a0d4e907 1px,transparent 1px),linear-gradient(90deg,#a0d4e907 1px,transparent 1px); background-size:28px 28px; mask-image:linear-gradient(#000,transparent 90%); }
+.report-kicker { position:relative; display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:8px; letter-spacing:1.8px; font-weight:700; color:#87aabe; text-transform:uppercase; }
+.report-kicker > span:first-child { color:#c0d6e4; font-size:9px; }
+.report-medallion { position:relative; width:150px; height:108px; margin:14px auto 3px; filter:drop-shadow(0 4px 5px #0004); }
+.report-hero h1 { position:relative; margin:0; font-size:36px; line-height:1.2; letter-spacing:-1.4px; font-weight:850; color:#e9f2f8; }
+.is-victory .report-hero h1 { color:#f4dda0; }
+.report-outcome { position:relative; color:#a2bfce; font-size:12px; line-height:1.65; max-width:270px; margin:9px auto 0; }
+.report-trial-note { position:relative; margin:14px auto 0; padding:7px 9px; border:1px solid #c3a56630; border-radius:7px; background:#b7975010; color:#d5c38f; font-size:10px; line-height:1.6; max-width:300px; }
+.report-reason { position:relative; margin-top:8px; font-size:11px; color:#8ea7b8; }
+.report-versus { display:flex; align-items:center; gap:11px; border:1px solid #91b8d22b; border-radius:8px 8px 18px 18px; background:linear-gradient(110deg,#18334890,#14263e80); padding:15px 13px; margin:5px 0 13px; min-height:70px; }
+.report-versus > .font-display { font-size:10px; letter-spacing:1px; color:#65899d; }
+.report-versus .text-sm { font-size:12px; }
+.report-stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:7px; margin-bottom:14px; }
+.report-stat { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:81px; padding:13px 3px; border:1px solid #88b5d32b; border-radius:13px; background:linear-gradient(145deg,#17354a80,#0c1d3180); box-shadow:inset 0 1px #e4f6ff05; }
+.report-stat strong { font-size:24px; font-weight:800; line-height:1.3; font-variant-numeric:tabular-nums; letter-spacing:-.8px; }
+.report-stat span { color:#8eacbe; margin-top:5px; font-size:8px; font-weight:650; text-transform:uppercase; letter-spacing:.3px; }
+.report-board-toggle { display:flex; justify-content:space-between; align-items:center; gap:12px; width:100%; padding:13px 15px; min-height:64px; border:1px solid #90b9d22b; border-radius:14px; background:#a3d6f009; text-align:left; margin-bottom:13px; color:#c9dce9; }
+.report-board-toggle b { display:block; font-size:13px; font-weight:750; }
+.report-board-toggle small { display:block; font-size:10px; color:#86a6b9; line-height:1.5; margin-top:3px; }
+.report-board { margin:0 0 16px; border:1px solid #88aec433; padding:12px; border-radius:15px; background:#0c2030a6; }
+.report-side-picker { display:flex; gap:5px; border-bottom:1px solid #99b8cc26; padding-bottom:10px; margin-bottom:10px; }
+.report-side-picker button { flex:1; min-height:37px; padding:6px; font-size:11px; color:#8aa8b9; border-radius:8px; }
+.report-side-picker button[aria-pressed=true] { background:#82d5ea15; color:#b4edfa; box-shadow:inset 0 0 0 1px #7fd5ed35; }
+.report-primary { display:flex; justify-content:center; align-items:center; gap:9px; min-height:54px; width:100%; padding:12px 16px; border:1px solid #99f2fa70; border-radius:13px; background:linear-gradient(110deg,#24c6da,#288ee5); color:#05202f; font-size:15px; font-weight:850; box-shadow:inset 0 1px #defcff55,0 7px 20px #1cb5de1a; margin-bottom:10px; }
+.report-primary:disabled { opacity:.5; cursor:wait; }
+.battle-report .btn-ghost { border-radius:12px; min-height:46px; font-size:12px; border-color:#9ac8df33; color:#c7dbe8; background:#90c0da09; }
+.battle-report button:focus-visible,.battle-appearance button:focus-visible { outline:2px solid #8fe1f2; outline-offset:3px; }
+.battle-appearance { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0 0 9px; min-height:39px; color:#90adbf; }
+.battle-appearance > span { display:flex; align-items:center; gap:5px; font-size:10px; }
+.battle-appearance > div { display:flex; gap:3px; padding:3px; border:1px solid #8cb7cf29; border-radius:9px; background:#071b2d77; }
+.battle-appearance button { min-height:30px; padding:5px 10px; border-radius:6px; color:#8da9b8; font-size:10px; font-weight:650; }
+.battle-appearance button[aria-pressed=true] { color:#d8eef8; background:#83c8e329; box-shadow:inset 0 0 0 1px #96d5e51a; }
+/* A sculpted cosmetic ornament, separate from the universal interface. */
+.avatar-regent { padding:5px !important; background:#132c31 !important; }
+.avatar-regent .avatar-face { box-shadow:none; }
+.avatar-regent .avatar-face > div { background:linear-gradient(135deg,#35555c,#142e37) !important; color:#ead9aa; }
+.regent-avatar-frame { position:absolute; inset:-8%; width:116%; height:116%; pointer-events:none; overflow:visible; }
+.regent-order-preview { display:flex; align-items:center; gap:19px; margin-top:22px; border:1px solid #b3a16c33; background:#cbb27305; border-radius:6px; padding:20px 18px; }
+.regent-order-preview h3 { color:#d7c59a; font-size:14px; font-weight:600; margin:0 0 5px; }
+.regent-order-preview p { color:#94a69c; font-size:10px; line-height:1.6; }
+@media(max-width:350px) { .report-hero h1 { font-size:31px; } .report-kicker { letter-spacing:1px; } .report-stat strong { font-size:21px; } .report-stat span { font-size:7px; } .battle-appearance button { padding:5px 8px; } }
+@media(prefers-reduced-motion:reduce) { .report-medallion { animation:none; } }

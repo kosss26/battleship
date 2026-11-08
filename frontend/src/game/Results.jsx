@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Home, RotateCcw, Share2, Swords, ChevronRight, UserPlus } from 'lucide-react'
 import { post } from '../lib/api.js'
 import { useNavigate } from 'react-router-dom'
@@ -13,7 +13,11 @@ import { RewardChips, Stars, Avatar } from '../components/ui.jsx'
 import Board from '../components/Board.jsx'
 import { AdButton } from '../components/Ads.jsx'
 import { StoryButton, HomeScreenPrompt, inviteLink } from '../components/Share.jsx'
-import { battleCosmetics } from '@shared/catalog.js'
+import { battleCosmetics, opponentCosmetics } from '@shared/catalog.js'
+import { shipCells, CELL } from '@shared/engine.js'
+import ResultMedallion from '../components/ResultMedallion.jsx'
+import BattleAppearance from '../components/BattleAppearance.jsx'
+import '../styles/battle-report.css'
 
 function Confetti() {
   const pieces = Array.from({ length: 36 }, (_, i) => i)
@@ -51,11 +55,18 @@ export default function Results({ over }) {
   const [showBoard, setShowBoard] = useState(false)
   const [friendSent, setFriendSent] = useState(false)
   const doubleGold = useStore((s) => s.profile?.ads?.doubleGold || 0)
+  const appearance = useStore(s => s.battleAppearance)
+  const reducedMotion = useReducedMotion()
+  const [reportSide,setReportSide] = useState('opponent')
   const game = over.state
   const { won, rewards, extra, myStats, durationMs, reason } = over
   const cancelled = reason === 'server_restart'
   const accuracy = myStats.shots ? Math.round((myStats.hits / myStats.shots) * 100) : 0
-  const { theme, skin, effect } = battleCosmetics(game, profile.equipped)
+  const mine = battleCosmetics(game, profile.equipped)
+  const opponent = opponentCosmetics(game)
+  const reportLook = reportSide==='mine' || appearance==='mine' ? mine : opponent
+  const reportBoard = reportSide==='mine' ? game.me : game.opp
+  const reportEffect = reportSide==='mine' ? opponent.effect : mine.effect
 
   useEffect(() => {
     useStore.setState({ feed: [] })
@@ -101,24 +112,23 @@ export default function Results({ over }) {
 
   return (
     <>
-      {won && <Confetti />}
-      <div className="relative">
-        <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 14 }} className="mb-5 pt-4 text-center">
-          <div className="relative mx-auto mb-3 h-24 w-24">
-            <div className={`absolute inset-0 rounded-full blur-2xl ${cancelled ? 'bg-cyan-300/20' : won ? 'bg-amber-300/50' : 'bg-rose-500/30'}`} />
-            <div className="relative flex h-full w-full items-center justify-center text-6xl">{won ? '🏆' : '⚓'}</div>
-          </div>
-          <h1 className={`h-display text-4xl ${won ? 'bg-gradient-to-b from-amber-100 to-amber-400 bg-clip-text text-transparent' : 'text-slate-200'}`}>
+      {won && !reducedMotion && <Confetti />}
+      <div className={`battle-report ${won?'is-victory':cancelled?'is-cancelled':'is-defeat'}`} data-battle-report>
+        <motion.div initial={reducedMotion ? false : { y:12, opacity:0 }} animate={{ y:0, opacity:1 }} transition={{ duration:.35 }} className="report-hero">
+          <div className="report-kicker"><span>BATTLESHIP</span><span>{t('battle_report')}</span></div>
+          <ResultMedallion won={won} cancelled={cancelled}/>
+          <h1>
             {cancelled ? t('battle_cancelled') : won ? t('victory') : t('defeat')}
           </h1>
-          {game.demoFleet && <p className="mt-2 text-sm text-amber-200">{t('regent_trial_note')}</p>}
-          {reasonText && <div className="mt-1 text-sm text-slate-400">{reasonText}</div>}
+          <p className="report-outcome">{cancelled?t('report_cancelled'):won?t('report_win'):t('report_loss')}</p>
+          {game.demoFleet && <p className="report-trial-note">{t('regent_trial_note')}</p>}
+          {reasonText && <div className="report-reason">{reasonText}</div>}
           {game.mode === 'campaign' && won && extra?.stars > 0 && (
             <div className="mt-3 flex justify-center"><Stars n={extra.stars} size={30} /></div>
           )}
         </motion.div>
 
-        <div className="glass mb-3 flex items-center gap-3 p-3">
+        <div className="report-versus">
           <Avatar photo={game.me.profile.photo} name={game.me.profile.name} frame={game.me.profile.frame} size={36} />
           <div className="flex-1 truncate text-sm font-bold">{game.me.profile.name}</div>
           <span className="font-display text-sm font-bold text-slate-400">VS</span>
@@ -142,16 +152,16 @@ export default function Results({ over }) {
           </button>
         )}
 
-        <div className="mb-3 grid grid-cols-4 gap-2">
+        <div className="report-stats">
           {[
             [t('shots'), myStats.shots],
             [t('accuracy'), `${accuracy}%`],
             [t('ships_sunk'), myStats.sunk],
             [t('duration'), fmtTime(durationMs)],
           ].map(([k, v]) => (
-            <div key={k} className="glass rounded-2xl p-2.5 text-center">
-              <div className="font-display text-lg font-bold">{v}</div>
-              <div className="text-[10px] font-bold uppercase text-slate-500">{k}</div>
+            <div key={k} className="report-stat">
+              <strong>{v}</strong>
+              <span>{k}</span>
             </div>
           ))}
         </div>
@@ -205,13 +215,17 @@ export default function Results({ over }) {
         )}
 
         {game.opp.ships && (
-          <button className="mb-3 flex w-full items-center justify-between rounded-2xl bg-white/[0.04] px-4 py-3 text-sm font-bold" onClick={() => setShowBoard((v) => !v)}>
-            {t('enemy_waters')} <ChevronRight size={18} className={`transition-transform ${showBoard ? 'rotate-90' : ''}`} />
+          <button className="report-board-toggle" aria-expanded={showBoard} onClick={() => setShowBoard((v) => !v)}>
+            <span><b>{t('report_review')}</b><small>{t('report_review_hint')}</small></span><ChevronRight size={18} className={`transition-transform ${showBoard ? 'rotate-90' : ''}`} />
           </button>
         )}
-        {showBoard && game.opp.ships && (
-          <div className="mb-3">
-            <Board shots={game.opp.shots} ships={game.opp.ships.map((s, i) => ({ ...s, key: i, state: 'alive' }))} skin={skin} theme={theme} effect={effect} />
+        {showBoard && reportBoard.ships && (
+          <div className="report-board" data-report-board>
+            <div className="report-side-picker" role="group" aria-label={t('report_review')}>
+              {['opponent','mine'].map(side=><button key={side} aria-pressed={reportSide===side} onClick={()=>setReportSide(side)}>{side==='mine'?t('your_fleet'):t('enemy_waters')}</button>)}
+            </div>
+            {reportSide==='opponent'&&<BattleAppearance/>}
+            <Board shots={reportBoard.shots} ships={reportBoard.ships.map((s, i) => ({ ...s, key:i, state:shipCells(s).every(([r,c])=>reportBoard.shots?.[r]?.[c]===CELL.SUNK)?'sunk':'alive' }))} skin={reportLook.skin} theme={reportLook.theme} effect={reportEffect} />
           </div>
         )}
 
@@ -219,7 +233,7 @@ export default function Results({ over }) {
           <div className="mb-2 rounded-2xl bg-fuchsia-400/15 p-3 text-center text-sm font-bold text-fuchsia-200">{t('rematch_offer')}</div>
         )}
 
-        <button className="btn-primary mb-2 w-full text-base" onClick={again} disabled={rematchWait}>
+        <button className="report-primary" onClick={again} disabled={rematchWait}>
           {game.mode === 'duel' ? <Swords size={20} /> : <RotateCcw size={20} />} {againLabel}
         </button>
         {won && <StoryButton over={over} className="mb-2 w-full" />}

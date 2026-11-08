@@ -13,6 +13,7 @@ import Board from '../components/Board.jsx'
 import { RegentArtwork, REGENT_CLASSES } from '../components/RegentShip.jsx'
 import { RegentShotMark } from '../components/RegentEffects.jsx'
 import { CELL } from '@shared/engine.js'
+import { Avatar } from '../components/ui.jsx'
 import '../styles/regent-showroom.css'
 
 const sample = () => createBoard(randomFleet(mulberry32(1864)))
@@ -142,6 +143,10 @@ export default function RegentShowroom() {
         </div>
       </section>
 
+      <section className="regent-order-preview">
+        <Avatar name="R" size={58} frame="frame_regent"/>
+        <div><h3>{t('regent_order')}</h3><p>{t('regent_order_hint')}</p></div>
+      </section>
       <section className="regent-invitation">
         <div className="regent-invitation-icon"><ShieldCheck size={25} strokeWidth={1.2}/></div>
         <p className="regent-eyebrow">{t('regent_your_command')}</p>

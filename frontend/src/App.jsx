@@ -205,6 +205,8 @@ export default function App() {
         className="relative mx-auto max-w-lg px-4"
         style={{
           paddingTop: 'calc(var(--safe-top) + 14px)',
+          paddingLeft:'calc(16px + var(--safe-left))',
+          paddingRight:'calc(16px + var(--safe-right))',
           paddingBottom: showTabs ? 'calc(96px + var(--safe-bottom))' : 'calc(24px + var(--safe-bottom))',
         }}
       >

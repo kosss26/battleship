@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Flag, Smile, Crosshair } from 'lucide-react'
-import { SHIP_SKINS, battleCosmetics, BOOSTERS, MODIFIERS } from '@shared/catalog.js'
+import { opponentCosmetics, battleCosmetics, BOOSTERS, MODIFIERS } from '@shared/catalog.js'
 import { inBounds } from '@shared/engine.js'
 import Board from '../components/Board.jsx'
+import BattleAppearance from '../components/BattleAppearance.jsx'
 import { Avatar, Modal, Sheet } from '../components/ui.jsx'
 import { useStore } from '../store/app.js'
 import { useT, useL } from '../lib/i18n.js'
@@ -31,9 +32,11 @@ export default function BattleView({ game }) {
   const oppConnected = useStore((s) => s.oppConnected)
   const oppGraceUntil = useStore((s) => s.oppGraceUntil)
   const toast = useStore((s) => s.toast)
+  const appearance = useStore(s => s.battleAppearance)
 
   const { theme, skin, effect } = battleCosmetics(game, profile.equipped)
-  const enemySkin = SHIP_SKINS.find(x => x.id === game.opp.profile.shipSkin) || SHIP_SKINS[0]
+  const opponent = opponentCosmetics(game)
+  const enemyLook = appearance === 'mine' ? {theme,skin} : opponent
 
   const [booster, setBooster] = useState(null) // { type, r?, c? }
   const [emoteOpen, setEmoteOpen] = useState(false)
@@ -216,16 +219,17 @@ export default function BattleView({ game }) {
       )}
 
       {/* Enemy board */}
+      <BattleAppearance />
       <div className={`relative transition-all duration-300 ${game.myTurn ? '' : 'opacity-80 saturate-[0.85]'}`}>
         {game.mods?.fog && <div className="fog-overlay pointer-events-none absolute inset-0 z-[45] ml-[18px] mt-[18px] rounded-2xl" />}
         <Board
           shots={game.opp.shots}
           hideNewSunk
           ships={enemyShips}
-          skin={enemySkin}
+          skin={enemyLook.skin}
           effect={effect}
           feed={enemyFeed}
-          theme={theme}
+          theme={enemyLook.theme}
           onCell={game.myTurn && !pending ? fire : null}
           highlight={highlight}
           scans={game.me.scans}
@@ -267,7 +271,7 @@ export default function BattleView({ game }) {
       <div className="mt-3 flex gap-3">
         <div className="w-[46%] shrink-0">
           <div ref={myBoardRef}>
-            <Board shots={game.me.shots} ships={myShips} skin={skin} effect={effect} feed={myFeed} theme={theme} labels={false} small />
+            <Board shots={game.me.shots} ships={myShips} skin={skin} effect={opponent.effect} feed={myFeed} theme={theme} labels={false} small />
           </div>
         </div>
         <div className="flex flex-1 flex-col justify-between py-1">

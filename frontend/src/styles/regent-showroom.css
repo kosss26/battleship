@@ -1,4 +1,4 @@
-.regent-page { min-height:100dvh; background:radial-gradient(ellipse at 50% 10%,#263e4226,transparent 43%),#081319; color:#eae5d8; padding:calc(var(--safe-top) + 20px) 20px calc(var(--safe-bottom) + 26px); }
+.regent-page { min-height:100dvh; background:radial-gradient(ellipse at 50% 10%,#263e4226,transparent 43%),#081319; color:#eae5d8; padding:calc(var(--safe-top) + 20px) calc(20px + var(--safe-right)) calc(var(--safe-bottom) + 26px) calc(20px + var(--safe-left)); }
 .regent-shell { max-width:880px; margin:auto; }
 .regent-nav { display:flex; align-items:center; justify-content:space-between; gap:16px; font-size:9px; font-weight:650; letter-spacing:1.6px; }
 .regent-nav a { display:flex; align-items:center; gap:10px; min-height:34px; color:#c9d3d1; }
@@ -77,7 +77,7 @@
 .fleet-collection-regent::after { background:linear-gradient(90deg,#06131cea,#071b2b60 70%),linear-gradient(0deg,#06131cec,transparent 80%); }
 @keyframes regent-arrive { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
 @media(min-width:700px) {
- .regent-page { padding:35px 40px 40px; } .regent-intro { padding:36px 0; }
+ .regent-page { padding:calc(35px + var(--safe-top)) calc(40px + var(--safe-right)) calc(40px + var(--safe-bottom)) calc(40px + var(--safe-left)); } .regent-intro { padding:36px 0; }
  .regent-nav { font-size:11px; } .regent-nav > span { font-size:9px; }
  .regent-drydock { padding:25px 30px; } .regent-ship-stage { height:290px; margin:20px -10px 0; }
  .regent-hero-ship { max-height:190px; } .regent-standard-ship { height:140px; max-width:75%; }

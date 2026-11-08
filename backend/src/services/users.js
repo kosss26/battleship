@@ -303,6 +303,8 @@ export function publicProfile(u) {
     rank: rank.id,
     frame: u.data.equipped.frame,
     shipSkin: u.data.equipped.ship,
+    boardTheme: u.data.equipped.theme,
+    shotEffect: u.data.equipped.effect,
     premium: !!u.data.pass.premium && u.data.pass.season === seasonId(),
     stats: {
       games: u.data.stats.games,

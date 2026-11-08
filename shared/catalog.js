@@ -144,7 +144,14 @@ export function battleCosmetics(game, equipped = {}) {
     skin: battleShipSkin(game, equipped.ship),
     theme: THEMES.find(x => x.id === (regent ? 'theme_regent' : equipped.theme)) || THEMES[0],
     effect: EFFECTS.find(x => x.id === (regent ? 'fx_regent' : equipped.effect)) || EFFECTS[0],
+    frame: regent ? 'frame_regent' : equipped.frame || 'frame_none',
   }
+}
+
+/** Public cosmetic identifiers only. Never reads the opponent's hidden board. */
+export function opponentCosmetics(game) {
+  const p = game?.opp?.profile || {}
+  return battleCosmetics(game, { ship:p.shipSkin, theme:p.boardTheme, effect:p.shotEffect, frame:p.frame })
 }
 
 /** Avatar frames */
@@ -155,6 +162,7 @@ export const FRAMES = [
   { id: 'frame_admiral', rarity: 'legendary', price: null, exclusive: 'pass', name: { ru: 'Адмиральская', en: 'Admiral' }, ring: 'linear-gradient(135deg,#fde047,#f59e0b,#fde047)' },
   { id: 'frame_officer', rarity: 'epic', price: null, exclusive: 'season', name: { ru: 'Офицер сезона', en: 'Season Officer' }, ring: 'conic-gradient(from 0deg,#38bdf8,#e0f2fe,#38bdf8,#0ea5e9,#38bdf8)' },
   { id: 'frame_legend', rarity: 'legendary', price: null, exclusive: 'season', name: { ru: 'Легенда сезона', en: 'Season Legend' }, ring: 'conic-gradient(from 0deg,#f43f5e,#fbbf24,#22d3ee,#a855f7,#f43f5e)' },
+  { id:'frame_regent', demo:true, rarity:'legendary', price:null, model:'regent', name:{ru:'Орден Регента',en:'Order of Regent'}, ring:'linear-gradient(135deg,#e8d49b,#665632 45%,#d8bf7c 70%,#77623c)' },
 ]
 
 export const COSMETIC_SLOTS = { theme: THEMES, ship: SHIP_SKINS, effect: EFFECTS, frame: FRAMES }

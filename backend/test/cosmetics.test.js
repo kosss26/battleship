@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { buyItem, equip } from '../src/services/shop.js'
-import { ACHIEVEMENTS, DEFAULT_EQUIPPED, DEFAULT_OWNED, FLEET_COLLECTIONS, findCosmetic, battleShipSkin, battleCosmetics } from '../../shared/catalog.js'
+import { ACHIEVEMENTS, DEFAULT_EQUIPPED, DEFAULT_OWNED, FLEET_COLLECTIONS, findCosmetic, battleShipSkin, battleCosmetics, opponentCosmetics } from '../../shared/catalog.js'
 import { publicProfile } from '../src/services/users.js'
 
 const player = () => ({
@@ -83,7 +83,7 @@ test('Regent trial renderer overrides only its own match, without granting owner
   assert.equal(battleShipSkin({ demoFleet: 'regent' }, 'ship_steel').id, 'ship_regent')
   assert.equal(battleShipSkin({}, 'ship_royal').id, 'ship_royal')
   assert.equal(battleShipSkin({}, null).id, 'ship_steel')
-  for (const id of ['ship_regent','theme_regent','fx_regent']) {
+  for (const id of ['ship_regent','theme_regent','fx_regent','frame_regent']) {
     assert.throws(() => equip(u, id), { code: 'not_owned' })
     assert.throws(() => buyItem(u, id), { code: 'item_not_found' })
   }
@@ -96,4 +96,18 @@ test('Regent trial renderer overrides only its own match, without granting owner
   buyItem(u, 'ship_royal')
   equip(u, 'ship_royal')
   assert.equal(publicProfile(u).shipSkin, 'ship_royal')
+})
+
+test('public opponent appearance uses their cosmetics and safe defaults for older rooms', () => {
+  const u=player()
+  Object.assign(u.data.equipped,{theme:'theme_arctic',ship:'ship_royal',effect:'fx_imperial',frame:'frame_silver'})
+  const p=publicProfile(u)
+  assert.equal(p.boardTheme,'theme_arctic')
+  assert.equal(p.shotEffect,'fx_imperial')
+  const enemy=opponentCosmetics({opp:{profile:p}})
+  assert.deepEqual([enemy.theme.id,enemy.skin.id,enemy.effect.id,enemy.frame],['theme_arctic','ship_royal','fx_imperial','frame_silver'])
+  assert.equal(opponentCosmetics({opp:{profile:{}}}).theme.id,'theme_ocean')
+  assert.equal(opponentCosmetics({demoFleet:'regent'}).frame,'frame_regent')
+  assert.equal('equipped' in p,false)
+  assert.equal('board' in p,false)
 })

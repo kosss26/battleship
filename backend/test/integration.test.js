@@ -206,6 +206,12 @@ test('Regent trial is a real AI match, costs nothing and changes no progression'
   assert.ok((await call(s, 'ai:start', { difficulty: 'easy', demoFleet: 'regent' })).room)
   await until(() => s.state?.phase === 'placement')
   assert.equal(s.state.demoFleet, 'regent')
+  for (const side of ['me','opp']) {
+    assert.equal(s.state[side].profile.shipSkin,'ship_regent')
+    assert.equal(s.state[side].profile.boardTheme,'theme_regent')
+    assert.equal(s.state[side].profile.shotEffect,'fx_regent')
+    assert.equal(s.state[side].profile.frame,'frame_regent')
+  }
   assert.equal(s.state.boostersAllowed, false)
   await call(s, 'game:place', { ships: 'random' })
   await until(() => s.state?.phase === 'battle')

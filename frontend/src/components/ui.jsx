@@ -6,6 +6,7 @@ import { FRAMES, BOOSTERS, findCosmetic, RANKS } from '@shared/catalog.js'
 import { useL, useT } from '../lib/i18n.js'
 import { haptic } from '../lib/telegram.js'
 import { sfx } from '../lib/sound.js'
+import RegentFrame from './RegentFrame.jsx'
 
 export const fmt = (n) => (n ?? 0).toLocaleString('ru-RU').replace(/,/g, ' ')
 
@@ -81,8 +82,8 @@ export function Avatar({ photo, name = '?', frame = 'frame_none', size = 44, cla
   const initials = name.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase()
   const hue = [...name].reduce((h, c) => h + c.charCodeAt(0), 0) % 360
   return (
-    <div className={`relative shrink-0 rounded-full p-[2.5px] ${className}`} style={{ width: size, height: size, background: ring }}>
-      <div className="h-full w-full overflow-hidden rounded-full bg-ink-800 ring-2 ring-ink-900">
+    <div data-avatar-frame={frame} className={`relative shrink-0 rounded-full p-[2.5px] ${frame==='frame_regent'?'avatar-regent ':''}${className}`} style={{ width: size, height: size, background: ring }}>
+      <div className="avatar-face h-full w-full overflow-hidden rounded-full bg-ink-800 ring-2 ring-ink-900">
         {photo ? (
           <img src={photo} alt="" className="h-full w-full object-cover" draggable={false} />
         ) : (
@@ -94,6 +95,7 @@ export function Avatar({ photo, name = '?', frame = 'frame_none', size = 44, cla
           </div>
         )}
       </div>
+      {frame==='frame_regent'&&<RegentFrame/>}
     </div>
   )
 }

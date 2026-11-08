@@ -3,8 +3,10 @@
 @tailwind utilities;
 
 :root {
-  --safe-top: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px));
-  --safe-bottom: max(var(--tg-safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px));
+  --safe-top: calc(max(var(--tg-safe-area-inset-top, 0px), env(safe-area-inset-top, 0px)) + var(--tg-content-safe-area-inset-top, 0px));
+  --safe-bottom: calc(max(var(--tg-safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px)) + var(--tg-content-safe-area-inset-bottom, 0px));
+  --safe-left: max(var(--tg-safe-area-inset-left, 0px),var(--tg-content-safe-area-inset-left, 0px),env(safe-area-inset-left, 0px));
+  --safe-right: max(var(--tg-safe-area-inset-right, 0px),var(--tg-content-safe-area-inset-right, 0px),env(safe-area-inset-right, 0px));
   --water: #0b3b5c;
   --water2: #0e4f7a;
   --grid: rgba(125, 211, 252, 0.18);

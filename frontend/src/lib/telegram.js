@@ -9,6 +9,25 @@ const supports = (v) => !!tg?.isVersionAtLeast?.(v)
 let hapticsOn = true
 export const setHapticsEnabled = (on) => { hapticsOn = on }
 
+export function syncTelegramInsets() {
+  if (!tg) return
+  const root = document.documentElement
+  for (const [prefix, insets] of [['safe-area',tg.safeAreaInset], ['content-safe-area',tg.contentSafeAreaInset]]) {
+    for (const side of ['top','bottom','left','right']) {
+      const n = insets?.[side]
+      if (Number.isFinite(n)) root.style.setProperty(`--tg-${prefix}-inset-${side}`,`${Math.max(0,n)}px`)
+    }
+  }
+  root.dataset.tgFullscreen = String(!!tg.isFullscreen)
+}
+
+export function requestFullscreen() {
+  if (!tg || !supports('8.0') || typeof tg.requestFullscreen !== 'function') return false
+  try { if (!tg.isFullscreen) tg.requestFullscreen(); return true } catch { return false }
+}
+
+let insetsBound = false
+
 export function initTelegram() {
   if (!tg) return
   try {
@@ -22,6 +41,13 @@ export function initTelegram() {
     if (supports('7.10')) tg.setBottomBarColor('#060d1d')
   } catch (e) {
     console.warn('tg init', e)
+  }
+  // Native fullscreen is separate from expand() and available since Bot API 8.0.
+  requestFullscreen()
+  syncTelegramInsets()
+  if (!insetsBound && tg.onEvent) {
+    for (const event of ['safeAreaChanged','contentSafeAreaChanged','fullscreenChanged','fullscreenFailed','viewportChanged']) tg.onEvent(event,syncTelegramInsets)
+    insetsBound = true
   }
 }
 

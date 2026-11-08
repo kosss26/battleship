@@ -547,6 +547,8 @@ export class GameRoom {
     const me = this.seats[i]
     const opp = this.seats[1 - i]
     const over = this.phase === 'over'
+    const appearance = p => this.demoFleet === 'regent'
+      ? { ...p, shipSkin:'ship_regent', boardTheme:'theme_regent', shotEffect:'fx_regent', frame:'frame_regent' } : p
     return {
       id: this.id,
       mode: this.mode,
@@ -565,7 +567,7 @@ export class GameRoom {
       ammoLeft: this.mods.ammo ? Math.max(0, this.mods.ammo - me.shots) : null,
       boostersLeft: this.boostersAllowed ? Math.max(0, BOOSTERS_PER_MATCH - me.boostersUsed) : 0,
       me: {
-        profile: me.profile,
+        profile: appearance(me.profile),
         ready: me.ready,
         ships: me.ships ? me.ships.map(publicShip) : null,
         shots: me.board ? me.board.shots : null,
@@ -574,7 +576,7 @@ export class GameRoom {
         scans: me.scans,
       },
       opp: {
-        profile: opp.profile,
+        profile: appearance(opp.profile),
         ready: opp.ready,
         connected: opp.connected,
         shots: over ? (opp.board ? opp.board.shots : null) : this.visibleShots(i),

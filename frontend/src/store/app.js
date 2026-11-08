@@ -11,6 +11,10 @@ let toastId = 0
 export { SHELL_FLIGHT_MS } from '../game/animation.js'
 let feedId = 0
 const dismissedKey = 'bs_dismissed_results'
+const appearanceKey = 'bs_battle_appearance'
+function savedAppearance() {
+  try { return localStorage.getItem(appearanceKey) === 'mine' ? 'mine' : 'opponent' } catch { return 'opponent' }
+}
 function dismissedResults() {
   try { const ids = JSON.parse(localStorage.getItem(dismissedKey) || '[]'); return Array.isArray(ids) ? ids.slice(-20) : [] }
   catch { return [] }
@@ -28,6 +32,12 @@ export const useStore = create((set, get) => ({
   pendingStart: startParam(),
 
   game: null,
+  battleAppearance: savedAppearance(),
+  setBattleAppearance(value) {
+    const battleAppearance = value === 'mine' ? 'mine' : 'opponent'
+    try { localStorage.setItem(appearanceKey, battleAppearance) } catch {}
+    set({battleAppearance})
+  },
   clockOffset: 0,
   feed: [],
   over: null,
