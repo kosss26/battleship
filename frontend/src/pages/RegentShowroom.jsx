@@ -11,6 +11,8 @@ import { mulberry32 } from '@shared/rng.js'
 import Ship from '../components/Ship.jsx'
 import Board from '../components/Board.jsx'
 import { RegentArtwork, REGENT_CLASSES } from '../components/RegentShip.jsx'
+import { RegentShotMark } from '../components/RegentEffects.jsx'
+import { CELL } from '@shared/engine.js'
 import '../styles/regent-showroom.css'
 
 const sample = () => createBoard(randomFleet(mulberry32(1864)))
@@ -27,12 +29,13 @@ export default function RegentShowroom() {
   const [error, setError] = useState(null)
   const [eventId, setEventId] = useState(0)
   const [lastDemo, setLastDemo] = useState('')
+  const [previewSequence, setPreviewSequence] = useState(0)
   const design = REGENT_CLASSES.find(c => c.size === selected)
   const regent = SHIP_SKINS.find(s => s.id === 'ship_regent')
   const steel = SHIP_SKINS.find(s => s.id === 'ship_steel')
-  const theme = THEMES.find(s => s.id === 'theme_imperial')
-  const effect = EFFECTS.find(s => s.id === 'fx_imperial')
-  const reset = () => { setBoard(sample()); setFeed([]); setLastDemo('') }
+  const theme = THEMES.find(s => s.id === 'theme_regent')
+  const effect = EFFECTS.find(s => s.id === 'fx_regent')
+  const reset = () => { setBoard(sample()); setFeed([]); setLastDemo(''); setPreviewSequence(n => n+1) }
   const shoot = (r, c) => {
     const next = structuredClone(board)
     const shot = fire(next, r, c)
@@ -43,6 +46,7 @@ export default function RegentShowroom() {
     setFeed(events => [...events.slice(-20), { ...shot, id, at: Date.now(), by: 'me' }])
   }
   const demo = kind => {
+    setPreviewSequence(n => n+1)
     const next = sample()
     let r, c
     if (kind === 'miss') {
@@ -121,8 +125,14 @@ export default function RegentShowroom() {
         <div className="regent-section-title"><div><p className="regent-eyebrow">{t('regent_in_action')}</p><h2 id="regent-range-title">{t('regent_on_board')}</h2></div><Crosshair size={22} strokeWidth={1.3} /></div>
         <p className="regent-range-hint">{t('regent_board_hint')}</p>
         <div className="regent-range-board" data-regent-range>
+          <div className="regent-sea-caption"><span>{l(theme.name)}</span><span>REGENT · 01</span></div>
           <Board shots={board.shots} ships={board.ships.map((s, i) => ({...s, key:i,state:s.hits>=s.size?'sunk':'alive'}))}
-            skin={regent} effect={effect} theme={theme} onCell={shoot} feed={feed} />
+            skin={regent} effect={effect} theme={theme} onCell={shoot} feed={feed} previewSequence={previewSequence} />
+        </div>
+        <div className="regent-shot-legend">
+          {[[CELL.HIT,'hit'],[CELL.MISS,'miss'],[CELL.SUNK,'sunk']].map(([state,key])=><span key={key}>
+            <i><RegentShotMark state={state}/></i>{t(`fx_demo_${key}`)}
+          </span>)}
         </div>
         <div className="regent-range-controls" role="group" aria-label={t('fx_demo')}>
           {['hit','miss','sunk'].map(kind => <button key={kind} onClick={() => demo(kind)} aria-pressed={lastDemo===kind}>

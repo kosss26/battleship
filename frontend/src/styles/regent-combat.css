@@ -1,0 +1,61 @@
+/* Regent Sound: a photographed surface, etched brass chart and restrained metal frame. */
+.water[data-board-theme='theme_regent'] {
+  border-radius: 7px;
+  background: linear-gradient(145deg,#14353510,#04151d45),url('/art/naval/regent-sea.webp') center / cover,#0b2229;
+  box-shadow: inset 0 0 0 1px #c2a76b88,inset 0 0 24px #02101688,0 8px 24px #0004 !important;
+}
+.water[data-board-theme='theme_regent'] > .water-waves {
+  opacity: .15;
+  background-image: linear-gradient(115deg,transparent 25%,#b8d4cd0a 48%,transparent 70%);
+  background-size: 200% 100%;
+  animation: regent-sea-light 24s ease-in-out infinite alternate;
+}
+.regent-board-labels > .text-slate-500 { color:#baa77d; font-weight:500; font-size:9px; }
+.regent-chart { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.regent-shot-mark { position:absolute; inset:0; display:grid; place-items:center; pointer-events:none; }
+.regent-shot-mark > svg { width:100%; height:100%; overflow:visible; }
+.regent-hit-ember { animation:regent-ember 3.4s ease-in-out infinite; }
+.regent-reticle { position:absolute; inset:8%; background:#d3bc7a10; border:1px solid #ddc99055; border-radius:2px; }
+.regent-reticle::before,.regent-reticle::after { content:''; position:absolute; width:30%; height:30%; border-color:#f2d9a0; }
+.regent-reticle::before { top:-1px; left:-1px; border-top:2px solid; border-left:2px solid; }
+.regent-reticle::after { bottom:-1px; right:-1px; border-bottom:2px solid; border-right:2px solid; }
+.combat-shell[data-effect-style='regent'] .combat-shell-body { width:31%; height:65%; }
+.combat-shell[data-effect-style='regent'] .combat-shell-body > svg { filter:drop-shadow(1px 2px 1px #0009); }
+.combat-shell[data-effect-style='regent'] .combat-shell-trail { width:14%; height:190%; left:44%; bottom:85%; opacity:.45; background:linear-gradient(0deg,#fce5b6,#a5b6b377 35%,transparent); }
+.regent-impact,.regent-splash,.regent-sink { position:absolute; inset:0; pointer-events:none; display:grid; place-items:center; }
+.regent-impact > span,.regent-splash > span,.regent-sink > span { position:absolute; }
+.regent-impact-pressure { width:80%; height:65%; border:1px solid #ffe1a0aa; border-radius:50%; animation:regent-pressure .62s ease-out both; }
+.regent-impact-core { width:72%; height:72%; background:radial-gradient(circle,#fffbe7 0 12%,#ffdf9c 25%,#e08e3e 43%,#9b492722 64%,transparent 72%); border-radius:50%; animation:regent-ignition .38s ease-out both; }
+.regent-impact-fire { width:80%; height:90%; background:radial-gradient(ellipse at 40% 35%,#ffedbdcc,#cb6e2b99 35%,#6a351d00 68%); border-radius:38% 62% 49% 51%; animation:regent-fire .62s ease-out .04s both; }
+.regent-fragment { width:2px; height:6px; border-radius:1px; background:#ffe4aa; box-shadow:0 0 3px #d68d3e77; animation:regent-fragment .64s cubic-bezier(.12,.6,.3,1) var(--delay) both; }
+.regent-fragment.is-steel { width:3px; height:4px; background:#9bafae; box-shadow:none; }
+.regent-gun-smoke { width:120%; height:120%; border-radius:48% 52% 38% 62%; background:radial-gradient(ellipse,#82938f88,#4a5c5b70 38%,#1d303000 70%); animation:regent-smoke 1.12s ease-out var(--delay) both; }
+.regent-impact.is-sinking .regent-impact-core { width:105%; height:105%; }
+.regent-impact.is-sinking .regent-gun-smoke { width:165%; height:165%; }
+.regent-splash-ring { width:70%; height:50%; border:1px solid #d7ebe5aa; box-shadow:0 1px 0 #031d2688,inset 0 1px 0 #e7f1d622; border-radius:50%; animation:regent-water-ring 1.05s ease-out var(--delay) both; }
+.regent-water-base { width:90%; height:48%; border-radius:50%; background:radial-gradient(ellipse,#edf4df90,#a9d3c940 45%,transparent 72%); animation:regent-water-base .65s ease-out both; }
+.regent-water-plume { width:32%; height:130%; transform-origin:50% 90%; background:linear-gradient(90deg,#60978d00,#bbdcd5bb 27%,#eff7e8e6 48%,#8fb7adbb 70%,#629a9200); clip-path:polygon(46% 0,62% 22%,59% 43%,82% 69%,100% 100%,0 100%,24% 70%,39% 45%,35% 20%); animation:regent-plume .74s cubic-bezier(.2,.7,.3,1) both; }
+.regent-spray { width:2px; height:5px; border-radius:50%; background:#e0ece3; animation:regent-spray .76s ease-out var(--delay) both; }
+.regent-hull-shadow { inset:8%; border-radius:45%; background:#010e16aa; animation:regent-hull-shadow 1.3s ease-out both; }
+.regent-hull-wave { inset:0; border:1px solid #d4e2ca99; border-radius:40%; box-shadow:inset 0 0 3px #d1e9d230; animation:regent-hull-wave 1.05s ease-out var(--delay) both; }
+.regent-hull-foam { inset:0; border-radius:45%; border:3px dotted #c4dadc77; animation:regent-hull-foam 1.25s ease-out both; }
+.regent-wreck-bubble { width:3px; height:3px; border:1px solid #cbe4da; border-radius:50%; animation:regent-bubble .8s ease-out var(--delay) both; }
+@keyframes regent-sea-light { from { background-position:0 0; opacity:.08; } to { background-position:100% 0; opacity:.22; } }
+@keyframes regent-ember { 0%,100% { opacity:.5; } 50% { opacity:1; } }
+@keyframes regent-ignition { 0% { transform:scale(.15); opacity:1; } 30% { opacity:1; } 100% { transform:scale(1.8); opacity:0; } }
+@keyframes regent-pressure { from { transform:scale(.3); opacity:.7; } to { transform:scale(2.5); opacity:0; } }
+@keyframes regent-fire { from { transform:translateY(0) scale(.4); opacity:.9; } to { transform:translateY(-7px) scale(1.6); opacity:0; } }
+@keyframes regent-fragment { 0% { transform:translate(0,0) rotate(0); opacity:1; } 65% { opacity:.9; } 100% { transform:translate(var(--dx),var(--dy)) rotate(var(--turn)); opacity:0; } }
+@keyframes regent-smoke { 0% { transform:translate(0,0) scale(.3); opacity:0; } 20% { opacity:.8; } 100% { transform:translate(var(--drift),-18px) scale(1.9); opacity:0; } }
+@keyframes regent-water-ring { from { transform:scale(.3); opacity:.8; } to { transform:scale(2.5); opacity:0; } }
+@keyframes regent-water-base { from { transform:scale(.3); opacity:.9; } to { transform:scale(1.8); opacity:0; } }
+@keyframes regent-plume { 0% { transform:translateY(0) scale(.2,.05); opacity:0; } 30% { transform:translateY(-12%) scale(.8,1); opacity:1; } 75% { opacity:.55; } 100% { transform:translateY(15%) scale(1.2,.15); opacity:0; } }
+@keyframes regent-spray { 0% { transform:translate(0,0) scale(.3); opacity:0; } 20% { opacity:1; } 60% { transform:translate(var(--dx),var(--dy)) scale(1); opacity:.9; } 100% { transform:translate(var(--dx),6px) scale(.3); opacity:0; } }
+@keyframes regent-hull-shadow { from { transform:scale(.9); opacity:.3; } 40% { opacity:.8; } to { transform:scale(.75); opacity:0; } }
+@keyframes regent-hull-wave { from { transform:scale(.85); opacity:.8; } to { transform:scale(1.35); opacity:0; } }
+@keyframes regent-hull-foam { from { transform:scale(.8); opacity:0; } 30% { opacity:.7; } to { transform:scale(1.15); opacity:0; } }
+@keyframes regent-bubble { from { transform:scale(.3); opacity:.9; } to { transform:translateY(-12px) scale(1.6); opacity:0; } }
+@media(prefers-reduced-motion:reduce) {
+  .regent-impact,.regent-splash,.regent-sink { display:none; }
+  .regent-hit-ember,.water[data-board-theme='theme_regent'] > .water-waves { animation:none; }
+}

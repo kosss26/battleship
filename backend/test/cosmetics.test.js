@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { buyItem, equip } from '../src/services/shop.js'
-import { ACHIEVEMENTS, DEFAULT_EQUIPPED, DEFAULT_OWNED, FLEET_COLLECTIONS, findCosmetic, battleShipSkin } from '../../shared/catalog.js'
+import { ACHIEVEMENTS, DEFAULT_EQUIPPED, DEFAULT_OWNED, FLEET_COLLECTIONS, findCosmetic, battleShipSkin, battleCosmetics } from '../../shared/catalog.js'
 import { publicProfile } from '../src/services/users.js'
 
 const player = () => ({
@@ -83,8 +83,16 @@ test('Regent trial renderer overrides only its own match, without granting owner
   assert.equal(battleShipSkin({ demoFleet: 'regent' }, 'ship_steel').id, 'ship_regent')
   assert.equal(battleShipSkin({}, 'ship_royal').id, 'ship_royal')
   assert.equal(battleShipSkin({}, null).id, 'ship_steel')
-  assert.throws(() => equip(u, 'ship_regent'), { code: 'not_owned' })
-  assert.throws(() => buyItem(u, 'ship_regent'), { code: 'item_not_found' })
+  for (const id of ['ship_regent','theme_regent','fx_regent']) {
+    assert.throws(() => equip(u, id), { code: 'not_owned' })
+    assert.throws(() => buyItem(u, id), { code: 'item_not_found' })
+  }
+  const before = structuredClone(u)
+  const trial = battleCosmetics({demoFleet:'regent'}, u.data.equipped)
+  assert.deepEqual([trial.skin.id,trial.theme.id,trial.effect.id], ['ship_regent','theme_regent','fx_regent'])
+  const normal = battleCosmetics({}, u.data.equipped)
+  assert.deepEqual([normal.skin.id,normal.theme.id,normal.effect.id], [u.data.equipped.ship,u.data.equipped.theme,u.data.equipped.effect])
+  assert.deepEqual(u,before)
   buyItem(u, 'ship_royal')
   equip(u, 'ship_royal')
   assert.equal(publicProfile(u).shipSkin, 'ship_royal')

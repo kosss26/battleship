@@ -1,6 +1,7 @@
 import { useId } from 'react'
 import { motion } from 'framer-motion'
 import '../styles/combat-effects.css'
+import { RegentImpact, RegentSplash, RegentShellArt, RegentSinkWake } from './RegentEffects.jsx'
 
 export { IMPACT_FX_MS } from '../game/animation.js'
 
@@ -15,6 +16,7 @@ const particles = Array.from({ length: 10 }, (_, i) => {
 })
 
 export function Explosion({ colors = ['#f97316', '#facc15'], big = false, effect }) {
+  if (effect?.model === 'regent') return <RegentImpact sunk={big} />
   if (effect?.model) return (
     <div data-impact="hit" data-effect-style={effect.model} className={`combat-impact combat-impact-${effect.model}${big ? ' combat-impact-sunk' : ''}`} style={material(effect)}>
       <span className="combat-flash" /><span className="combat-impact-ring" /><span className="combat-impact-mist" />
@@ -54,6 +56,7 @@ export function Explosion({ colors = ['#f97316', '#facc15'], big = false, effect
 }
 
 export function Splash({ effect }) {
+  if (effect?.model === 'regent') return <RegentSplash />
   if (effect?.model) return (
     <div data-impact="miss" data-effect-style={effect.model} className={`combat-impact combat-splash combat-splash-${effect.model}`} style={material(effect)}>
       {[0, 1, 2].map((i) => <span key={i} className="combat-water-ring" style={{ '--delay': `${i * 110}ms` }} />)}
@@ -110,11 +113,11 @@ export function Shell({ ms = 300, effect }) {
       <motion.span className="combat-shell-shadow" initial={{ scale: .15, opacity: 0 }} animate={{ scale: 1, opacity: [0, .5, 0] }} transition={{ duration: d, times: [0, .85, 1] }} />
       <motion.span className="combat-shell-body" initial={{ x: -17, y: -40, scale: 2.6, rotate: -24, opacity: 0 }} animate={{ x: 0, y: 0, scale: .65, rotate: 0, opacity: [0, 1, 1] }} transition={{ duration: d, ease: [.55, 0, .9, .4] }}>
         <span className="combat-shell-trail" />
-        <svg viewBox="0 0 24 32" className="h-full w-full">
+        {effect.model === 'regent' ? <RegentShellArt id={gid} /> : <svg viewBox="0 0 24 32" className="h-full w-full">
           <defs><linearGradient id={gid} x1="0" y1="0" x2="1" y2="1"><stop stopColor="var(--fx-light)" /><stop offset=".48" stopColor="var(--fx-color)" /><stop offset="1" stopColor="var(--fx-smoke)" /></linearGradient></defs>
           <path d="M12 2Q5 8 5 15v11q7 5 14 0V15Q19 8 12 2Z" fill={`url(#${gid})`} stroke="var(--fx-light)" strokeWidth="1" />
           <path d="M6 22h12M6 25h12" stroke="var(--fx-smoke)" strokeWidth="1.6" /><path d="M9 12v7" stroke="#fff" strokeOpacity=".8" strokeWidth="1.5" />
-        </svg>
+        </svg>}
       </motion.span>
     </div>
   )
@@ -151,6 +154,7 @@ export function Shell({ ms = 300, effect }) {
 
 /** Whole-hull wake. Stays inside the board; final wreck and X markers remain. */
 export function SinkWake({ effect }) {
+  if (effect?.model === 'regent') return <RegentSinkWake />
   return (
     <div data-sinking data-effect-style={effect?.model || 'classic'} className={`combat-sink combat-sink-${effect?.model || 'classic'}`} style={material(effect)}>
       <span className="combat-sink-ripple" /><span className="combat-sink-ripple combat-sink-ripple-late" />

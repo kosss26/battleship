@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Flag, Smile, Crosshair } from 'lucide-react'
-import { THEMES, SHIP_SKINS, battleShipSkin, EFFECTS, BOOSTERS, MODIFIERS } from '@shared/catalog.js'
+import { SHIP_SKINS, battleCosmetics, BOOSTERS, MODIFIERS } from '@shared/catalog.js'
 import { inBounds } from '@shared/engine.js'
 import Board from '../components/Board.jsx'
 import { Avatar, Modal, Sheet } from '../components/ui.jsx'
@@ -32,10 +32,8 @@ export default function BattleView({ game }) {
   const oppGraceUntil = useStore((s) => s.oppGraceUntil)
   const toast = useStore((s) => s.toast)
 
-  const theme = THEMES.find((x) => x.id === profile.equipped.theme)
-  const skin = battleShipSkin(game, profile.equipped.ship)
+  const { theme, skin, effect } = battleCosmetics(game, profile.equipped)
   const enemySkin = SHIP_SKINS.find(x => x.id === game.opp.profile.shipSkin) || SHIP_SKINS[0]
-  const effect = EFFECTS.find((x) => x.id === profile.equipped.effect)
 
   const [booster, setBooster] = useState(null) // { type, r?, c? }
   const [emoteOpen, setEmoteOpen] = useState(false)

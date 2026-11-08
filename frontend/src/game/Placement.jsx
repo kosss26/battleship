@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Shuffle, RotateCw, Eraser, Check } from 'lucide-react'
 import { FLEET, SIZE, canPlace, randomFleet } from '@shared/engine.js'
-import { THEMES, SHIP_SKINS, battleShipSkin } from '@shared/catalog.js'
+import { battleCosmetics } from '@shared/catalog.js'
 import Board from '../components/Board.jsx'
 import Ship from '../components/Ship.jsx'
 import { useT } from '../lib/i18n.js'
@@ -17,8 +17,7 @@ export default function Placement({ game, deadlineLeft }) {
   const t = useT()
   const profile = useStore((s) => s.profile)
   const toast = useStore((s) => s.toast)
-  const theme = THEMES.find((x) => x.id === profile.equipped.theme)
-  const skin = battleShipSkin(game, profile.equipped.ship)
+  const { theme, skin, effect } = battleCosmetics(game, profile.equipped)
 
   // placed ships carry an id = index in FLEET
   const [ships, setShips] = useState(() => withIds(randomFleet()))
@@ -158,7 +157,7 @@ export default function Placement({ game, deadlineLeft }) {
       </div>
       {game.recovering && <p role="status" className="mb-3 text-sm text-amber-200">{t('game_recovering')}</p>}
 
-      <Board ref={boardRef} ships={drawn} skin={skin} theme={theme} onPointerDown={onBoardDown} />
+      <Board ref={boardRef} ships={drawn} skin={skin} theme={theme} effect={effect} onPointerDown={onBoardDown} />
 
       {/* Dock */}
       <div className="mt-4 min-h-[64px] rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-3">

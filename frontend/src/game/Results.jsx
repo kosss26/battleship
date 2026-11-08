@@ -13,7 +13,7 @@ import { RewardChips, Stars, Avatar } from '../components/ui.jsx'
 import Board from '../components/Board.jsx'
 import { AdButton } from '../components/Ads.jsx'
 import { StoryButton, HomeScreenPrompt, inviteLink } from '../components/Share.jsx'
-import { THEMES, SHIP_SKINS, battleShipSkin } from '@shared/catalog.js'
+import { battleCosmetics } from '@shared/catalog.js'
 
 function Confetti() {
   const pieces = Array.from({ length: 36 }, (_, i) => i)
@@ -55,8 +55,7 @@ export default function Results({ over }) {
   const { won, rewards, extra, myStats, durationMs, reason } = over
   const cancelled = reason === 'server_restart'
   const accuracy = myStats.shots ? Math.round((myStats.hits / myStats.shots) * 100) : 0
-  const theme = THEMES.find((x) => x.id === profile.equipped.theme)
-  const skin = battleShipSkin(game, profile.equipped.ship)
+  const { theme, skin, effect } = battleCosmetics(game, profile.equipped)
 
   useEffect(() => {
     useStore.setState({ feed: [] })
@@ -212,7 +211,7 @@ export default function Results({ over }) {
         )}
         {showBoard && game.opp.ships && (
           <div className="mb-3">
-            <Board shots={game.opp.shots} ships={game.opp.ships.map((s, i) => ({ ...s, key: i, state: 'alive' }))} skin={skin} theme={theme} />
+            <Board shots={game.opp.shots} ships={game.opp.ships.map((s, i) => ({ ...s, key: i, state: 'alive' }))} skin={skin} theme={theme} effect={effect} />
           </div>
         )}
 

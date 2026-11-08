@@ -2,6 +2,7 @@ import { forwardRef, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { SIZE, CELL, COLS, COLS_EN, shipCells } from '@shared/engine.js'
 import Ship from './Ship.jsx'
+import { RegentChart, RegentShotMark } from './RegentEffects.jsx'
 import { Explosion, Splash, Flame, Shell, SinkWake, IMPACT_FX_MS } from './Fx.jsx'
 import { SHELL_FLIGHT_MS } from '../game/animation.js'
 import { useLang } from '../lib/i18n.js'
@@ -52,18 +53,29 @@ function ShotFx({ f, effect, small, landed }) {
  *  highlight  [[r,c]] cells to highlight (booster preview)
  */
 const Board = forwardRef(function Board(
-  { shots, ships = [], skin, effect, feed = [], onCell, highlight = [], scans = [], labels = true, dim = false, small = false, theme, children, onPointerDown, shake, hideNewSunk = false },
+  { shots, ships = [], skin, effect, feed = [], onCell, highlight = [], scans = [], labels = true, dim = false, small = false, theme, children, onPointerDown, shake, hideNewSunk = false, previewSequence = 0 },
   ref,
 ) {
   const lang = useLang()
   const reducedMotion = useReducedMotion()
+  const regentMarks = effect?.model === 'regent'
   const [fx, setFx] = useState([])
   const [landing, setLanding] = useState(() => new Set())
   const [hover, setHover] = useState(null)
   const seen = useRef(new Set(feed.map((f) => f.id)))
   const timers = useRef(new Set())
+  const sequence = useRef(previewSequence)
 
   useLayoutEffect(() => {
+    if (sequence.current !== previewSequence) {
+      // A fitting-room preset replaces the previous shot, including its timers.
+      timers.current.forEach(clearTimeout)
+      timers.current.clear()
+      setFx([])
+      setLanding(new Set())
+      seen.current.clear()
+      sequence.current = previewSequence
+    }
     const fresh = feed.filter((f) => !seen.current.has(f.id))
     fresh.forEach((f) => seen.current.add(f.id))
     if (reducedMotion) {
@@ -86,7 +98,7 @@ const Board = forwardRef(function Board(
     }
     schedule(() => setLanding((cur) => new Set([...cur].filter((k) => !keys.includes(k)))), SHELL_FLIGHT_MS)
     schedule(() => setFx((cur) => cur.filter((f) => !ids.has(f.id))), SHELL_FLIGHT_MS + IMPACT_FX_MS)
-  }, [feed, reducedMotion])
+  }, [feed, reducedMotion, previewSequence])
 
   useEffect(() => () => timers.current.forEach(clearTimeout), [])
 
@@ -107,6 +119,7 @@ const Board = forwardRef(function Board(
       onPointerLeave={() => setHover(null)}
     >
       <div className="water-waves absolute inset-0" />
+      {theme?.id === 'theme_regent' && <RegentChart />}
       {/* grid lines */}
       <div
         className="absolute inset-0"
@@ -169,9 +182,10 @@ const Board = forwardRef(function Board(
                 : {})}
               className={`relative outline-none ${canShoot ? 'cursor-crosshair' : 'cursor-default'}`}
             >
-              {v === CELL.MISS && <MissMark reducedMotion={reducedMotion} />}
-              {v === CELL.HIT && <Flame effect={effect} colors={effect?.colors} />}
-              {v === CELL.SUNK && (
+              {regentMarks && v !== CELL.EMPTY && <RegentShotMark state={v} />}
+              {!regentMarks && v === CELL.MISS && <MissMark reducedMotion={reducedMotion} />}
+              {!regentMarks && v === CELL.HIT && <Flame effect={effect} colors={effect?.colors} />}
+              {!regentMarks && v === CELL.SUNK && (
                 <span className="absolute inset-[8%] flex items-center justify-center rounded-md bg-rose-950/40">
                   <svg viewBox="0 0 24 24" className="h-[60%] w-[60%] opacity-90">
                     <path d="M5 5l14 14M19 5L5 19" stroke="#fb7185" strokeWidth="3.2" strokeLinecap="round" />
@@ -179,7 +193,7 @@ const Board = forwardRef(function Board(
                 </span>
               )}
               {canShoot && hover === k && !small && (
-                <span className="absolute inset-[6%] rounded-md border-2 border-white/70 bg-white/10" />
+                <span className={regentMarks ? 'regent-reticle' : 'absolute inset-[6%] rounded-md border-2 border-white/70 bg-white/10'} />
               )}
             </Tag>
           )
@@ -203,7 +217,7 @@ const Board = forwardRef(function Board(
   if (!labels) return <div style={style}>{grid}</div>
 
   return (
-    <div style={style} className="grid grid-cols-[14px_1fr] grid-rows-[14px_1fr] gap-1">
+    <div style={style} className={`grid grid-cols-[14px_1fr] grid-rows-[14px_1fr] gap-1${theme?.id === 'theme_regent' ? ' regent-board-labels' : ''}`}>
       <div />
       <div className="grid grid-cols-10 text-center text-[10px] font-bold text-slate-500">
         {cols.split('').map((ch) => <span key={ch}>{ch}</span>)}

@@ -96,6 +96,11 @@ export const THEMES = [
     name: { ru: 'Императорские воды', en: 'Imperial Waters' },
     vars: { water: '#081b30', water2: '#183b57', grid: 'rgba(225,191,124,0.32)', glow: '#d8b775', miss: '#c5e4f5' },
   },
+  {
+    id: 'theme_regent', demo: true, rarity: 'legendary', price: null,
+    name: { ru: 'Глубины Регента', en: 'Regent Sound' },
+    vars: { water: '#081c23', water2: '#183b3c', grid: 'rgba(204,184,133,0.23)', glow: '#a28b5a', miss: '#b9ded9' },
+  },
 ]
 
 /** Ship skins: hull gradient + deck colour */
@@ -127,7 +132,20 @@ export const EFFECTS = [
   { id: 'fx_firework', rarity: 'legendary', price: { gems: 350 }, name: { ru: 'Салют', en: 'Fireworks' }, icon: '🎆', colors: ['#f472b6', '#38bdf8', '#facc15'] },
   { id: 'fx_arctic', rarity: 'epic', price: { gems: 180 }, model: 'arctic', name: { ru: 'Полярный залп', en: 'Polar Salvo' }, icon: '❄️', colors: ['#64c8ef', '#edfcff', '#478ebd'], description: { ru: 'Ледяной след снаряда, осколки инея, холодные всплески и пена при потоплении.', en: 'An ice-blue shell trail, frost fragments, cold splashes and a foaming sinking wake.' } },
   { id: 'fx_imperial', rarity: 'legendary', price: { gems: 250 }, model: 'imperial', name: { ru: 'Адмиральский залп', en: 'Admiral’s Salvo' }, icon: '⚓', colors: ['#d5a956', '#fff1c9', '#67879f'], description: { ru: 'Латунный снаряд, тёплые искры, морской всплеск и дым над уходящим под воду корпусом.', en: 'A brass shell, warm sparks, a sea-water splash and smoke above the sinking hull.' } },
+  { id: 'fx_regent', demo: true, rarity: 'legendary', price: null, model: 'regent',
+    name: { ru: 'Залп Регента', en: 'Regent Salvo' }, icon: '⚓', colors: ['#d6a15e', '#fff0cf', '#65777b'],
+    description: { ru: 'Бронебойный снаряд, осколки металла, дым и серебристый водяной столб.', en: 'An armour-piercing shell, metal fragments, smoke and a silver water plume.' } },
 ]
+
+/** A trial uses the entire set throughout placement, combat and results. */
+export function battleCosmetics(game, equipped = {}) {
+  const regent = game?.demoFleet === 'regent'
+  return {
+    skin: battleShipSkin(game, equipped.ship),
+    theme: THEMES.find(x => x.id === (regent ? 'theme_regent' : equipped.theme)) || THEMES[0],
+    effect: EFFECTS.find(x => x.id === (regent ? 'fx_regent' : equipped.effect)) || EFFECTS[0],
+  }
+}
 
 /** Avatar frames */
 export const FRAMES = [
