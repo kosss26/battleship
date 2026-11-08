@@ -302,6 +302,7 @@ export function publicProfile(u) {
     peakRating: u.peak_rating,
     rank: rank.id,
     frame: u.data.equipped.frame,
+    shipSkin: u.data.equipped.ship,
     premium: !!u.data.pass.premium && u.data.pass.season === seasonId(),
     stats: {
       games: u.data.stats.games,

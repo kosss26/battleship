@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Shuffle, RotateCw, Eraser, Check } from 'lucide-react'
 import { FLEET, SIZE, canPlace, randomFleet } from '@shared/engine.js'
-import { THEMES, SHIP_SKINS } from '@shared/catalog.js'
+import { THEMES, SHIP_SKINS, battleShipSkin } from '@shared/catalog.js'
 import Board from '../components/Board.jsx'
 import Ship from '../components/Ship.jsx'
 import { useT } from '../lib/i18n.js'
@@ -18,7 +18,7 @@ export default function Placement({ game, deadlineLeft }) {
   const profile = useStore((s) => s.profile)
   const toast = useStore((s) => s.toast)
   const theme = THEMES.find((x) => x.id === profile.equipped.theme)
-  const skin = SHIP_SKINS.find((x) => x.id === profile.equipped.ship)
+  const skin = battleShipSkin(game, profile.equipped.ship)
 
   // placed ships carry an id = index in FLEET
   const [ships, setShips] = useState(() => withIds(randomFleet()))

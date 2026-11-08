@@ -108,7 +108,16 @@ export const SHIP_SKINS = [
   { id: 'ship_royal', rarity: 'legendary', price: { gems: 500 }, name: { ru: 'Королевский', en: 'Royal' }, hull: ['#334b60', '#0b192c'], deck: '#a88d59', model: 'imperial', accent: '#e6c780' },
   { id: 'ship_arctic', rarity: 'epic', price: { gems: 180 }, name: { ru: 'Полярный', en: 'Polar' }, hull: ['#e7f3fc', '#738fa8'], deck: '#c0d4e3', model: 'arctic', accent: '#9ee7ff' },
   { id: 'ship_season', rarity: 'legendary', price: null, exclusive: 'pass', name: { ru: 'Флагман сезона', en: 'Season Flagship' }, hull: ['#f43f5e', '#7e22ce'], deck: '#fecdd3' },
+  { id: 'ship_regent', demo: true, rarity: 'legendary', price: null,
+    name: { ru: 'Регент', en: 'Regent' }, model: 'regent',
+    hull: ['#334552', '#101c27'], deck: '#9e7245', accent: '#d9b875',
+    description: { ru: 'Четыре отдельных класса кораблей. Бесплатная демонстрация флота.', en: 'Four distinct ship classes. A free fleet demonstration.' } },
 ]
+
+export function battleShipSkin(game, equippedId) {
+  const id = game?.demoFleet === 'regent' ? 'ship_regent' : equippedId
+  return SHIP_SKINS.find(s => s.id === id) || SHIP_SKINS.find(s => s.id === 'ship_steel')
+}
 
 /** Shot effects */
 export const EFFECTS = [

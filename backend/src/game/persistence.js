@@ -67,7 +67,7 @@ export async function settleRoom(room) {
       OR id IN (SELECT referred_by FROM users WHERE id=ANY($1::bigint[])) ORDER BY id FOR UPDATE`, [ids])
     const players = await Promise.all(room.seats.map(s => s.kind === 'human' ? getUser(s.userId, client) : null))
     const { winnerSeat, reason } = room.result
-    const played = room.startedAt != null && reason !== 'server_restart'
+    const played = room.startedAt != null && reason !== 'server_restart' && !room.demoFleet
     let note = null
     const deltas = [0, 0]
     if (room.mode === 'ranked' && played) {
@@ -93,7 +93,7 @@ export async function settleRoom(room) {
     }
     const humanId = i => room.seats[i]?.kind === 'human' ? room.seats[i].userId : null
     const durationMs = Math.max(0, room.result.endedAt - (room.startedAt || room.createdAt))
-    if (room.startedAt != null) await saveGame({
+    if (room.startedAt != null && !room.demoFleet) await saveGame({
       id: room.id, mode: room.mode, difficulty: room.difficulty || (room.level ? `L${room.level}` : null),
       p1: humanId(0), p2: humanId(1), winner: humanId(winnerSeat), winnerSlot: winnerSeat,
       reason, p1Delta: deltas[0], p2Delta: deltas[1], shots: room.moves.length, durationMs, moves: room.moves,

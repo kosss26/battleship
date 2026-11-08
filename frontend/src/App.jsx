@@ -13,6 +13,7 @@ import Onboarding from './components/Onboarding.jsx'
 import { setMusicMood } from './lib/music.js'
 import { Spinner } from './components/ui.jsx'
 import Home from './pages/Home.jsx'
+import RegentShowroom from './pages/RegentShowroom.jsx'
 import Quests from './pages/Quests.jsx'
 import Shop from './pages/Shop.jsx'
 import Leaderboard from './pages/Leaderboard.jsx'
@@ -141,6 +142,8 @@ export default function App() {
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [location.pathname])
+
+  if (location.pathname === '/fleet/regent') return <RegentShowroom />
 
   // Legal documents are readable without signing in (e.g. opened from the bot)
   if (location.pathname.startsWith('/legal/') && status !== 'ready') {

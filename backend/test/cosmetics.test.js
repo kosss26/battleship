@@ -1,7 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { buyItem, equip } from '../src/services/shop.js'
-import { ACHIEVEMENTS, DEFAULT_EQUIPPED, DEFAULT_OWNED, FLEET_COLLECTIONS, findCosmetic } from '../../shared/catalog.js'
+import { ACHIEVEMENTS, DEFAULT_EQUIPPED, DEFAULT_OWNED, FLEET_COLLECTIONS, findCosmetic, battleShipSkin } from '../../shared/catalog.js'
+import { publicProfile } from '../src/services/users.js'
 
 const player = () => ({
   id: 1, gold: 10000, gems: 2000, xp: 45, rating: 1200, peak_rating: 1200,
@@ -75,4 +76,16 @@ test('effect packs use the normal ownership checks and cannot be charged twice',
   }
   assert.deepEqual(findCosmetic('fx_plasma').item.price, { gold: 2500 })
   assert.deepEqual(findCosmetic('fx_firework').item.price, { gems: 350 })
+})
+
+test('Regent trial renderer overrides only its own match, without granting ownership', () => {
+  const u = player()
+  assert.equal(battleShipSkin({ demoFleet: 'regent' }, 'ship_steel').id, 'ship_regent')
+  assert.equal(battleShipSkin({}, 'ship_royal').id, 'ship_royal')
+  assert.equal(battleShipSkin({}, null).id, 'ship_steel')
+  assert.throws(() => equip(u, 'ship_regent'), { code: 'not_owned' })
+  assert.throws(() => buyItem(u, 'ship_regent'), { code: 'item_not_found' })
+  buyItem(u, 'ship_royal')
+  equip(u, 'ship_royal')
+  assert.equal(publicProfile(u).shipSkin, 'ship_royal')
 })

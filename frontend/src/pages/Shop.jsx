@@ -1,4 +1,4 @@
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useState } from 'react'
 import { Check, ChevronRight, Eye } from 'lucide-react'
 import {
@@ -157,6 +157,11 @@ function Collection() {
       {['theme', 'ship', 'effect'].includes(slot) && (
         <section className="fleet-collections" aria-label={t('skins_collections')}>
           <div className="naval-section-heading"><h2>{t('skins_collections')}</h2><span>{t('skins_preview_first')}</span></div>
+          <Link to="/fleet/regent" className="fleet-collection-card fleet-collection-regent" data-regent-showroom>
+            <span className="fleet-collection-kicker">{t('regent_prototype')}</span>
+            <strong>{t('regent_name')}</strong><span className="fleet-collection-tagline">{t('regent_card_sub')}</span>
+            <span className="fleet-collection-footer"><span><Eye size={14} />{t('regent_open')}</span><span>4 / 4<ChevronRight size={16} /></span></span>
+          </Link>
           {FLEET_COLLECTIONS.map((c) => (
             <button key={c.id} className={`fleet-collection-card fleet-collection-${c.id}`} data-collection-id={c.id}
               onClick={() => setPreview({ collectionId: c.id, themeId: c.themeId, shipId: c.shipId, effectId: c.effectId })}>
@@ -168,7 +173,7 @@ function Collection() {
         </section>
       )}
       <div className="grid grid-cols-2 gap-3">
-        {lists[slot].map((item) => {
+        {lists[slot].filter(item => !item.demo).map((item) => {
           const owned = p.owned.includes(item.id)
           const equipped = p.equipped[slot] === item.id
           const rarity = RARITY[item.rarity]

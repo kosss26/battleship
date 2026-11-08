@@ -272,7 +272,8 @@ export function initSockets(server) {
       return { room: null }
     }))
 
-    socket.on('ai:start', guard(async ({ difficulty, level }) => {
+    socket.on('ai:start', guard(async ({ difficulty, level, demoFleet }) => {
+      if (demoFleet != null && (demoFleet !== 'regent' || level != null)) throw new GameError('bad_demo')
       await ensureFree()
       const u = await loadProfile()
       let mode = 'ai'
@@ -288,6 +289,7 @@ export function initSockets(server) {
       if (mode === 'campaign') bot.name = `${bot.name} · ${level}`
       const r = await createRoom({
         mode,
+        demoFleet,
         difficulty: mode === 'ai' ? diff : null,
         level: mode === 'campaign' ? Number(level) : null,
         mods: mode === 'campaign' ? CAMPAIGN.find((l) => l.n === Number(level)).mods : {},

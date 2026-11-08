@@ -11,7 +11,7 @@ async function run(event, data) {
   return res
 }
 
-export const startAi = (difficulty) => run('ai:start', { difficulty })
+export const startAi = (difficulty, options = {}) => run('ai:start', { difficulty, ...options })
 export const startCampaign = (level) => run('ai:start', { level })
 export const joinQueue = () => run('mm:join')
 export const leaveQueue = () => request('mm:leave')

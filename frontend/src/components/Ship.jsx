@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import RegentShip from './RegentShip.jsx'
 
 function DetailedHull({ size, skin, sunk, id }) {
   const L = size * 100
@@ -66,6 +67,7 @@ function DetailedHull({ size, skin, sunk, id }) {
  */
 export default function Ship({ size, vertical, skin, state = 'alive', className = '', style }) {
   const id = useId().replace(/:/g, '')
+  if (skin?.model === 'regent') return <RegentShip size={size} vertical={vertical} state={state} className={className} style={style} />
   const L = size * 100
   const [h1, h2] = skin?.hull || ['#94a3b8', '#475569']
   const deck = skin?.deck || '#cbd5e1'

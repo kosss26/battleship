@@ -10,7 +10,7 @@ import Results from '../game/Results.jsx'
 import { useCountdown } from '../game/parts.jsx'
 import { Avatar, Spinner } from '../components/ui.jsx'
 import Board from '../components/Board.jsx'
-import { THEMES, SHIP_SKINS } from '@shared/catalog.js'
+import { THEMES, SHIP_SKINS, battleShipSkin } from '@shared/catalog.js'
 import { finalShotDeadline } from '../game/animation.js'
 
 function VersusIntro({ game }) {
@@ -80,7 +80,7 @@ export default function Battle() {
       )
     }
     const theme = THEMES.find((x) => x.id === profile.equipped.theme)
-    const skin = SHIP_SKINS.find((x) => x.id === profile.equipped.ship)
+    const skin = battleShipSkin(game, profile.equipped.ship)
     return (
       <div>
         <VersusIntro game={game} />

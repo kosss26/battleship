@@ -40,9 +40,10 @@ export function botProfile(difficulty, lang = 'ru') {
  * The room never trusts the client: it owns both boards and validates every action.
  */
 export class GameRoom {
-  constructor({ mode, seats, difficulty = null, level = null, duelCode = null, mods = {}, hooks, restored = null }) {
+  constructor({ mode, seats, difficulty = null, level = null, duelCode = null, mods = {}, hooks, restored = null, demoFleet = null }) {
     this.id = crypto.randomUUID()
     this.mode = mode // ai | campaign | ranked | duel
+    this.demoFleet = mode === 'ai' && demoFleet === 'regent' ? 'regent' : null
     this.difficulty = difficulty
     this.level = level
     this.duelCode = duelCode
@@ -193,6 +194,7 @@ export class GameRoom {
   }
 
   get boostersAllowed() {
+    if (this.demoFleet) return false
     return (this.mode === 'ai' || this.mode === 'campaign') && !this.mods.noBoosters
   }
 
@@ -548,6 +550,7 @@ export class GameRoom {
     return {
       id: this.id,
       mode: this.mode,
+      demoFleet: this.demoFleet,
       difficulty: this.difficulty,
       level: this.level,
       duelCode: this.duelCode,

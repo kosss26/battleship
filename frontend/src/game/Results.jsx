@@ -13,7 +13,7 @@ import { RewardChips, Stars, Avatar } from '../components/ui.jsx'
 import Board from '../components/Board.jsx'
 import { AdButton } from '../components/Ads.jsx'
 import { StoryButton, HomeScreenPrompt, inviteLink } from '../components/Share.jsx'
-import { THEMES, SHIP_SKINS } from '@shared/catalog.js'
+import { THEMES, SHIP_SKINS, battleShipSkin } from '@shared/catalog.js'
 
 function Confetti() {
   const pieces = Array.from({ length: 36 }, (_, i) => i)
@@ -56,7 +56,7 @@ export default function Results({ over }) {
   const cancelled = reason === 'server_restart'
   const accuracy = myStats.shots ? Math.round((myStats.hits / myStats.shots) * 100) : 0
   const theme = THEMES.find((x) => x.id === profile.equipped.theme)
-  const skin = SHIP_SKINS.find((x) => x.id === profile.equipped.ship)
+  const skin = battleShipSkin(game, profile.equipped.ship)
 
   useEffect(() => {
     useStore.setState({ feed: [] })
@@ -68,13 +68,13 @@ export default function Results({ over }) {
 
   const home = () => {
     leaveGame()
-    navigate('/', { replace: true })
+    navigate(game.demoFleet ? '/fleet/regent' : '/', { replace: true })
   }
 
   const again = async () => {
     if (game.mode === 'ai') {
       leaveGame()
-      await startAi(game.difficulty)
+      await startAi(game.difficulty, { demoFleet: game.demoFleet || undefined })
     } else if (game.mode === 'campaign') {
       const next = won && CAMPAIGN.find((x) => x.n === game.level + 1)
       leaveGame()
@@ -112,6 +112,7 @@ export default function Results({ over }) {
           <h1 className={`h-display text-4xl ${won ? 'bg-gradient-to-b from-amber-100 to-amber-400 bg-clip-text text-transparent' : 'text-slate-200'}`}>
             {cancelled ? t('battle_cancelled') : won ? t('victory') : t('defeat')}
           </h1>
+          {game.demoFleet && <p className="mt-2 text-sm text-amber-200">{t('regent_trial_note')}</p>}
           {reasonText && <div className="mt-1 text-sm text-slate-400">{reasonText}</div>}
           {game.mode === 'campaign' && won && extra?.stars > 0 && (
             <div className="mt-3 flex justify-center"><Stars n={extra.stars} size={30} /></div>
@@ -174,7 +175,7 @@ export default function Results({ over }) {
               </div>
             ) : null}
             <RewardChips reward={rewards} size="lg" />
-            {doubleGold > 0 && (
+            {!game.demoFleet && doubleGold > 0 && (
               <AdButton placement="double" className="mt-3 w-full">{t('ad_double', { n: doubleGold })}</AdButton>
             )}
             {rewards?.levelUps?.length > 0 && (
