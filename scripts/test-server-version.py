@@ -55,7 +55,7 @@ if a[0]=='compose':
   if fail.exists(): fail.unlink();save();sys.exit(9)
   tree=pathlib.Path(override['build']['context'])
   assert (tree/'server-patch').read_text()=='preserved\n'
-  assert (tree/'frontend/version').read_text()=='design\n'
+  assert (tree/'frontend/version').read_text()==('release\n' if ':release-' in override['image'] else 'design\n')
   for folder in ['backend', 'shared']:
    for source in [tree/folder, *(tree/folder).rglob('*')]:
     assert source.stat().st_mode & 0o004, source
@@ -66,7 +66,7 @@ if a[0]=='compose':
   assert a[-1]=='backend' and '--no-deps' in a and '--no-build' in a
   s['active']=image(override['image']);s['unhealthy']=False
   fail=p.parent/'fail-health-once'
-  if fail.exists() and ':preview-' in override['image']:
+  if fail.exists() and any(prefix in override['image'] for prefix in [':preview-',':release-']):
    fail.unlink();s['unhealthy']=True
  else: raise RuntimeError(a)
  save();sys.exit(0)
@@ -108,6 +108,11 @@ with tempfile.TemporaryDirectory(prefix='battleship-switch-test-') as tmp:
     (seed / 'frontend/version').write_text('design\n')
     run(['git', 'commit', '-am', 'Design'], seed)
     run(['git', 'push', 'origin', 'design/naval-home'], seed)
+    run(['git', 'switch', '-c', 'release/production'], seed)
+    (seed/'frontend/version').write_text('release\n')
+    run(['git','commit','-am','Production release'],seed)
+    run(['git', 'push', 'origin', 'release/production'], seed)
+    release_source=run(['git','rev-parse','HEAD'],seed).stdout.strip()
     run(['git', 'clone', '--single-branch', '--branch', 'main', str(origin), str(root)])
     run(['git', 'config', 'user.name', 'Test'], root)
     run(['git', 'config', 'user.email', 'test@localhost'], root)
@@ -217,3 +222,29 @@ with tempfile.TemporaryDirectory(prefix='battleship-switch-test-') as tmp:
     assert not any(c[0]=='compose' and 'up' in c for c in after['calls'][len(before['calls']):])
     assert after['preflights'] >= 2
     print('Source modes allow image user access; failed offline image preflight never restarts live backend: pass', flush=True)
+
+    snapshot=(state/'original-commit').read_text()
+    result=switch('release')
+    assert 'ОСНОВНАЯ ВЕРСИЯ' in result.stdout
+    release_front=(web/'current').resolve()
+    release_image=json.loads(docker_state.read_text())['active']
+    assert (state/'release-web').read_text().strip()==str(release_front)
+    assert (state/'release-source').read_text().strip()==release_source
+    assert (state/'original-commit').read_text()==snapshot
+    assert (state/'test-web').read_text().strip()==str(test_front)
+    assert list((state/'backups').glob('before-release-*.sql.gz'))
+    assert 'ОСНОВНАЯ ВЕРСИЯ' in switch('status').stdout
+    print('Production release preserves original/test snapshots and creates a database backup: pass',flush=True)
+
+    (base/'fail-health-once').touch()
+    switch('release',False)
+    assert json.loads(docker_state.read_text())['active']==release_image
+    assert (web/'current').resolve()==release_front
+    assert (state/'release-web').read_text().strip()==str(release_front)
+    result=switch('deploy')
+    assert 'ОСНОВНАЯ ВЕРСИЯ' in result.stdout
+    assert ':release-' in (state/'release-image').read_text()
+    assert (state/'test-web').read_text().strip()==str(test_front)
+    switch('original')
+    assert json.loads(docker_state.read_text())['active']==original_id
+    print('Failed release rolls back; subsequent deploy targets production; original remains available: pass',flush=True)

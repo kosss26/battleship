@@ -28,7 +28,7 @@ save_state() { printf '%s\n' "$2" > "$STATE/$1.tmp"; mv -f "$STATE/$1.tmp" "$STA
 image_id() { docker image inspect "$1" --format '{{.Id}}'; }
 container_image() { docker inspect "$BACKEND" --format '{{.Image}}'; }
 
-case "$MODE" in test|deploy|original|status) ;; *) die 'Использование: server-version.sh test|original|status|deploy' ;; esac
+case "$MODE" in test|deploy|release|original|status) ;; *) die 'Использование: server-version.sh release|deploy|test|original|status' ;; esac
 for command in git docker python3 curl gzip flock; do command -v "$command" >/dev/null || die "Не найдена команда: $command"; done
 [[ -d "$ROOT/.git" && -f "$COMPOSE" ]] || die "Не найдена серверная установка в $ROOT"
 [[ -L "$WEB/current" ]] || die "Ожидается символическая ссылка $WEB/current"
@@ -186,21 +186,27 @@ finish_activation() {
   printf 'Готово: %s\nАдрес: %s\n' "$1" "$DOMAIN"
 }
 
-deploy_test() {
+deploy_version() {
+  local kind=${1:-test} branch=design/naval-home label='ТЕСТОВАЯ ВЕРСИЯ' image_kind=preview
+  if [[ "$kind" == release ]]; then
+    branch=release/production
+    label='ОСНОВНАЯ ВЕРСИЯ'
+    image_kind=release
+  fi
   initialize
   say 'Создаю резервную копию общей базы'
   mkdir -p "$STATE/backups"
-  local backup=$STATE/backups/before-test-$STAMP.sql.gz worktree source image release
+  local backup=$STATE/backups/before-$kind-$STAMP.sql.gz worktree source image release
   docker exec "$DB" pg_dump --username="$(read_state db-user)" --dbname="$(read_state db-name)" | gzip > "$backup.tmp"
   mv -f "$backup.tmp" "$backup"
   save_state latest-db-backup "$backup"
-  say 'Получаю тестовую ветку; оригинальный checkout останется без изменений'
-  git -C "$ROOT" fetch origin refs/heads/design/naval-home:refs/remotes/origin/design/naval-home
-  source=$(git -C "$ROOT" rev-parse --verify 'origin/design/naval-home^{commit}')
+  say "Получаю $branch; серверные настройки и исходный checkout сохраняются"
+  git -C "$ROOT" fetch origin "refs/heads/$branch:refs/remotes/origin/$branch"
+  source=$(git -C "$ROOT" rev-parse --verify "refs/remotes/origin/$branch^{commit}")
   worktree=$STATE/worktrees/$STAMP
   mkdir -p "$STATE/worktrees"
   git -C "$ROOT" worktree add --detach "$worktree" "$(read_state original-commit)"
-  if ! git -C "$worktree" -c user.name='Battleship preview deploy' -c user.email='deploy@localhost' merge --no-ff --no-edit "$source"; then
+  if ! git -C "$worktree" -c user.name='Battleship deploy' -c user.email='deploy@localhost' merge --no-ff --no-edit "$source"; then
     git -C "$worktree" merge --abort || true
     die 'Конфликт с серверными патчами. Работающая версия не менялась.'
   fi
@@ -208,7 +214,7 @@ deploy_test() {
   # image runs as USER node. Make only application source traversable/readable;
   # STATE, Compose snapshots, backups and environment files stay private.
   chmod -R a+rX "$worktree/backend" "$worktree/shared"
-  image=$TAG_PREFIX:preview-${source:0:10}-$STAMP
+  image=$TAG_PREFIX:$image_kind-${source:0:10}-$STAMP
   python3 - "$STATE/build-override.json" "$worktree" "$(read_state build-context)" "$(read_state build-dockerfile)" "$image" <<'PY'
 import json, pathlib, sys
 path, tree, context, dockerfile, image = sys.argv[1:]
@@ -237,16 +243,16 @@ PY
   say 'Собираю интерфейс в отдельной папке'
   docker run --rm -v "$worktree:/src" -w /src -e "VITE_API_URL=$DOMAIN/api" -e "VITE_WS_URL=$DOMAIN" node:20-alpine sh -c 'npm ci --no-audit --no-fund && npm run build'
   [[ -f "$worktree/frontend/dist/index.html" ]] || die 'Сборка интерфейса не создала index.html'
-  release=$WEB/releases/preview-$STAMP
+  release=$WEB/releases/$image_kind-$STAMP
   mkdir -p "$release"
   cp -a "$worktree/frontend/dist/." "$release/"
   chmod -R a+rX "$release"
-  activate "$image" "$release" 'ТЕСТОВАЯ ВЕРСИЯ'
-  save_state test-image "$image"
-  save_state test-web "$release"
-  save_state test-source "$source"
-  save_state test-worktree "$worktree"
-  finish_activation 'ТЕСТОВАЯ ВЕРСИЯ'
+  activate "$image" "$release" "$label"
+  save_state "$kind-image" "$image"
+  save_state "$kind-web" "$release"
+  save_state "$kind-source" "$source"
+  save_state "$kind-worktree" "$worktree"
+  finish_activation "$label"
 }
 
 show_status() {
@@ -257,6 +263,8 @@ show_status() {
     printf 'Переключатель ещё не создавал снимок оригинала.\n'
   elif [[ "$current" == "$(read_state original-image-id)" ]] && [[ "$web" == "$(read_state original-web)" || "$web" == "$(read_state original-live-web)" ]]; then
     printf 'Активна: ОРИГИНАЛЬНАЯ ВЕРСИЯ\n'
+  elif [[ -f "$STATE/release-image" && -f "$STATE/release-web" ]] && [[ "$current" == "$(image_id "$(read_state release-image)")" && "$web" == "$(read_state release-web)" ]]; then
+    printf 'Активна: ОСНОВНАЯ ВЕРСИЯ\nКоммит: %s\n' "$(read_state release-source)"
   elif [[ -f "$STATE/test-image" && -f "$STATE/test-web" ]] && [[ "$current" == "$(image_id "$(read_state test-image)")" && "$web" == "$(read_state test-web)" ]]; then
     printf 'Активна: ТЕСТОВАЯ ВЕРСИЯ\nКоммит: %s\n' "$(read_state test-source)"
   else
@@ -267,13 +275,16 @@ show_status() {
 
 case "$MODE" in
   status) show_status ;;
-  deploy) deploy_test ;;
+  release) deploy_version release ;;
+  deploy)
+    if [[ -f "$STATE/release-source" ]]; then deploy_version release; else deploy_version test; fi
+    ;;
   test)
     if [[ -f "$STATE/test-image" && -f "$STATE/test-web" ]]; then
       activate "$(read_state test-image)" "$(read_state test-web)" 'ТЕСТОВАЯ ВЕРСИЯ'
       finish_activation 'ТЕСТОВАЯ ВЕРСИЯ'
     else
-      deploy_test
+      deploy_version test
     fi
     ;;
   original)

@@ -2,7 +2,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useState } from 'react'
 import { Check, ChevronRight, Eye } from 'lucide-react'
 import {
-  STAR_PRODUCTS, THEMES, SHIP_SKINS, EFFECTS, FRAMES, BOOSTERS, GOLD_EXCHANGE, RARITY, FLEET_COLLECTIONS,
+  STAR_PRODUCTS, THEMES, SHIP_SKINS, EFFECTS, FRAMES, BOOSTERS, GOLD_EXCHANGE, RARITY, FLEET_COLLECTIONS, collectionItems,
 } from '@shared/catalog.js'
 import { useStore } from '../store/app.js'
 import { useT, useL, tr } from '../lib/i18n.js'
@@ -154,15 +154,15 @@ function Collection() {
           { value: 'frame', label: t('frames') },
         ]}
       />
-      {['theme', 'ship', 'effect'].includes(slot) && (
+      {['theme', 'ship', 'effect', 'frame'].includes(slot) && (
         <section className="fleet-collections" aria-label={t('skins_collections')}>
           <div className="naval-section-heading"><h2>{t('skins_collections')}</h2><span>{t('skins_preview_first')}</span></div>
           <Link to="/fleet/regent" className="fleet-collection-card fleet-collection-regent" data-regent-showroom>
             <span className="fleet-collection-kicker">{t('regent_prototype')}</span>
             <strong>{t('regent_name')}</strong><span className="fleet-collection-tagline">{t('regent_card_sub')}</span>
-            <span className="fleet-collection-footer"><span><Eye size={14} />{t('regent_open')}</span><span>4 / 4<ChevronRight size={16} /></span></span>
+            <span className="fleet-collection-footer"><span><Eye size={14} />{t('regent_open')}</span><span>{t('skins_owned',{n:collectionItems('regent').filter(x=>p.owned.includes(x.item.id)).length,total:4})}<ChevronRight size={16} /></span></span>
           </Link>
-          {FLEET_COLLECTIONS.map((c) => (
+          {FLEET_COLLECTIONS.filter(c=>c.id!=='regent').map((c) => (
             <button key={c.id} className={`fleet-collection-card fleet-collection-${c.id}`} data-collection-id={c.id}
               onClick={() => setPreview({ collectionId: c.id, themeId: c.themeId, shipId: c.shipId, effectId: c.effectId })}>
               <span className="fleet-collection-kicker">{t('skins_collection')}</span>

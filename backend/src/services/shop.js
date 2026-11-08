@@ -1,11 +1,14 @@
 import crypto from 'crypto'
 import { tx, query } from '../db.js'
 import {
-  findCosmetic, BOOSTERS, GOLD_EXCHANGE, findStarProduct, PASS_PREMIUM_GEMS, seasonId, DEFAULT_EQUIPPED,
+  findCosmetic, BOOSTERS, GOLD_EXCHANGE, findStarProduct, PASS_PREMIUM_GEMS, seasonId, DEFAULT_EQUIPPED, collectionItems, collectionQuote,
 } from '../../../shared/catalog.js'
 import { mutateUser, grant, newSummary, checkAchievements, GameError } from './users.js'
 
 function pay(user, price) {
+  // Validate every currency before mutating either balance.
+  if (price.gold && user.gold < price.gold) throw new GameError('not_enough_gold')
+  if (price.gems && user.gems < price.gems) throw new GameError('not_enough_gems')
   if (price.gold) {
     if (user.gold < price.gold) throw new GameError('not_enough_gold')
     user.gold -= price.gold
@@ -19,6 +22,16 @@ function pay(user, price) {
 /** Purchases for soft/hard in-game currency */
 export function buyItem(user, itemId, qty = 1) {
   const summary = newSummary()
+  if (itemId.startsWith('collection:')) {
+    const id=itemId.slice(11), all=collectionItems(id)
+    if (!all.length || all.some(x=>!x?.item.price)) throw new GameError('item_not_found',404)
+    const {items,price}=collectionQuote(id,user.data.owned)
+    if (!items.length) throw new GameError('already_owned')
+    pay(user,price)
+    grant(user,{cosmetics:items.map(x=>x.item.id)},summary)
+    checkAchievements(user,summary)
+    return summary
+  }
   if (itemId.startsWith('booster:')) {
     const b = BOOSTERS[itemId.slice(8)]
     const n = [1, 5, 10].includes(qty) ? qty : 1
@@ -54,6 +67,13 @@ export function buyItem(user, itemId, qty = 1) {
 }
 
 export function equip(user, itemId) {
+  if (itemId.startsWith('collection:')) {
+    const items=collectionItems(itemId.slice(11))
+    if (!items.length) throw new GameError('item_not_found',404)
+    if (items.some(x=>!user.data.owned.includes(x.item.id))) throw new GameError('not_owned')
+    for (const {slot,item} of items) user.data.equipped[slot]=item.id
+    return
+  }
   const found = findCosmetic(itemId)
   if (!found) throw new GameError('item_not_found', 404)
   if (!user.data.owned.includes(itemId)) throw new GameError('not_owned')

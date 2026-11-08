@@ -97,7 +97,7 @@ export const THEMES = [
     vars: { water: '#081b30', water2: '#183b57', grid: 'rgba(225,191,124,0.32)', glow: '#d8b775', miss: '#c5e4f5' },
   },
   {
-    id: 'theme_regent', demo: true, rarity: 'legendary', price: null,
+    id: 'theme_regent', rarity: 'legendary', price: { gems: 450 },
     name: { ru: 'Глубины Регента', en: 'Regent Sound' },
     vars: { water: '#081c23', water2: '#183b3c', grid: 'rgba(204,184,133,0.23)', glow: '#a28b5a', miss: '#b9ded9' },
   },
@@ -113,10 +113,10 @@ export const SHIP_SKINS = [
   { id: 'ship_royal', rarity: 'legendary', price: { gems: 500 }, name: { ru: 'Королевский', en: 'Royal' }, hull: ['#334b60', '#0b192c'], deck: '#a88d59', model: 'imperial', accent: '#e6c780' },
   { id: 'ship_arctic', rarity: 'epic', price: { gems: 180 }, name: { ru: 'Полярный', en: 'Polar' }, hull: ['#e7f3fc', '#738fa8'], deck: '#c0d4e3', model: 'arctic', accent: '#9ee7ff' },
   { id: 'ship_season', rarity: 'legendary', price: null, exclusive: 'pass', name: { ru: 'Флагман сезона', en: 'Season Flagship' }, hull: ['#f43f5e', '#7e22ce'], deck: '#fecdd3' },
-  { id: 'ship_regent', demo: true, rarity: 'legendary', price: null,
+  { id: 'ship_regent', rarity: 'legendary', price: { gems: 600 },
     name: { ru: 'Регент', en: 'Regent' }, model: 'regent',
     hull: ['#334552', '#101c27'], deck: '#9e7245', accent: '#d9b875',
-    description: { ru: 'Четыре отдельных класса кораблей. Бесплатная демонстрация флота.', en: 'Four distinct ship classes. A free fleet demonstration.' } },
+    description: { ru: 'Четыре отдельных класса кораблей: линкор, крейсер, эсминец и бронекатер.', en: 'Four distinct classes: battleship, cruiser, destroyer and armoured launch.' } },
 ]
 
 export function battleShipSkin(game, equippedId) {
@@ -132,7 +132,7 @@ export const EFFECTS = [
   { id: 'fx_firework', rarity: 'legendary', price: { gems: 350 }, name: { ru: 'Салют', en: 'Fireworks' }, icon: '🎆', colors: ['#f472b6', '#38bdf8', '#facc15'] },
   { id: 'fx_arctic', rarity: 'epic', price: { gems: 180 }, model: 'arctic', name: { ru: 'Полярный залп', en: 'Polar Salvo' }, icon: '❄️', colors: ['#64c8ef', '#edfcff', '#478ebd'], description: { ru: 'Ледяной след снаряда, осколки инея, холодные всплески и пена при потоплении.', en: 'An ice-blue shell trail, frost fragments, cold splashes and a foaming sinking wake.' } },
   { id: 'fx_imperial', rarity: 'legendary', price: { gems: 250 }, model: 'imperial', name: { ru: 'Адмиральский залп', en: 'Admiral’s Salvo' }, icon: '⚓', colors: ['#d5a956', '#fff1c9', '#67879f'], description: { ru: 'Латунный снаряд, тёплые искры, морской всплеск и дым над уходящим под воду корпусом.', en: 'A brass shell, warm sparks, a sea-water splash and smoke above the sinking hull.' } },
-  { id: 'fx_regent', demo: true, rarity: 'legendary', price: null, model: 'regent',
+  { id: 'fx_regent', rarity: 'legendary', price: { gems: 250 }, model: 'regent',
     name: { ru: 'Залп Регента', en: 'Regent Salvo' }, icon: '⚓', colors: ['#d6a15e', '#fff0cf', '#65777b'],
     description: { ru: 'Бронебойный снаряд, осколки металла, дым и серебристый водяной столб.', en: 'An armour-piercing shell, metal fragments, smoke and a silver water plume.' } },
 ]
@@ -162,7 +162,7 @@ export const FRAMES = [
   { id: 'frame_admiral', rarity: 'legendary', price: null, exclusive: 'pass', name: { ru: 'Адмиральская', en: 'Admiral' }, ring: 'linear-gradient(135deg,#fde047,#f59e0b,#fde047)' },
   { id: 'frame_officer', rarity: 'epic', price: null, exclusive: 'season', name: { ru: 'Офицер сезона', en: 'Season Officer' }, ring: 'conic-gradient(from 0deg,#38bdf8,#e0f2fe,#38bdf8,#0ea5e9,#38bdf8)' },
   { id: 'frame_legend', rarity: 'legendary', price: null, exclusive: 'season', name: { ru: 'Легенда сезона', en: 'Season Legend' }, ring: 'conic-gradient(from 0deg,#f43f5e,#fbbf24,#22d3ee,#a855f7,#f43f5e)' },
-  { id:'frame_regent', demo:true, rarity:'legendary', price:null, model:'regent', name:{ru:'Орден Регента',en:'Order of Regent'}, ring:'linear-gradient(135deg,#e8d49b,#665632 45%,#d8bf7c 70%,#77623c)' },
+  { id:'frame_regent', rarity:'legendary', price:{gems:180}, model:'regent', name:{ru:'Орден Регента',en:'Order of Regent'}, ring:'linear-gradient(135deg,#e8d49b,#665632 45%,#d8bf7c 70%,#77623c)' },
 ]
 
 export const COSMETIC_SLOTS = { theme: THEMES, ship: SHIP_SKINS, effect: EFFECTS, frame: FRAMES }
@@ -180,6 +180,12 @@ export function findCosmetic(id) {
 /** Curated looks. Components use the normal cosmetic purchase/equip endpoints. */
 export const FLEET_COLLECTIONS = [
   {
+    id:'regent', themeId:'theme_regent', shipId:'ship_regent', effectId:'fx_regent', frameId:'frame_regent',
+    name:{ru:'Регент',en:'Regent'},
+    tagline:{ru:'Авторский флот. Собственная акватория. Латунный орден.',en:'A signature fleet. Bespoke waters. A brass order.'},
+    description:{ru:'Четыре класса кораблей, морская карта, бронебойный залп и рамка аватара. Для всех режимов игры.',en:'Four ship classes, a naval chart, an armour-piercing salvo and an avatar frame. For every game mode.'},
+  },
+  {
     id: 'arctic', themeId: 'theme_arctic', shipId: 'ship_arctic', effectId: 'fx_arctic',
     name: { ru: 'Арктика', en: 'Arctic' },
     tagline: { ru: 'Холодная сталь. Чистая тактика.', en: 'Cold steel. Clear tactics.' },
@@ -192,6 +198,20 @@ export const FLEET_COLLECTIONS = [
     description: { ru: 'Латунная окантовка, тиковая палуба и глубокое синее море. Королевский скин остаётся доступен его владельцам.', en: 'Brass trim, a teak deck and deep blue water. Existing Royal owners keep their ship skin.' },
   },
 ]
+
+/** Normal ownership rules apply to each component; partial owners pay only for missing items. */
+export function collectionItems(id) {
+  const c = FLEET_COLLECTIONS.find(c => c.id === id)
+  return c ? [c.themeId,c.shipId,c.effectId,c.frameId].filter(Boolean).map(findCosmetic) : []
+}
+
+export function collectionQuote(id, owned = []) {
+  const items = collectionItems(id).filter(x => !owned.includes(x.item.id))
+  return { items, price:items.reduce((price,{item}) => {
+    for (const currency of ['gold','gems']) if (item.price?.[currency]) price[currency]=(price[currency]||0)+item.price[currency]
+    return price
+  },{}) }
+}
 
 /* ───────────────────────── Boosters ───────────────────────── */
 /* Only usable vs AI and in the campaign — ranked stays skill-only. */

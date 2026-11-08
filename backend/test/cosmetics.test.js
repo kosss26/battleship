@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { buyItem, equip } from '../src/services/shop.js'
-import { ACHIEVEMENTS, DEFAULT_EQUIPPED, DEFAULT_OWNED, FLEET_COLLECTIONS, findCosmetic, battleShipSkin, battleCosmetics, opponentCosmetics } from '../../shared/catalog.js'
+import { ACHIEVEMENTS, DEFAULT_EQUIPPED, DEFAULT_OWNED, FLEET_COLLECTIONS, findCosmetic, battleShipSkin, battleCosmetics, opponentCosmetics, collectionItems, collectionQuote } from '../../shared/catalog.js'
 import { publicProfile } from '../src/services/users.js'
 
 const player = () => ({
@@ -13,7 +13,7 @@ const player = () => ({
 test('collection cosmetics purchase and equip without affecting match stats', () => {
   for (const c of FLEET_COLLECTIONS) {
     const u = player()
-    for (const id of [c.themeId, c.shipId, c.effectId]) {
+    for (const {item:{id}} of collectionItems(c.id)) {
       const { slot, item } = findCosmetic(id)
       const gold = u.gold
       const gems = u.gems
@@ -85,7 +85,6 @@ test('Regent trial renderer overrides only its own match, without granting owner
   assert.equal(battleShipSkin({}, null).id, 'ship_steel')
   for (const id of ['ship_regent','theme_regent','fx_regent','frame_regent']) {
     assert.throws(() => equip(u, id), { code: 'not_owned' })
-    assert.throws(() => buyItem(u, id), { code: 'item_not_found' })
   }
   const before = structuredClone(u)
   const trial = battleCosmetics({demoFleet:'regent'}, u.data.equipped)
@@ -96,6 +95,35 @@ test('Regent trial renderer overrides only its own match, without granting owner
   buyItem(u, 'ship_royal')
   equip(u, 'ship_royal')
   assert.equal(publicProfile(u).shipSkin, 'ship_royal')
+})
+
+test('Regent is a paid collection: partial ownership, exact price and atomic equip',()=>{
+  const u=player(),before=structuredClone(u)
+  assert.equal(collectionItems('regent').length,4)
+  assert.deepEqual(collectionQuote('regent').price,{gems:1480})
+  assert.throws(()=>equip(u,'collection:regent'),{code:'not_owned'})
+  assert.deepEqual(u,before)
+  buyItem(u,'ship_regent')
+  assert.deepEqual(collectionQuote('regent',u.data.owned).price,{gems:880})
+  const paid=u.gems
+  const result=buyItem(u,'collection:regent')
+  assert.equal(u.gems,paid-880)
+  assert.equal(result.cosmetics.length,3)
+  assert.deepEqual(u.data.equipped,DEFAULT_EQUIPPED)
+  equip(u,'collection:regent')
+  assert.deepEqual(u.data.equipped,{theme:'theme_regent',ship:'ship_regent',effect:'fx_regent',frame:'frame_regent'})
+  const after=structuredClone(u)
+  assert.throws(()=>buyItem(u,'collection:regent'),{code:'already_owned'})
+  assert.deepEqual(u,after)
+})
+
+test('collection balance validation and unknown collections never partially charge or equip',()=>{
+  const u=player();u.gems=1
+  const before=structuredClone(u)
+  for(const id of ['collection:regent','collection:arctic'])assert.throws(()=>buyItem(u,id),{code:'not_enough_gems'})
+  assert.throws(()=>buyItem(u,'collection:missing'),{code:'item_not_found'})
+  assert.throws(()=>equip(u,'collection:missing'),{code:'item_not_found'})
+  assert.deepEqual(u,before)
 })
 
 test('public opponent appearance uses their cosmetics and safe defaults for older rooms', () => {

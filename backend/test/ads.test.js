@@ -75,8 +75,14 @@ test('free gold for an ad: limits, cooldown and anti-skip', async () => {
   await age(u.profile.id)
   const b = await api('/me/ads/complete', { token: u.token, method: 'POST', body: { sessionId: booster.body.sessionId } })
   assert.equal(b.body.summary.boosters.radar, 1)
-  const views = await query('SELECT count(*)::int AS n FROM ad_views WHERE user_id = $1', [u.profile.id])
-  assert.equal(views.rows[0].n, 6)
+  // View logging is deliberately asynchronous to the reward response.
+  let count=0
+  for(let attempt=0;attempt<50;attempt++) {
+    count=(await query('SELECT count(*)::int AS n FROM ad_views WHERE user_id = $1',[u.profile.id])).rows[0].n
+    if(count===6) break
+    await wait(20)
+  }
+  assert.equal(count,6)
 })
 
 test('double the last battle reward once', async () => {
